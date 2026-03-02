@@ -1,0 +1,520 @@
+---
+title: Advanced Form Features
+description: Master reactive fields, dependent fields, field lifecycle, and advanced form patterns
+---
+
+## Introduction
+
+Filament forms are built on Livewire, enabling powerful reactive behavior without writing JavaScript. This guide covers advanced features like reactive fields, dependent field logic, field lifecycle hooks, and performance optimization.
+
+## Reactive forms
+
+### The basics of reactivity
+
+By default, forms don't re-render when field values change. This is a performance optimization since rendering requires a server round-trip. To make a field reactive, use the `live()` method:
+
+```php
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Utilities\Get;
+
+Select::make('country')
+    ->options([
+        'us' => 'United States',
+        'uk' => 'United Kingdom',
+        'ca' => 'Canada',
+    ])
+    ->live(), // Re-render form when changed
+
+Select::make('state')
+    ->options(fn (Get $get) => match ($get('country')) {
+        'us' => ['ny' => 'New York', 'ca' => 'California'],
+        'uk' => ['eng' => 'England', 'sco' => 'Scotland'],
+        'ca' => ['on' => 'Ontario', 'bc' => 'British Columbia'],
+        default => [],
+    })
+    ->visible(fn (Get $get) => filled($get('country')))
+```
+
+### Reactive on blur
+
+For text inputs, validate after the user finishes typing:
+
+```php
+TextInput::make('slug')
+    ->live(onBlur: true)
+```
+
+### Debounced reactivity
+
+Wait for the user to stop typing before triggering updates:
+
+```php
+TextInput::make('search')
+    ->live(debounce: 500) // Wait 500ms after last keystroke
+```
+
+## Dependent fields
+
+### Conditional visibility
+
+Show or hide fields based on other field values:
+
+```php
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Utilities\Get;
+
+Toggle::make('is_company')
+    ->live(),
+
+TextInput::make('company_name')
+    ->required()
+    ->visible(fn (Get $get) => $get('is_company') === true),
+
+TextInput::make('tax_id')
+    ->required()
+    ->visible(fn (Get $get) => $get('is_company') === true)
+```
+
+### Conditional requirements
+
+Make fields required based on conditions:
+
+```php
+Select::make('shipping_method')
+    ->options([
+        'standard' => 'Standard',
+        'express' => 'Express',
+        'pickup' => 'Store Pickup',
+    ])
+    ->live(),
+
+TextInput::make('shipping_address')
+    ->required(fn (Get $get) => $get('shipping_method') !== 'pickup')
+```
+
+### Conditional disabling
+
+```php
+Toggle::make('custom_pricing')
+    ->live(),
+
+TextInput::make('price')
+    ->numeric()
+    ->disabled(fn (Get $get) => ! $get('custom_pricing'))
+    ->dehydrated(fn (Get $get) => $get('custom_pricing'))
+```
+
+### Dynamic field options
+
+```php
+Select::make('category_id')
+    ->relationship('category', 'name')
+    ->live(),
+
+Select::make('subcategory_id')
+    ->options(function (Get $get) {
+        $categoryId = $get('category_id');
+        if (! $categoryId) {
+            return [];
+        }
+        return Subcategory::where('category_id', $categoryId)
+            ->pluck('name', 'id');
+    })
+    ->visible(fn (Get $get) => filled($get('category_id')))
+```
+
+## Field lifecycle hooks
+
+### After state hydrated
+
+Runs when the form is filled with data:
+
+```php
+TextInput::make('name')
+    ->afterStateHydrated(function (TextInput $component, $state) {
+        $component->state(ucwords($state));
+    })
+```
+
+Or use the shortcut:
+
+```php
+TextInput::make('name')
+    ->formatStateUsing(fn (string $state): string => ucwords($state))
+```
+
+### After state updated
+
+Runs when the user changes a field:
+
+```php
+use Filament\Schemas\Components\Utilities\Set;
+use Illuminate\Support\Str;
+
+TextInput::make('title')
+    ->live(onBlur: true)
+    ->afterStateUpdated(function (Set $set, ?string $state) {
+        $set('slug', Str::slug($state));
+    })
+
+TextInput::make('slug')
+    ->required()
+```
+
+### Before state dehydrated
+
+Runs before form data is saved:
+
+```php
+TextInput::make('name')
+    ->dehydrateStateUsing(fn (string $state): string => ucwords($state))
+```
+
+## Advanced reactive patterns
+
+### Auto-generating slugs
+
+```php
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Illuminate\Support\Str;
+
+TextInput::make('title')
+    ->required()
+    ->live(onBlur: true)
+    ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
+        if (! $get('is_slug_changed_manually') && filled($state)) {
+            $set('slug', Str::slug($state));
+        }
+    }),
+
+TextInput::make('slug')
+    ->required()
+    ->unique(ignoreRecord: true)
+    ->afterStateUpdated(fn (Set $set) => $set('is_slug_changed_manually', true)),
+
+Hidden::make('is_slug_changed_manually')
+    ->default(false)
+    ->dehydrated(false)
+```
+
+### Calculated totals
+
+```php
+TextInput::make('quantity')
+    ->numeric()
+    ->default(1)
+    ->live(onBlur: true),
+
+TextInput::make('price')
+    ->numeric()
+    ->prefix('$')
+    ->live(onBlur: true),
+
+TextInput::make('total')
+    ->numeric()
+    ->prefix('$')
+    ->disabled()
+    ->dehydrated(false)
+    ->state(function (Get $get) {
+        return ($get('quantity') ?? 0) * ($get('price') ?? 0);
+    })
+```
+
+### Dependent repeaters
+
+```php
+use Filament\Forms\Components\Repeater;
+
+Repeater::make('line_items')
+    ->schema([
+        Select::make('product_id')
+            ->relationship('product', 'name')
+            ->live()
+            ->afterStateUpdated(function (Set $set, $state) {
+                $product = Product::find($state);
+                $set('unit_price', $product?->price ?? 0);
+            }),
+        
+        TextInput::make('quantity')
+            ->numeric()
+            ->default(1)
+            ->live(onBlur: true),
+        
+        TextInput::make('unit_price')
+            ->numeric()
+            ->prefix('$')
+            ->disabled(),
+        
+        TextInput::make('total')
+            ->numeric()
+            ->prefix('$')
+            ->disabled()
+            ->state(fn (Get $get) => 
+                ($get('quantity') ?? 0) * ($get('unit_price') ?? 0)
+            ),
+    ])
+    ->columns(4)
+    ->live()
+```
+
+### Wizard with conditional steps
+
+```php
+use Filament\Schemas\Components\Wizard;
+use Filament\Schemas\Components\Wizard\Step;
+
+Wizard::make([
+    Step::make('Type')
+        ->schema([
+            Select::make('account_type')
+                ->options([
+                    'personal' => 'Personal',
+                    'business' => 'Business',
+                ])
+                ->required()
+                ->live(),
+        ]),
+    
+    Step::make('Personal Info')
+        ->schema([
+            TextInput::make('first_name')->required(),
+            TextInput::make('last_name')->required(),
+        ])
+        ->visible(fn (Get $get) => $get('account_type') === 'personal'),
+    
+    Step::make('Business Info')
+        ->schema([
+            TextInput::make('company_name')->required(),
+            TextInput::make('tax_id')->required(),
+        ])
+        ->visible(fn (Get $get) => $get('account_type') === 'business'),
+])
+```
+
+## Performance optimization
+
+### Avoiding unnecessary re-renders
+
+Use JavaScript expressions for simple UI updates:
+
+```php
+use Filament\Schemas\JsContent;
+
+TextInput::make('name')
+    ->live(onBlur: true),
+
+Placeholder::make('greeting')
+    ->content(JsContent::make(
+        "'Hello, ' + ($get('name') || 'guest') + '!'"
+    ))
+```
+
+### Selective field rendering
+
+Only re-render specific fields:
+
+```php
+TextInput::make('first_name')
+    ->live(onBlur: true)
+    ->afterStateUpdated(function (Set $set, $state) {
+        // This won't trigger a full form re-render
+        $set('full_name', $state . ' ' . $get('last_name'));
+    })
+```
+
+### Dehydration control
+
+Prevent fields from being saved:
+
+```php
+TextInput::make('confirmation_code')
+    ->required()
+    ->saved(false) // Won't be included in form data
+
+Placeholder::make('calculated_field')
+    ->content(fn (Get $get) => $get('field_a') + $get('field_b'))
+    ->dehydrated(false) // Same as saved(false)
+```
+
+## Using JavaScript utilities
+
+### JavaScript expressions in labels
+
+```php
+use Filament\Schemas\JsContent;
+
+TextInput::make('greeting_response')
+    ->label(JsContent::make(
+        "($get('name') === 'John') ? 'Hello, John!' : 'Hello, stranger!'"
+    ))
+```
+
+### Accessing field state in JavaScript
+
+The `$get()` and `$state` utilities are available in JavaScript contexts:
+
+```php
+TextInput::make('quantity')
+    ->hint(JsContent::make(
+        "'Total: $' + ($get('quantity') * $get('price'))"
+    ))
+```
+
+## Field state management
+
+### Getting field values
+
+```php
+use Filament\Schemas\Components\Utilities\Get;
+
+TextInput::make('confirmation')
+    ->rules([
+        fn (Get $get): Closure => function ($attribute, $value, $fail) use ($get) {
+            if ($value !== $get('original_value')) {
+                $fail('The confirmation must match.');
+            }
+        },
+    ])
+```
+
+### Setting field values
+
+```php
+use Filament\Schemas\Components\Utilities\Set;
+
+Select::make('template')
+    ->options([
+        'welcome' => 'Welcome Email',
+        'reset' => 'Password Reset',
+    ])
+    ->live()
+    ->afterStateUpdated(function (Set $set, $state) {
+        $template = EmailTemplate::find($state);
+        $set('subject', $template->subject);
+        $set('body', $template->body);
+    })
+```
+
+### Calling updated hooks
+
+By default, `$set()` doesn't trigger `afterStateUpdated()` hooks. To trigger them:
+
+```php
+$set('field_name', 'value', shouldCallUpdatedHooks: true);
+```
+
+## Complex form patterns
+
+### Multi-step validation
+
+```php
+Wizard::make([
+    Step::make('Account')
+        ->schema([
+            TextInput::make('email')
+                ->email()
+                ->required()
+                ->unique(),
+            TextInput::make('password')
+                ->password()
+                ->required()
+                ->minLength(8),
+        ])
+        ->afterValidation(function ($state) {
+            // Custom validation after step completion
+            if (! $this->isEmailDomainAllowed($state['email'])) {
+                throw ValidationException::withMessages([
+                    'email' => 'This email domain is not allowed.',
+                ]);
+            }
+        }),
+])
+```
+
+### Dynamic field schema
+
+```php
+Repeater::make('fields')
+    ->schema(fn (Get $get) => match ($get('../../field_type')) {
+        'text' => [
+            TextInput::make('value')
+                ->required(),
+        ],
+        'select' => [
+            Select::make('value')
+                ->options($get('../../options'))
+                ->required(),
+        ],
+        default => [],
+    })
+```
+
+### Conditional field groups
+
+```php
+Select::make('payment_method')
+    ->options([
+        'card' => 'Credit Card',
+        'bank' => 'Bank Transfer',
+        'crypto' => 'Cryptocurrency',
+    ])
+    ->live(),
+
+Group::make([
+    TextInput::make('card_number')->required(),
+    TextInput::make('expiry')->required(),
+    TextInput::make('cvv')->required(),
+])
+    ->visible(fn (Get $get) => $get('payment_method') === 'card'),
+
+Group::make([
+    TextInput::make('account_number')->required(),
+    TextInput::make('routing_number')->required(),
+])
+    ->visible(fn (Get $get) => $get('payment_method') === 'bank'),
+
+Group::make([
+    Select::make('cryptocurrency')->options([...])->required(),
+    TextInput::make('wallet_address')->required(),
+])
+    ->visible(fn (Get $get) => $get('payment_method') === 'crypto')
+```
+
+## Best practices
+
+### Performance
+
+- Use `live(onBlur: true)` for text inputs to reduce requests
+- Use `live(debounce: 500)` for real-time validation with typing
+- Avoid deep nesting of reactive fields
+- Use JavaScript expressions for simple calculations
+
+### User experience
+
+- Provide immediate feedback for validation errors
+- Use debouncing to avoid jarring UI updates
+- Show loading states during async operations
+- Clear dependent fields when their parent changes
+
+### Code organization
+
+- Extract complex logic into dedicated methods
+- Use form components to reuse field patterns
+- Document complex reactive relationships
+- Test edge cases thoroughly
+
+### Security
+
+- Always validate on the backend
+- Don't rely solely on frontend validation
+- Sanitize user input before setting field values
+- Be cautious with dynamic field schemas
+
+## Next steps
+
+- Explore [custom form fields](https://filamentphp.com/docs/forms/custom-fields)
+- Learn about [form actions](https://filamentphp.com/docs/actions/overview)
+- Integrate forms with [panel resources](https://filamentphp.com/docs/panels/resources)

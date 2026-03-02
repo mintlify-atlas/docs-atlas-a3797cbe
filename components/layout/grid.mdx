@@ -1,0 +1,174 @@
+---
+title: Grid
+---
+
+## Introduction
+
+The Grid component provides explicit grid syntax without extra styling:
+
+```php
+use Filament\Schemas\Components\Grid;
+
+Grid::make([
+    'default' => 1,
+    'sm' => 2,
+    'md' => 3,
+    'lg' => 4,
+    'xl' => 6,
+    '2xl' => 8,
+])
+    ->schema([
+        // ...
+    ])
+```
+
+<ParamField path="columns" type="int | array" default="2">
+  The number of columns or responsive column configuration.
+</ParamField>
+
+## Basic usage
+
+The Grid component is useful when you want explicit grid syntax:
+
+```php
+Grid::make(2)
+    ->schema([
+        TextInput::make('name'),
+        TextInput::make('email'),
+    ])
+```
+
+## Responsive grids
+
+Define different column counts for different breakpoints:
+
+```php
+Grid::make([
+    'default' => 1,
+    'sm' => 2,
+    'lg' => 3,
+])
+    ->schema([
+        // ...
+    ])
+```
+
+Breakpoints (`sm`, `md`, `lg`, `xl`, `2xl`) follow Tailwind's responsive design system.
+
+## Column spanning
+
+Control how many columns a component occupies:
+
+```php
+use Filament\Forms\Components\TextInput;
+
+Grid::make(3)
+    ->schema([
+        TextInput::make('title')
+            ->columnSpan(2),
+        TextInput::make('author'),
+    ])
+```
+
+Available spanning options:
+- Integer (e.g., `columnSpan(2)`) - spans 2 columns on `lg` and higher
+- `'full'` - spans full width on `lg` and higher
+- `columnSpanFull()` - spans full width on all devices
+- Responsive array (e.g., `['md' => 2, 'xl' => 3]`)
+
+## Column starting position
+
+Control where a component starts in the grid:
+
+```php
+Grid::make([
+    'sm' => 3,
+    'xl' => 6,
+])
+    ->schema([
+        TextInput::make('name')
+            ->columnStart([
+                'sm' => 2,
+                'xl' => 3,
+            ]),
+    ])
+```
+
+## Column ordering
+
+Control the visual order of components:
+
+```php
+Grid::make(3)
+    ->schema([
+        TextInput::make('first')
+            ->columnOrder(3),
+        TextInput::make('second')
+            ->columnOrder(1),
+        TextInput::make('third')
+            ->columnOrder(2),
+    ])
+```
+
+Responsive ordering:
+
+```php
+TextInput::make('title')
+    ->columnOrder([
+        'default' => 1,
+        'lg' => 3,
+    ])
+```
+
+## Container queries
+
+Use container queries for responsive layouts based on parent size:
+
+```php
+Grid::make()
+    ->gridContainer()
+    ->columns([
+        '@md' => 3,
+        '@xl' => 4,
+    ])
+    ->schema([
+        // ...
+    ])
+```
+
+Container breakpoints: `@sm`, `@md`, `@lg`, `@xl`, `@2xl`.
+
+### Fallback breakpoints
+
+Support older browsers with fallback breakpoints:
+
+```php
+Grid::make()
+    ->gridContainer()
+    ->columns([
+        '@md' => 3,
+        '@xl' => 4,
+        '!@md' => 2,
+        '!@xl' => 3,
+    ])
+    ->schema([
+        // ...
+    ])
+```
+
+## Relationship integration
+
+Grids can integrate with singular relationships:
+
+```php
+Grid::make(2)
+    ->relationship('settings')
+    ->schema([
+        TextInput::make('key'),
+        TextInput::make('value'),
+    ])
+```
+
+<ParamField path="relationshipName" type="string">
+  The name of the relationship.
+</ParamField>

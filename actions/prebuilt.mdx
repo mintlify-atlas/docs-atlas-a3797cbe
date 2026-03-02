@@ -1,0 +1,412 @@
+---
+title: Prebuilt Actions
+description: Use Filament's prebuilt actions for common Eloquent operations like Create, Edit, Delete, Replicate, and more.
+---
+
+## Introduction
+
+Filament includes several prebuilt actions that simplify common Eloquent operations. These actions come with sensible defaults, automatic authorization, notifications, and full customization options.
+
+## Available prebuilt actions
+
+The following actions are available out of the box:
+
+- **CreateAction** - Create new records with a form
+- **EditAction** - Edit existing records
+- **ViewAction** - View records in read-only mode
+- **DeleteAction** - Delete records with confirmation
+- **ReplicateAction** - Duplicate existing records
+- **ForceDeleteAction** - Permanently delete soft-deleted records
+- **RestoreAction** - Restore soft-deleted records
+- **ImportAction** - Import data from files
+- **ExportAction** - Export data to files
+
+## Create action
+
+The create action opens a modal with a form to create new Eloquent records:
+
+<Steps>
+
+### Basic usage
+
+```php
+use Filament\Actions\CreateAction;
+use Filament\Forms\Components\TextInput;
+
+CreateAction::make()
+    ->schema([
+        TextInput::make('title')->required(),
+        TextInput::make('slug')->required(),
+    ])
+```
+
+### Mutating data before saving
+
+Modify form data before it's saved to the database:
+
+```php
+CreateAction::make()
+    ->mutateDataUsing(function (array $data): array {
+        $data['user_id'] = auth()->id();
+        $data['created_at'] = now();
+        
+        return $data;
+    })
+```
+
+### Customizing the creation process
+
+Take full control of how records are created:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+CreateAction::make()
+    ->using(function (array $data, string $model): Model {
+        $record = $model::create($data);
+        $record->attachDefaultTags();
+        
+        return $record;
+    })
+```
+
+</Steps>
+
+### Creating another record
+
+The create action includes a "Create & create another" button by default:
+
+```php
+CreateAction::make()
+    ->createAnother(false) // Disable the feature
+```
+
+Preserve form data when creating another record:
+
+```php
+CreateAction::make()
+    ->preserveFormDataWhenCreatingAnother(['category_id', 'is_published'])
+```
+
+## Edit action
+
+The edit action opens a modal with a form pre-filled with the record's data:
+
+<Steps>
+
+### Basic usage
+
+```php
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\TextInput;
+
+EditAction::make()
+    ->schema([
+        TextInput::make('title')->required(),
+        TextInput::make('slug')->required(),
+    ])
+```
+
+### Mutating data before filling
+
+Modify the record's data before filling the form:
+
+```php
+EditAction::make()
+    ->mutateRecordDataUsing(function (array $data): array {
+        $data['formatted_price'] = number_format($data['price'], 2);
+        
+        return $data;
+    })
+```
+
+### Mutating data before saving
+
+Modify form data before saving:
+
+```php
+EditAction::make()
+    ->mutateDataUsing(function (array $data): array {
+        $data['last_edited_by_id'] = auth()->id();
+        $data['updated_at'] = now();
+        
+        return $data;
+    })
+```
+
+</Steps>
+
+## Delete action
+
+The delete action requires confirmation before deleting records:
+
+```php
+use Filament\Actions\DeleteAction;
+
+DeleteAction::make()
+```
+
+### Bulk delete action
+
+Allow users to delete multiple records at once:
+
+```php
+use Filament\Actions\DeleteBulkAction;
+use Filament\Tables\Table;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->bulkActions([
+            DeleteBulkAction::make(),
+        ]);
+}
+```
+
+### Optimizing bulk deletes
+
+For large datasets, use chunking to reduce memory usage:
+
+```php
+DeleteBulkAction::make()
+    ->chunkSelectedRecords(250)
+```
+
+Skip loading records into memory for better performance:
+
+```php
+DeleteBulkAction::make()
+    ->fetchSelectedRecords(false) // Deletes in a single query
+```
+
+<Note>
+When using `fetchSelectedRecords(false)`, model events and individual record authorization are skipped.
+</Note>
+
+## View action
+
+The view action displays record data in read-only form fields:
+
+```php
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\TextInput;
+
+ViewAction::make()
+    ->schema([
+        TextInput::make('title'),
+        TextInput::make('slug'),
+    ])
+```
+
+All fields are automatically disabled, preventing user edits.
+
+## Replicate action
+
+The replicate action duplicates existing records:
+
+<Steps>
+
+### Basic usage
+
+```php
+use Filament\Actions\ReplicateAction;
+
+ReplicateAction::make()
+```
+
+### Excluding attributes
+
+Prevent certain columns from being replicated:
+
+```php
+ReplicateAction::make()
+    ->excludeAttributes(['slug', 'created_at', 'updated_at'])
+```
+
+### Mutating replicated data
+
+Modify the data before creating the replica:
+
+```php
+ReplicateAction::make()
+    ->mutateRecordDataUsing(function (array $data): array {
+        $data['title'] = $data['title'] . ' (Copy)';
+        $data['slug'] = $data['slug'] . '-copy';
+        
+        return $data;
+    })
+```
+
+</Steps>
+
+### Lifecycle hooks
+
+Execute code at different points in the replication process:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+ReplicateAction::make()
+    ->beforeReplicaSaved(function (Model $replica): void {
+        // Modify the replica before it's saved
+        $replica->status = 'draft';
+    })
+    ->after(function (Model $replica): void {
+        // Do something after the replica is saved
+        $replica->syncRelationships($this->record);
+    })
+```
+
+## Soft delete actions
+
+Filament provides specialized actions for Laravel's soft delete feature:
+
+### Force delete action
+
+Permanently delete soft-deleted records:
+
+```php
+use Filament\Actions\ForceDeleteAction;
+
+ForceDeleteAction::make()
+```
+
+### Restore action
+
+Restore soft-deleted records:
+
+```php
+use Filament\Actions\RestoreAction;
+
+RestoreAction::make()
+```
+
+### Bulk actions
+
+Both actions have bulk variants:
+
+```php
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+
+ForceDeleteBulkAction::make()
+RestoreBulkAction::make()
+```
+
+## Customizing notifications
+
+All prebuilt actions dispatch success notifications that you can customize:
+
+<CodeGroup>
+```php Custom title
+CreateAction::make()
+    ->successNotificationTitle('Post created successfully')
+```
+
+```php Custom notification
+use Filament\Notifications\Notification;
+
+CreateAction::make()
+    ->successNotification(
+        Notification::make()
+            ->success()
+            ->title('Post created')
+            ->body('The post has been created and published.'),
+    )
+```
+
+```php Disable notification
+CreateAction::make()
+    ->successNotification(null)
+```
+</CodeGroup>
+
+## Redirecting after actions
+
+Customize where users are redirected after an action completes:
+
+```php
+CreateAction::make()
+    ->successRedirectUrl(route('posts.list'))
+```
+
+Access the created/edited record:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+CreateAction::make()
+    ->successRedirectUrl(fn (Model $record): string => route('posts.show', $record))
+```
+
+## Lifecycle hooks
+
+All prebuilt actions support lifecycle hooks for executing code at specific points:
+
+```php
+CreateAction::make()
+    ->beforeFormFilled(function () {
+        // Runs before form fields are populated with defaults
+    })
+    ->afterFormFilled(function () {
+        // Runs after form fields are populated
+    })
+    ->beforeFormValidated(function () {
+        // Runs before validation when submitted
+    })
+    ->afterFormValidated(function () {
+        // Runs after validation passes
+    })
+    ->before(function () {
+        // Runs before saving to database
+    })
+    ->after(function () {
+        // Runs after saving to database
+    })
+```
+
+## Halting execution
+
+Stop an action from completing using `halt()` or `cancel()`:
+
+```php
+use Filament\Actions\CreateAction;
+use Filament\Notifications\Notification;
+
+CreateAction::make()
+    ->before(function (CreateAction $action) {
+        if (! $this->user->hasCredits()) {
+            Notification::make()
+                ->warning()
+                ->title('Insufficient credits')
+                ->body('Purchase more credits to continue.')
+                ->send();
+            
+            $action->halt(); // Stops execution but keeps modal open
+        }
+    })
+```
+
+Use `cancel()` to close the modal:
+
+```php
+$action->cancel(); // Stops execution and closes modal
+```
+
+## Using wizards
+
+Transform create and edit actions into multi-step wizards:
+
+```php
+use Filament\Schemas\Components\Wizard\Step;
+
+CreateAction::make()
+    ->steps([
+        Step::make('Details')
+            ->schema([...]),
+        Step::make('Content')
+            ->schema([...]),
+        Step::make('Settings')
+            ->schema([...]),
+    ])
+```

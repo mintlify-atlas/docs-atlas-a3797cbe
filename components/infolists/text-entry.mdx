@@ -1,0 +1,409 @@
+---
+title: Text Entry
+description: Display simple text in Filament infolists.
+---
+
+## Introduction
+
+Text entries display simple text from your data source. They are the most commonly used entry type in infolists.
+
+<CodeGroup>
+```php Basic usage
+use Filament\Infolists\Components\TextEntry;
+
+TextEntry::make('title')
+```
+</CodeGroup>
+
+## Available Methods
+
+### Formatting
+
+<ParamField path="formatStateUsing()" type="Closure">
+  Format the entry's state using a custom closure. The closure receives the state and can return a formatted value.
+
+  ```php
+  TextEntry::make('status')
+      ->formatStateUsing(fn (string $state): string => __("statuses.{$state}"))
+  ```
+</ParamField>
+
+<ParamField path="date()" type="string|Closure|null">
+  Format the entry as a date using PHP date formatting tokens.
+
+  ```php
+  TextEntry::make('created_at')
+      ->date('M j, Y')
+  ```
+</ParamField>
+
+<ParamField path="dateTime()" type="string|Closure|null">
+  Format the entry as a date and time.
+
+  ```php
+  TextEntry::make('created_at')
+      ->dateTime('M j, Y H:i:s')
+  ```
+</ParamField>
+
+<ParamField path="time()" type="string|Closure|null">
+  Format the entry as a time.
+
+  ```php
+  TextEntry::make('created_at')
+      ->time('H:i:s')
+  ```
+</ParamField>
+
+<ParamField path="since()" type="string|Closure|null">
+  Format the entry as a relative time (e.g., "2 hours ago").
+
+  ```php
+  TextEntry::make('created_at')
+      ->since()
+  ```
+</ParamField>
+
+<ParamField path="money()" type="string">
+  Format the entry as a money value with currency.
+
+  ```php
+  TextEntry::make('price')
+      ->money('USD')
+  ```
+</ParamField>
+
+<ParamField path="numeric()" type="int|Closure|null">
+  Format the entry as a number with optional decimal places.
+
+  ```php
+  TextEntry::make('stock')
+      ->numeric(decimalPlaces: 2)
+  ```
+</ParamField>
+
+<ParamField path="markdown()" type="bool|Closure">
+  Render the entry as Markdown.
+
+  ```php
+  TextEntry::make('description')
+      ->markdown()
+  ```
+</ParamField>
+
+<ParamField path="html()" type="bool|Closure">
+  Render the entry as HTML.
+
+  ```php
+  TextEntry::make('content')
+      ->html()
+  ```
+</ParamField>
+
+### Appearance
+
+<ParamField path="color()" type="string|array|Closure">
+  Set the text color.
+
+  ```php
+  TextEntry::make('status')
+      ->color(fn (string $state): string => match ($state) {
+          'draft' => 'gray',
+          'published' => 'success',
+      })
+  ```
+</ParamField>
+
+<ParamField path="icon()" type="string|Htmlable|Closure">
+  Add an icon to the entry.
+
+  ```php
+  use Filament\Support\Icons\Heroicon;
+
+  TextEntry::make('email')
+      ->icon(Heroicon::Envelope)
+  ```
+</ParamField>
+
+<ParamField path="iconColor()" type="string|array|Closure">
+  Set the icon color separately from the text color.
+
+  ```php
+  TextEntry::make('email')
+      ->icon(Heroicon::Envelope)
+      ->iconColor('primary')
+  ```
+</ParamField>
+
+<ParamField path="iconPosition()" type="IconPosition">
+  Set the icon position (before or after the text).
+
+  ```php
+  use Filament\Support\Enums\IconPosition;
+
+  TextEntry::make('email')
+      ->icon(Heroicon::Envelope)
+      ->iconPosition(IconPosition::After)
+  ```
+</ParamField>
+
+<ParamField path="badge()" type="bool|Closure">
+  Display the text as a badge with a background color.
+
+  ```php
+  TextEntry::make('status')
+      ->badge()
+      ->color(fn (string $state): string => match ($state) {
+          'draft' => 'gray',
+          'published' => 'success',
+      })
+  ```
+</ParamField>
+
+<ParamField path="size()" type="TextSize">
+  Set the text size.
+
+  ```php
+  use Filament\Support\Enums\TextSize;
+
+  TextEntry::make('title')
+      ->size(TextSize::Large)
+  ```
+</ParamField>
+
+<ParamField path="weight()" type="FontWeight">
+  Set the font weight.
+
+  ```php
+  use Filament\Support\Enums\FontWeight;
+
+  TextEntry::make('title')
+      ->weight(FontWeight::Bold)
+  ```
+</ParamField>
+
+<ParamField path="fontFamily()" type="FontFamily">
+  Set the font family.
+
+  ```php
+  use Filament\Support\Enums\FontFamily;
+
+  TextEntry::make('code')
+      ->fontFamily(FontFamily::Mono)
+  ```
+</ParamField>
+
+### Lists
+
+<ParamField path="listWithLineBreaks()" type="bool|Closure">
+  Display array values with line breaks between items.
+
+  ```php
+  TextEntry::make('authors.name')
+      ->listWithLineBreaks()
+  ```
+</ParamField>
+
+<ParamField path="bulleted()" type="bool|Closure">
+  Display array values as a bulleted list.
+
+  ```php
+  TextEntry::make('authors.name')
+      ->bulleted()
+  ```
+</ParamField>
+
+<ParamField path="limitList()" type="int|Closure|null">
+  Limit the number of items displayed in a list.
+
+  ```php
+  TextEntry::make('tags')
+      ->badge()
+      ->limitList(3)
+  ```
+</ParamField>
+
+<ParamField path="expandableLimitedList()" type="bool|Closure">
+  Allow users to expand a limited list to see all items.
+
+  ```php
+  TextEntry::make('tags')
+      ->listWithLineBreaks()
+      ->limitList(3)
+      ->expandableLimitedList()
+  ```
+</ParamField>
+
+<ParamField path="separator()" type="string|Closure">
+  Split a single value into multiple list items using a separator.
+
+  ```php
+  TextEntry::make('tags')
+      ->badge()
+      ->separator(',')
+  ```
+</ParamField>
+
+### Text Manipulation
+
+<ParamField path="limit()" type="int|Closure|null">
+  Limit the character length of the text.
+
+  ```php
+  TextEntry::make('description')
+      ->limit(50)
+  ```
+</ParamField>
+
+<ParamField path="words()" type="int|Closure|null">
+  Limit the word count of the text.
+
+  ```php
+  TextEntry::make('description')
+      ->words(10)
+  ```
+</ParamField>
+
+<ParamField path="lineClamp()" type="int|Closure|null">
+  Limit the text to a specific number of lines.
+
+  ```php
+  TextEntry::make('description')
+      ->lineClamp(2)
+  ```
+</ParamField>
+
+<ParamField path="wrap()" type="bool|Closure">
+  Control whether text wraps to the next line.
+
+  ```php
+  TextEntry::make('code')
+      ->wrap(false)
+  ```
+</ParamField>
+
+<ParamField path="copyable()" type="bool|Closure">
+  Make the text copyable to clipboard on click.
+
+  ```php
+  TextEntry::make('api_key')
+      ->copyable()
+      ->copyMessage('Copied!')
+      ->copyMessageDuration(1500)
+  ```
+</ParamField>
+
+<ParamField path="prefix()" type="string|Htmlable|Closure">
+  Add a prefix before the text.
+
+  ```php
+  TextEntry::make('price')
+      ->prefix('$')
+  ```
+</ParamField>
+
+<ParamField path="suffix()" type="string|Htmlable|Closure">
+  Add a suffix after the text.
+
+  ```php
+  TextEntry::make('temperature')
+      ->suffix('°C')
+  ```
+</ParamField>
+
+### Relationship Aggregation
+
+<ParamField path="avg()" type="string|array">
+  Display the average of a relationship field.
+
+  ```php
+  TextEntry::make('users_avg_age')
+      ->avg('users', 'age')
+  ```
+</ParamField>
+
+<ParamField path="counts()" type="string|array">
+  Display the count of related records.
+
+  ```php
+  TextEntry::make('users_count')
+      ->counts('users')
+  ```
+</ParamField>
+
+<ParamField path="max()" type="string|array">
+  Display the maximum value of a relationship field.
+
+  ```php
+  TextEntry::make('users_max_age')
+      ->max('users', 'age')
+  ```
+</ParamField>
+
+<ParamField path="min()" type="string|array">
+  Display the minimum value of a relationship field.
+
+  ```php
+  TextEntry::make('users_min_age')
+      ->min('users', 'age')
+  ```
+</ParamField>
+
+<ParamField path="sum()" type="string|array">
+  Display the sum of a relationship field.
+
+  ```php
+  TextEntry::make('orders_sum_total')
+      ->sum('orders', 'total')
+  ```
+</ParamField>
+
+## Examples
+
+### Status Badge with Color
+
+<CodeGroup>
+```php Status with dynamic color
+TextEntry::make('status')
+    ->badge()
+    ->color(fn (string $state): string => match ($state) {
+        'draft' => 'gray',
+        'reviewing' => 'warning',
+        'published' => 'success',
+        'rejected' => 'danger',
+    })
+```
+</CodeGroup>
+
+### Formatted Money
+
+<CodeGroup>
+```php Price in EUR
+TextEntry::make('price')
+    ->money('EUR', divideBy: 100)
+    ->label('Price')
+```
+</CodeGroup>
+
+### Author List
+
+<CodeGroup>
+```php Multiple authors
+TextEntry::make('authors.name')
+    ->listWithLineBreaks()
+    ->limitList(3)
+    ->expandableLimitedList()
+```
+</CodeGroup>
+
+### API Key with Copy
+
+<CodeGroup>
+```php Copyable API key
+TextEntry::make('api_key')
+    ->label('API Key')
+    ->fontFamily(FontFamily::Mono)
+    ->copyable()
+    ->copyMessage('API key copied to clipboard!')
+```
+</CodeGroup>

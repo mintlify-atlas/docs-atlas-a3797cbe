@@ -1,0 +1,443 @@
+---
+title: Filters
+description: Add powerful filtering and search capabilities to Filament tables with select filters, ternary filters, and custom filter forms.
+---
+
+## Introduction
+
+Filters allow users to scope table data and find specific information. They're defined in the `$table->filters()` method and provide various ways to constrain your query.
+
+```php
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->filters([
+            Filter::make('is_featured')
+                ->query(fn (Builder $query): Builder => $query->where('is_featured', true))
+        ]);
+}
+```
+
+## Available filter types
+
+<CardGroup cols={2}>
+  <Card title="Basic Filter" icon="filter">
+    Simple checkbox or toggle filter
+  </Card>
+  <Card title="Select Filter" icon="chevron-down">
+    Dropdown with predefined options
+  </Card>
+  <Card title="Ternary Filter" icon="list-check">
+    Three-state filter (true/false/blank)
+  </Card>
+  <Card title="Query Builder" icon="code">
+    Advanced filter combinations
+  </Card>
+</CardGroup>
+
+## Basic filter
+
+The default filter renders as a checkbox. When checked, the `query()` callback is applied:
+
+```php
+use Filament\Tables\Filters\Filter;
+use Illuminate\Database\Eloquent\Builder;
+
+Filter::make('is_featured')
+    ->label('Featured only')
+    ->query(fn (Builder $query): Builder => $query->where('is_featured', true))
+```
+
+### Using a toggle instead
+
+Replace the checkbox with a toggle button:
+
+```php
+Filter::make('is_featured')
+    ->toggle()
+    ->query(fn (Builder $query): Builder => $query->where('is_featured', true))
+```
+
+### Applying by default
+
+Enable a filter by default:
+
+```php
+Filter::make('is_active')
+    ->default()
+    ->query(fn (Builder $query): Builder => $query->where('is_active', true))
+```
+
+## Select filter
+
+Provide a dropdown of predefined options:
+
+```php
+use Filament\Tables\Filters\SelectFilter;
+
+SelectFilter::make('status')
+    ->options([
+        'draft' => 'Draft',
+        'reviewing' => 'Reviewing',
+        'published' => 'Published',
+    ])
+```
+
+### Custom attribute
+
+By default, the filter uses its name as the column. Override with `attribute()`:
+
+```php
+SelectFilter::make('status')
+    ->options([
+        'draft' => 'Draft',
+        'reviewing' => 'Reviewing',
+        'published' => 'Published',
+    ])
+    ->attribute('status_id')
+```
+
+### Multi-select filters
+
+Allow selecting multiple options:
+
+```php
+SelectFilter::make('status')
+    ->multiple()
+    ->options([
+        'draft' => 'Draft',
+        'reviewing' => 'Reviewing',
+        'published' => 'Published',
+    ])
+```
+
+### Relationship filters
+
+Automatically populate options from a relationship:
+
+```php
+SelectFilter::make('author')
+    ->relationship('author', 'name')
+```
+
+#### Searchable relationship filters
+
+```php
+SelectFilter::make('author')
+    ->relationship('author', 'name')
+    ->searchable()
+    ->preload()
+```
+
+#### Including empty relationships
+
+Add a "None" option for records without a relationship:
+
+```php
+SelectFilter::make('author')
+    ->relationship('author', 'name', hasEmptyOption: true)
+    ->emptyRelationshipOptionLabel('No author')
+```
+
+### Applying select filters by default
+
+```php
+SelectFilter::make('status')
+    ->options([
+        'draft' => 'Draft',
+        'published' => 'Published',
+    ])
+    ->default('draft')
+```
+
+### Native select vs. custom select
+
+Use a native HTML select for better mobile experience:
+
+```php
+SelectFilter::make('status')
+    ->native(false) // Use custom select with search
+```
+
+## Ternary filter
+
+Provide three states: true, false, and blank (no filter):
+
+```php
+use Filament\Tables\Filters\TernaryFilter;
+
+TernaryFilter::make('is_featured')
+    ->placeholder('All posts')
+    ->trueLabel('Featured only')
+    ->falseLabel('Not featured')
+    ->queries(
+        true: fn (Builder $query) => $query->where('is_featured', true),
+        false: fn (Builder $query) => $query->where('is_featured', false),
+        blank: fn (Builder $query) => $query,
+    )
+```
+
+### Simplified boolean ternary
+
+For simple boolean columns:
+
+```php
+TernaryFilter::make('email_verified_at')
+    ->label('Email verification')
+    ->boolean()
+    ->placeholder('All users')
+    ->trueLabel('Verified only')
+    ->falseLabel('Unverified only')
+```
+
+### Filtering soft-deleted records
+
+Use the built-in `TrashedFilter`:
+
+```php
+use Filament\Tables\Filters\TrashedFilter;
+
+TrashedFilter::make()
+```
+
+This provides options to show only active records, only trashed records, or all records.
+
+## Query Builder filter
+
+Allow users to create complex filter combinations:
+
+```php
+use Filament\Tables\Filters\QueryBuilder;
+use Filament\Tables\Filters\QueryBuilder\Constraints\TextConstraint;
+use Filament\Tables\Filters\QueryBuilder\Constraints\BooleanConstraint;
+use Filament\Tables\Filters\QueryBuilder\Constraints\DateConstraint;
+
+QueryBuilder::make()
+    ->constraints([
+        TextConstraint::make('title')
+            ->label('Title'),
+        TextConstraint::make('slug'),
+        BooleanConstraint::make('is_featured'),
+        DateConstraint::make('created_at'),
+    ])
+```
+
+### Available constraints
+
+- `TextConstraint` - Text fields with operators like contains, starts with, equals
+- `BooleanConstraint` - True/false values
+- `DateConstraint` - Date comparisons
+- `NumberConstraint` - Numeric comparisons
+- `SelectConstraint` - Predefined options
+- `RelationshipConstraint` - Related records
+
+## Custom filters
+
+Build custom filters using any form field:
+
+```php
+use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Filters\Filter;
+use Illuminate\Database\Eloquent\Builder;
+
+Filter::make('created_at')
+    ->form([
+        DatePicker::make('created_from')
+            ->label('Created from'),
+        DatePicker::make('created_until')
+            ->label('Created until'),
+    ])
+    ->query(function (Builder $query, array $data): Builder {
+        return $query
+            ->when(
+                $data['created_from'],
+                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+            )
+            ->when(
+                $data['created_until'],
+                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+            );
+    })
+```
+
+### Indicators for custom filters
+
+Show active filter indicators:
+
+```php
+Filter::make('created_at')
+    ->form([
+        DatePicker::make('created_from'),
+        DatePicker::make('created_until'),
+    ])
+    // ...
+    ->indicateUsing(function (array $data): array {
+        $indicators = [];
+
+        if ($data['created_from'] ?? null) {
+            $indicators[] = 'From ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+        }
+
+        if ($data['created_until'] ?? null) {
+            $indicators[] = 'Until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+        }
+
+        return $indicators;
+    })
+```
+
+## Filter layout
+
+By default, filters appear in a dropdown. Change the layout:
+
+```php
+use Filament\Tables\Enums\FiltersLayout;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->filters([
+            // ...
+        ])
+        ->filtersLayout(FiltersLayout::AboveContent);
+}
+```
+
+Available layouts:
+- `FiltersLayout::Dropdown` (default)
+- `FiltersLayout::AboveContent`
+- `FiltersLayout::AboveContentCollapsible`
+- `FiltersLayout::BelowContent`
+
+## Live filters
+
+By default, filter changes are deferred until clicking "Apply". Make filters live:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->filters([
+            // ...
+        ])
+        ->deferFilters(false);
+}
+```
+
+## Persisting filters
+
+Save filter state in the user's session:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->filters([
+            // ...
+        ])
+        ->persistFiltersInSession();
+}
+```
+
+## Customizing the filters trigger
+
+```php
+use Filament\Actions\Action;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->filters([
+            // ...
+        ])
+        ->filtersTriggerAction(
+            fn (Action $action) => $action
+                ->button()
+                ->label('Filter'),
+        );
+}
+```
+
+## Global search
+
+Add searchable columns to enable global search:
+
+```php
+use Filament\Tables\Columns\TextColumn;
+
+TextColumn::make('title')
+    ->searchable()
+
+TextColumn::make('content')
+    ->searchable()
+```
+
+### Individual column search
+
+Add search inputs per column:
+
+```php
+TextColumn::make('title')
+    ->searchable(isIndividual: true)
+```
+
+Disable global search but keep individual search:
+
+```php
+TextColumn::make('title')
+    ->searchable(isIndividual: true, isGlobal: false)
+```
+
+### Search customization
+
+Customize the search placeholder:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->searchPlaceholder('Search (ID, Name, Email)');
+}
+```
+
+Adjust search debounce:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->searchDebounce('750ms');
+}
+```
+
+Search only on blur:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->searchOnBlur();
+}
+```
+
+## Laravel Scout integration
+
+Use Laravel Scout for full-text search:
+
+```php
+use App\Models\Post;
+use Illuminate\Database\Eloquent\Builder;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->searchable()
+        ->searchUsing(fn (Builder $query, string $search) => 
+            $query->whereKey(Post::search($search)->keys())
+        );
+}
+```

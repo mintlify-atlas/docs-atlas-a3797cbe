@@ -1,0 +1,343 @@
+---
+title: Livewire Integration
+description: Livewire component integration in Filament
+---
+
+Filament is built on top of Laravel Livewire, providing seamless integration between Livewire components and Filament's UI components. This page documents the Livewire integration points in Filament.
+
+## BasePage
+
+The `BasePage` class is the foundation for all Filament pages and extends Livewire's `Component` class.
+
+### Namespace
+
+```php
+Filament\Pages\BasePage
+```
+
+### Inheritance
+
+Extends: `Livewire\Component`
+
+Implements: `HasActions`, `HasRenderHookScopes`, `HasSchemas`
+
+### Methods
+
+#### render()
+
+Render the Livewire component.
+
+```php
+public function render(): View
+```
+
+<ParamField path="return" type="View">
+  Returns the component view with layout.
+</ParamField>
+
+**Example:**
+
+```php
+public function render(): View
+{
+    return view($this->getView(), $this->getViewData())
+        ->layout($this->getLayout(), [
+            'livewire' => $this,
+            'maxContentWidth' => $this->getMaxContentWidth(),
+            ...$this->getLayoutData(),
+        ]);
+}
+```
+
+#### getView()
+
+Get the view name for the component.
+
+```php
+public function getView(): string
+```
+
+<ParamField path="return" type="string">
+  Returns the view name.
+</ParamField>
+
+#### getLayout()
+
+Get the layout view name.
+
+```php
+public function getLayout(): string
+```
+
+<ParamField path="return" type="string">
+  Returns the layout view name.
+</ParamField>
+
+#### getHeading()
+
+Get the page heading.
+
+```php
+public function getHeading(): string | Htmlable | null
+```
+
+<ParamField path="return" type="string | Htmlable | null">
+  Returns the page heading.
+</ParamField>
+
+#### getSubheading()
+
+Get the page subheading.
+
+```php
+public function getSubheading(): string | Htmlable | null
+```
+
+<ParamField path="return" type="string | Htmlable | null">
+  Returns the page subheading.
+</ParamField>
+
+#### getTitle()
+
+Get the page title.
+
+```php
+public function getTitle(): string | Htmlable
+```
+
+<ParamField path="return" type="string | Htmlable">
+  Returns the page title.
+</ParamField>
+
+#### getMaxContentWidth()
+
+Get the maximum content width for the page.
+
+```php
+public function getMaxContentWidth(): Width | string | null
+```
+
+<ParamField path="return" type="Width | string | null">
+  Returns the maximum content width.
+</ParamField>
+
+#### getExtraBodyAttributes()
+
+Get extra HTML attributes for the page body.
+
+```php
+public function getExtraBodyAttributes(): array
+```
+
+<ParamField path="return" type="array<mixed>">
+  Returns an array of HTML attributes.
+</ParamField>
+
+## Livewire Attributes
+
+### #[On('refresh-page')]
+
+The refresh event listener is automatically registered on all pages.
+
+```php
+#[On('refresh-page')]
+public function refresh(): void {}
+```
+
+**Example usage:**
+
+```php
+// Dispatch from JavaScript
+$dispatch('refresh-page')
+
+// Dispatch from Livewire
+$this->dispatch('refresh-page');
+```
+
+## InteractsWithActions
+
+Pages that implement `HasActions` use the `InteractsWithActions` trait, which provides Livewire methods for mounting and calling actions.
+
+### Key Methods
+
+#### mountAction()
+
+Mount an action modal.
+
+```php
+public function mountAction(string $name, array $arguments = []): mixed
+```
+
+<ParamField path="name" type="string">
+  The action name.
+</ParamField>
+
+<ParamField path="arguments" type="array" default="[]">
+  Arguments to pass to the action.
+</ParamField>
+
+#### callMountedAction()
+
+Execute the mounted action.
+
+```php
+public function callMountedAction(): mixed
+```
+
+## InteractsWithSchemas
+
+Pages that implement `HasSchemas` use the `InteractsWithSchemas` trait, which provides Livewire integration for forms and schema components.
+
+### Key Methods
+
+#### getSchemas()
+
+Get all schemas registered on the component.
+
+```php
+public function getSchemas(): array
+```
+
+<ParamField path="return" type="array">
+  Returns an array of schema instances.
+</ParamField>
+
+#### getSchema()
+
+Get a specific schema by name.
+
+```php
+public function getSchema(?string $name = null): ?Schema
+```
+
+<ParamField path="name" type="string | null">
+  The schema name. Defaults to the default schema.
+</ParamField>
+
+<ParamField path="return" type="Schema | null">
+  Returns the schema instance or `null`.
+</ParamField>
+
+## Livewire Properties
+
+### Protected Properties
+
+#### $view
+
+```php
+protected string $view;
+```
+
+The view name for the component.
+
+#### $heading
+
+```php
+protected ?string $heading = null;
+```
+
+The page heading.
+
+#### $subheading
+
+```php
+protected ?string $subheading = null;
+```
+
+The page subheading.
+
+#### $maxContentWidth
+
+```php
+protected Width | string | null $maxContentWidth = null;
+```
+
+The maximum content width.
+
+### Static Properties
+
+#### $layout
+
+```php
+protected static string $layout = 'filament-panels::components.layout.base';
+```
+
+The default layout view.
+
+#### $title
+
+```php
+protected static ?string $title = null;
+```
+
+The page title.
+
+#### $formActionsAlignment
+
+```php
+public static string | Alignment $formActionsAlignment = Alignment::Start;
+```
+
+The alignment for form actions.
+
+#### $formActionsAreSticky
+
+```php
+public static bool $formActionsAreSticky = false;
+```
+
+Whether form actions should be sticky.
+
+#### $hasInlineLabels
+
+```php
+public static bool $hasInlineLabels = false;
+```
+
+Whether forms should use inline labels.
+
+## Wire Loading States
+
+Filament components automatically integrate with Livewire's wire:loading directive.
+
+**Example:**
+
+```blade
+<div wire:loading>
+    Loading...
+</div>
+
+<div wire:loading.remove>
+    Content
+</div>
+```
+
+## Wire Model Binding
+
+Filament form components automatically use Livewire's wire:model directive for data binding.
+
+**Example:**
+
+```php
+use Filament\Forms\Components\TextInput;
+
+TextInput::make('name')
+    ->live() // Updates on every keystroke
+    ->afterStateUpdated(fn ($state) => /* ... */);
+```
+
+## Error Handling
+
+Filament integrates with Livewire's validation error handling.
+
+```php
+public static ?Closure $reportValidationErrorUsing = null;
+```
+
+You can customize validation error reporting by setting this property.
+
+## Related Documentation
+
+- [Livewire Documentation](https://livewire.laravel.com)
+- [Page](/api/page)
+- [Action](/api/action)

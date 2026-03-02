@@ -1,0 +1,159 @@
+---
+title: KeyValue
+---
+
+The key-value component allows you to interact with one-dimensional key-value pairs.
+
+## Basic Usage
+
+```php
+use Filament\Forms\Components\KeyValue;
+
+KeyValue::make('metadata')
+```
+
+## Available Methods
+
+<ParamField path="keyLabel" type="method">
+  Sets the label for the key column.
+  
+  ```php
+  KeyValue::make('metadata')
+      ->keyLabel('Property name')
+  ```
+</ParamField>
+
+<ParamField path="valueLabel" type="method">
+  Sets the label for the value column.
+  
+  ```php
+  KeyValue::make('metadata')
+      ->valueLabel('Property value')
+  ```
+</ParamField>
+
+<ParamField path="keyPlaceholder" type="method">
+  Sets placeholder for key inputs.
+  
+  ```php
+  KeyValue::make('metadata')
+      ->keyPlaceholder('Key')
+  ```
+</ParamField>
+
+<ParamField path="valuePlaceholder" type="method">
+  Sets placeholder for value inputs.
+  
+  ```php
+  KeyValue::make('metadata')
+      ->valuePlaceholder('Value')
+  ```
+</ParamField>
+
+<ParamField path="addActionLabel" type="method">
+  Customizes the add button label.
+  
+  ```php
+  KeyValue::make('metadata')
+      ->addActionLabel('Add property')
+  ```
+</ParamField>
+
+<ParamField path="addable" type="method">
+  Controls whether items can be added.
+  
+  ```php
+  KeyValue::make('metadata')
+      ->addable(false)
+  ```
+</ParamField>
+
+<ParamField path="deletable" type="method">
+  Controls whether items can be deleted.
+  
+  ```php
+  KeyValue::make('metadata')
+      ->deletable(false)
+  ```
+</ParamField>
+
+<ParamField path="reorderable" type="method">
+  Controls whether items can be reordered.
+  
+  ```php
+  KeyValue::make('metadata')
+      ->reorderable()
+  ```
+</ParamField>
+
+<ParamField path="editableKeys" type="method">
+  Controls whether keys can be edited.
+  
+  ```php
+  KeyValue::make('settings')
+      ->editableKeys(false)
+  ```
+</ParamField>
+
+## Common Patterns
+
+### Product Metadata
+
+```php
+KeyValue::make('metadata')
+    ->keyLabel('Property')
+    ->valueLabel('Value')
+    ->reorderable()
+```
+
+### Configuration Settings
+
+```php
+KeyValue::make('settings')
+    ->keyLabel('Setting')
+    ->valueLabel('Value')
+    ->keyPlaceholder('Setting name')
+    ->valuePlaceholder('Setting value')
+    ->addActionLabel('Add setting')
+```
+
+### Custom Attributes
+
+```php
+KeyValue::make('attributes')
+    ->keyLabel('Attribute')
+    ->valueLabel('Value')
+    ->reorderable()
+    ->addActionLabel('Add attribute')
+```
+
+### Fixed Keys
+
+```php
+KeyValue::make('social_links')
+    ->editableKeys(false)
+    ->default([
+        'twitter' => '',
+        'facebook' => '',
+        'instagram' => '',
+        'linkedin' => '',
+    ])
+```
+
+## Database Casting
+
+Add an `array` cast:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class Product extends Model
+{
+    protected function casts(): array
+    {
+        return [
+            'metadata' => 'array',
+        ];
+    }
+}
+```

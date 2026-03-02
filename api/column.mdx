@@ -1,0 +1,491 @@
+---
+title: Column
+description: Column base class API reference for table columns
+---
+
+The `Column` class is the foundation for all table column components in Filament. It provides functionality for displaying data, sorting, searching, and interacting with table records.
+
+## Namespace
+
+```php
+Filament\Tables\Columns\Column
+```
+
+## Inheritance
+
+Extends: `Filament\Support\Components\ViewComponent`
+
+## Static Methods
+
+### make()
+
+Create a new column instance.
+
+```php
+public static function make(?string $name = null): static
+```
+
+<ParamField path="name" type="string | null">
+  The column name, typically corresponding to a database column or model attribute. If `null`, the column class must define `getDefaultName()`.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the column instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+use Filament\Tables\Columns\TextColumn;
+
+TextColumn::make('name')
+    ->sortable()
+    ->searchable();
+```
+
+### getDefaultName()
+
+Get the default name for the column.
+
+```php
+public static function getDefaultName(): ?string
+```
+
+<ParamField path="return" type="string | null">
+  Returns the default column name or `null`.
+</ParamField>
+
+## Instance Methods
+
+### getTable()
+
+Get the table instance this column belongs to.
+
+```php
+public function getTable(): Table
+```
+
+<ParamField path="return" type="Table">
+  Returns the parent table instance.
+</ParamField>
+
+### getState()
+
+Get the current state/value for this column.
+
+```php
+public function getState(): mixed
+```
+
+<ParamField path="return" type="mixed">
+  Returns the column value for the current record.
+</ParamField>
+
+### getRecord()
+
+Get the current record.
+
+```php
+public function getRecord(): ?Model
+```
+
+<ParamField path="return" type="Model | null">
+  Returns the Eloquent model instance for the current row.
+</ParamField>
+
+### getLivewire()
+
+Get the Livewire component instance.
+
+```php
+public function getLivewire(): Component
+```
+
+<ParamField path="return" type="Component">
+  Returns the parent Livewire component.
+</ParamField>
+
+### renderInLayout()
+
+Render the column within a layout (for split layouts).
+
+```php
+public function renderInLayout(): ?HtmlString
+```
+
+<ParamField path="return" type="HtmlString | null">
+  Returns the rendered HTML or `null` if hidden.
+</ParamField>
+
+## Display Methods
+
+### label()
+
+Set the column label (header).
+
+```php
+public function label(string | Htmlable | Closure | null $label): static
+```
+
+<ParamField path="label" type="string | Htmlable | Closure | null">
+  The column header label.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the column instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+TextColumn::make('created_at')
+    ->label('Date Created');
+```
+
+### placeholder()
+
+Set a placeholder when the column value is empty.
+
+```php
+public function placeholder(string | Htmlable | Closure | null $placeholder): static
+```
+
+<ParamField path="placeholder" type="string | Htmlable | Closure | null">
+  The placeholder text to display when the value is empty.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the column instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+TextColumn::make('description')
+    ->placeholder('No description');
+```
+
+### alignment()
+
+Set the column alignment.
+
+```php
+public function alignment(Alignment | string | Closure | null $alignment): static
+```
+
+<ParamField path="alignment" type="Alignment | string | Closure | null">
+  The alignment (start, center, end).
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the column instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+use Filament\Support\Enums\Alignment;
+
+TextColumn::make('price')
+    ->alignment(Alignment::End);
+```
+
+### width()
+
+Set the column width.
+
+```php
+public function width(string | Closure | null $width): static
+```
+
+<ParamField path="width" type="string | Closure | null">
+  The width (e.g., '200px', '20%').
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the column instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+TextColumn::make('actions')
+    ->width('100px');
+```
+
+### grow()
+
+Allow the column to grow to fill available space.
+
+```php
+public function grow(bool | Closure $condition = true): static
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether the column should grow.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the column instance for method chaining.
+</ParamField>
+
+## Searching and Sorting
+
+### searchable()
+
+Make the column searchable.
+
+```php
+public function searchable(
+    bool | array | Closure $condition = true,
+    ?Closure $query = null,
+    bool $isIndividual = false
+): static
+```
+
+<ParamField path="condition" type="bool | array | Closure" default="true">
+  Whether the column is searchable, or an array of searchable database columns.
+</ParamField>
+
+<ParamField path="query" type="Closure | null">
+  Custom search query callback.
+</ParamField>
+
+<ParamField path="isIndividual" type="bool" default="false">
+  Whether to use individual column search.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the column instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+TextColumn::make('name')
+    ->searchable();
+
+// Search multiple columns
+TextColumn::make('name')
+    ->searchable(['first_name', 'last_name']);
+```
+
+### sortable()
+
+Make the column sortable.
+
+```php
+public function sortable(bool | array | Closure $condition = true, ?Closure $query = null): static
+```
+
+<ParamField path="condition" type="bool | array | Closure" default="true">
+  Whether the column is sortable, or an array of database columns to sort by.
+</ParamField>
+
+<ParamField path="query" type="Closure | null">
+  Custom sort query callback.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the column instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+TextColumn::make('created_at')
+    ->sortable();
+```
+
+## Actions and URLs
+
+### action()
+
+Set an action to trigger when the column is clicked.
+
+```php
+public function action(Action | Closure | null $action): static
+```
+
+<ParamField path="action" type="Action | Closure | null">
+  The action to execute or a callback returning an action name.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the column instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+TextColumn::make('name')
+    ->action(fn () => 'edit');
+```
+
+### url()
+
+Set a URL for the column.
+
+```php
+public function url(string | Closure | null $url, bool | Closure $shouldOpenInNewTab = false): static
+```
+
+<ParamField path="url" type="string | Closure | null">
+  The URL or a callback returning a URL.
+</ParamField>
+
+<ParamField path="shouldOpenInNewTab" type="bool | Closure" default="false">
+  Whether to open the URL in a new tab.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the column instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+TextColumn::make('website')
+    ->url(fn (Model $record) => $record->website, shouldOpenInNewTab: true);
+```
+
+## Visibility Control
+
+### hidden()
+
+Hide the column based on a condition.
+
+```php
+public function hidden(bool | Closure $condition = true): static
+```
+
+**Example:**
+
+```php
+TextColumn::make('internal_notes')
+    ->hidden(fn () => ! auth()->user()->isAdmin());
+```
+
+### toggleable()
+
+Allow users to toggle column visibility.
+
+```php
+public function toggleable(bool | Closure $condition = true, bool | Closure $isToggledHiddenByDefault = false): static
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether the column is toggleable.
+</ParamField>
+
+<ParamField path="isToggledHiddenByDefault" type="bool | Closure" default="false">
+  Whether the column is hidden by default.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the column instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+TextColumn::make('updated_at')
+    ->toggleable(isToggledHiddenByDefault: true);
+```
+
+## Summarization
+
+### summarize()
+
+Add summary calculations to the column.
+
+```php
+public function summarize(Summarizer | array | Closure $summarizers): static
+```
+
+<ParamField path="summarizers" type="Summarizer | array | Closure">
+  One or more summarizer instances or a callback returning summarizers.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the column instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+use Filament\Tables\Columns\Summarizers\Sum;
+use Filament\Tables\Columns\Summarizers\Average;
+
+TextColumn::make('price')
+    ->summarize([
+        Sum::make(),
+        Average::make(),
+    ]);
+```
+
+## Tooltips
+
+### tooltip()
+
+Add a tooltip to the column.
+
+```php
+public function tooltip(string | Htmlable | Closure | null $tooltip): static
+```
+
+<ParamField path="tooltip" type="string | Htmlable | Closure | null">
+  The tooltip content.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the column instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+TextColumn::make('status')
+    ->tooltip(fn (Model $record) => "Last updated: {$record->updated_at}");
+```
+
+## Traits
+
+The Column class uses multiple traits for functionality:
+
+- `BelongsToGroup` - Column group relationship
+- `BelongsToLayout` - Layout relationship
+- `BelongsToTable` - Table relationship
+- `CanAggregateRelatedModels` - Relationship aggregation
+- `CanBeDisabled` - Disability control
+- `CanBeHidden` - Visibility control
+- `CanBeInline` - Inline display
+- `CanBeSearchable` - Search functionality
+- `CanBeSortable` - Sorting functionality
+- `CanBeSummarized` - Summary calculations
+- `CanBeToggled` - Toggle visibility
+- `CanCallAction` - Action triggering
+- `CanGrow` - Growth control
+- `CanOpenUrl` - URL handling
+- `CanSpanColumns` - Column spanning
+- `CanWrapHeader` - Header wrapping
+- `HasAlignment` - Alignment control
+- `HasCellState` - Cell state management
+- `HasExtraAttributes` - Extra HTML attributes
+- `HasExtraCellAttributes` - Cell-specific attributes
+- `HasExtraHeaderAttributes` - Header-specific attributes
+- `HasLabel` - Label configuration
+- `HasName` - Name configuration
+- `HasPlaceholder` - Placeholder support
+- `HasRecord` - Record access
+- `HasRowLoopObject` - Row loop access
+- `HasTooltip` - Tooltip support
+- `HasVerticalAlignment` - Vertical alignment
+- `HasWidth` - Width control
+- `InteractsWithTableQuery` - Query interaction
+
+## Related Classes
+
+- [Table](/api/table) - Table builder
+- [Filter](/api/filter) - Table filters
+- [Action](/api/action) - Column actions

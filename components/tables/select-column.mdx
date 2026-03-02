@@ -1,0 +1,321 @@
+---
+title: Select Column
+---
+
+## Introduction
+
+The select column allows you to render a select field inside the table for inline editing:
+
+```php
+use Filament\Tables\Columns\SelectColumn;
+
+SelectColumn::make('status')
+    ->options([
+        'draft' => 'Draft',
+        'reviewing' => 'Reviewing',
+        'published' => 'Published',
+    ])
+```
+
+## Select type
+
+By default, Filament uses the native HTML5 select. Enable a JavaScript select:
+
+```php
+SelectColumn::make('status')
+    ->options([
+        'draft' => 'Draft',
+        'reviewing' => 'Reviewing',
+        'published' => 'Published',
+    ])
+    ->native(false)
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to use the native select.
+</ParamField>
+
+## Searchable options
+
+Enable searching through options:
+
+```php
+SelectColumn::make('author_id')
+    ->label('Author')
+    ->options(User::query()->pluck('name', 'id'))
+    ->searchableOptions()
+```
+
+<ParamField path="condition" type="bool | array | Closure" default="true">
+  Whether options are searchable. Pass an array of column names to search specific columns.
+</ParamField>
+
+### Custom search results
+
+Provide custom search results for large datasets:
+
+```php
+SelectColumn::make('author_id')
+    ->searchableOptions()
+    ->getOptionsSearchResultsUsing(fn (string $search): array => User::query()
+        ->where('name', 'like', "%{$search}%")
+        ->limit(50)
+        ->pluck('name', 'id')
+        ->all())
+    ->getOptionLabelUsing(fn ($value): ?string => User::find($value)?->name)
+```
+
+<ParamField path="callback" type="Closure">
+  A closure that returns search results as a `$key => $value` array.
+</ParamField>
+
+### Search messages
+
+Customize the search experience:
+
+<Tabs>
+<Tab title="Loading">
+```php
+SelectColumn::make('author_id')
+    ->optionsLoadingMessage('Loading authors...')
+```
+</Tab>
+
+<Tab title="No Results">
+```php
+SelectColumn::make('author_id')
+    ->noOptionsSearchResultsMessage('No authors found.')
+```
+</Tab>
+
+<Tab title="Search Prompt">
+```php
+SelectColumn::make('author_id')
+    ->optionsSearchPrompt('Search authors...')
+```
+</Tab>
+
+<Tab title="Searching">
+```php
+SelectColumn::make('author_id')
+    ->optionsSearchingMessage('Searching authors...')
+```
+</Tab>
+</Tabs>
+
+### Search debounce
+
+Customize the search delay:
+
+```php
+SelectColumn::make('author_id')
+    ->searchableOptions()
+    ->optionsSearchDebounce(500)
+```
+
+<ParamField path="debounce" type="int | Closure" default="1000">
+  The debounce time in milliseconds.
+</ParamField>
+
+## Relationship integration
+
+Integrate with Eloquent relationships:
+
+```php
+SelectColumn::make('author_id')
+    ->optionsRelationship(name: 'author', titleAttribute: 'name')
+```
+
+<ParamField path="name" type="string | Closure" required>
+  The relationship name.
+</ParamField>
+
+<ParamField path="titleAttribute" type="string | Closure">
+  The column to use for option labels.
+</ParamField>
+
+<ParamField path="modifyQueryUsing" type="Closure">
+  A closure to modify the relationship query.
+</ParamField>
+
+### Searching relationships
+
+Search across multiple columns:
+
+```php
+SelectColumn::make('author_id')
+    ->optionsRelationship(name: 'author', titleAttribute: 'name')
+    ->searchableOptions(['name', 'email'])
+```
+
+### Preloading options
+
+Load options immediately instead of on search:
+
+```php
+SelectColumn::make('author_id')
+    ->optionsRelationship(name: 'author', titleAttribute: 'name')
+    ->searchableOptions()
+    ->preloadOptions()
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to preload all options.
+</ParamField>
+
+### Custom relationship query
+
+Modify the relationship query:
+
+```php
+use Illuminate\Database\Eloquent\Builder;
+
+SelectColumn::make('author_id')
+    ->optionsRelationship(
+        name: 'author',
+        titleAttribute: 'name',
+        modifyQueryUsing: fn (Builder $query) => $query->withTrashed(),
+    )
+```
+
+### Custom option labels
+
+Customize option labels from records:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+SelectColumn::make('author_id')
+    ->optionsRelationship(
+        name: 'author',
+        modifyQueryUsing: fn (Builder $query) => $query->orderBy('first_name')->orderBy('last_name'),
+    )
+    ->getOptionLabelFromRecordUsing(fn (Model $record) => "{$record->first_name} {$record->last_name}")
+    ->searchableOptions(['first_name', 'last_name'])
+```
+
+### Remembering options
+
+By default, options are cached per page. Disable for record-specific options:
+
+```php
+SelectColumn::make('author_id')
+    ->optionsRelationship(name: 'author', titleAttribute: 'name')
+    ->rememberOptions(false)
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to remember options.
+</ParamField>
+
+## HTML in option labels
+
+Allow HTML in option labels:
+
+```php
+SelectColumn::make('technology')
+    ->options([
+        'tailwind' => '<span class="text-blue-500">Tailwind</span>',
+        'laravel' => '<span class="text-red-500">Laravel</span>',
+    ])
+    ->searchableOptions()
+    ->allowOptionsHtml()
+```
+
+<Warning>
+  Ensure HTML is safe to prevent XSS attacks.
+</Warning>
+
+<ParamField path="condition" type="bool | Closure" default="false">
+  Whether to allow HTML in option labels.
+</ParamField>
+
+## Wrapping option labels
+
+Control label wrapping in the JavaScript select:
+
+```php
+SelectColumn::make('description')
+    ->wrapOptionLabels(false)
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to wrap option labels.
+</ParamField>
+
+## Placeholder selection
+
+Disable null option selection:
+
+```php
+SelectColumn::make('status')
+    ->options([
+        'draft' => 'Draft',
+        'published' => 'Published',
+    ])
+    ->selectablePlaceholder(false)
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether the placeholder can be selected.
+</ParamField>
+
+## Disabling options
+
+Disable specific options:
+
+```php
+SelectColumn::make('status')
+    ->options([
+        'draft' => 'Draft',
+        'reviewing' => 'Reviewing',
+        'published' => 'Published',
+    ])
+    ->disableOptionWhen(fn (string $value): bool => $value === 'published')
+```
+
+<ParamField path="callback" type="Closure" required>
+  A closure that returns whether an option should be disabled.
+</ParamField>
+
+## Options limit
+
+Limit displayed options:
+
+```php
+SelectColumn::make('author_id')
+    ->optionsRelationship(name: 'author', titleAttribute: 'name')
+    ->searchableOptions()
+    ->optionsLimit(20)
+```
+
+<ParamField path="limit" type="int | Closure" default="50">
+  The maximum number of options to display.
+</ParamField>
+
+## Validation
+
+Add validation rules:
+
+```php
+SelectColumn::make('status')
+    ->options([
+        'draft' => 'Draft',
+        'published' => 'Published',
+    ])
+    ->rules(['required'])
+```
+
+## Lifecycle hooks
+
+Execute code before and after updates:
+
+```php
+SelectColumn::make('status')
+    ->beforeStateUpdated(function ($record, $state) {
+        // Runs before the state is saved
+    })
+    ->afterStateUpdated(function ($record, $state) {
+        // Runs after the state is saved
+    })
+```

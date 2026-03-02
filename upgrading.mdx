@@ -1,0 +1,471 @@
+---
+title: Upgrading to v4
+description: Upgrade your Filament application from v3 to v4
+---
+
+<Note>
+  If you see anything missing from this guide, please [make a pull request](https://github.com/filamentphp/filament/edit/4.x/docs/14-upgrade-guide.md) to the repository. Any help is appreciated!
+</Note>
+
+## New Requirements
+
+Before upgrading, ensure your environment meets these requirements:
+
+- **PHP 8.2+** (upgraded from PHP 8.1+)
+- **Laravel v11.28+** (upgraded from Laravel v10.0+)
+- **Tailwind CSS v4.1+** if you're using a custom theme (upgraded from v3.0)
+- Filament no longer requires `doctrine/dbal`, but if your application still does, add it directly to your `composer.json` file
+
+## Running the Automated Upgrade Script
+
+<Warning>
+  The upgrade script is not a replacement for the upgrade guide. It handles many small changes that aren't mentioned in the upgrade guide, but it doesn't handle all breaking changes. You should still read the manual upgrade steps below.
+</Warning>
+
+<Tip>
+  Some plugins you're using may not be available in v4 just yet. You could temporarily remove them from your `composer.json` file until they've been upgraded, replace them with similar plugins that are v4-compatible, wait for the plugins to be upgraded, or even write PRs to help the authors upgrade them.
+</Tip>
+
+<Steps>
+  <Step title="Install the upgrade package">
+    Install the Filament upgrade package:
+
+    ```bash
+    composer require filament/upgrade:"^4.0" -W --dev
+    ```
+
+    <Warning>
+      When using Windows PowerShell, use `"~4.0"` instead of `"^4.0"` since PowerShell ignores `^` characters.
+    </Warning>
+
+    <Note>
+      If installation fails, ensure your PHPStan version is at least v2, or your Larastan version is at least v3. The script uses Rector v2, which requires PHPStan v2 or higher.
+    </Note>
+  </Step>
+
+  <Step title="Run the upgrade script">
+    Execute the automated upgrade script:
+
+    ```bash
+    vendor/bin/filament-v4
+    ```
+
+    The script will analyze your codebase and output commands specific to your application. Follow the instructions carefully.
+  </Step>
+
+  <Step title="Update Composer dependencies">
+    Run the commands output by the upgrade script to update your dependencies:
+
+    ```bash
+    # Example commands (will be unique to your app)
+    composer require filament/filament:"^4.0" -W --no-update
+    composer update
+    ```
+  </Step>
+
+  <Step title="Review the changes">
+    Carefully review all changes made by the script. You may need to make some manual adjustments based on your specific implementation.
+  </Step>
+
+  <Step title="Upgrade directory structure (optional)">
+    Filament v4 introduces a new default directory structure for resources and clusters. To preview the changes:
+
+    ```bash
+    php artisan filament:upgrade-directory-structure-to-v4 --dry-run
+    ```
+
+    If you're happy with the changes, apply them:
+
+    ```bash
+    php artisan filament:upgrade-directory-structure-to-v4
+    ```
+
+    <Warning>
+      This script cannot perfectly update all references to classes in the same namespace. Use tools like [PHPStan](https://phpstan.org) to identify broken references after the upgrade.
+    </Warning>
+  </Step>
+
+  <Step title="Remove upgrade package">
+    Once the upgrade is complete, remove the upgrade package:
+
+    ```bash
+    composer remove filament/upgrade --dev
+    ```
+  </Step>
+</Steps>
+
+## Publishing the Configuration File
+
+Some changes in Filament v4 can be reverted using the configuration file. If you haven't published it yet:
+
+```bash
+php artisan vendor:publish --tag=filament-config
+```
+
+### Important Configuration Changes
+
+<CodeGroup>
+```php Filesystem Disk
+// config/filament.php
+return [
+    // v4 uses FILESYSTEM_DISK instead of FILAMENT_FILESYSTEM_DISK
+    // To preserve v3 behavior:
+    'default_filesystem_disk' => env('FILAMENT_FILESYSTEM_DISK', 'public'),
+];
+```
+
+```php File Generation
+// config/filament.php
+use Filament\Support\Commands\FileGenerators\FileGenerationFlag;
+
+return [
+    'file_generation' => [
+        'flags' => [
+            // Define forms/infolists inside resource class (v3 behavior)
+            FileGenerationFlag::EMBEDDED_PANEL_RESOURCE_SCHEMAS,
+            
+            // Define tables inside resource class (v3 behavior)
+            FileGenerationFlag::EMBEDDED_PANEL_RESOURCE_TABLES,
+            
+            // Create cluster classes outside directories (not needed if you ran upgrade script)
+            FileGenerationFlag::PANEL_CLUSTER_CLASSES_OUTSIDE_DIRECTORIES,
+            
+            // Create resource classes outside directories (not needed if you ran upgrade script)
+            FileGenerationFlag::PANEL_RESOURCE_CLASSES_OUTSIDE_DIRECTORIES,
+            
+            // Use partial imports for components (v3 behavior)
+            FileGenerationFlag::PARTIAL_IMPORTS,
+        ],
+    ],
+];
+```
+</CodeGroup>
+
+## High-Impact Breaking Changes
+
+### File Visibility Now Private by Default
+
+For non-local disks (such as `s3`), file visibility is now `private` by default instead of `public`. This affects:
+
+- `FileUpload` form field (including `SpatieMediaLibraryFileUpload`)
+- `ImageColumn` table column (including `SpatieMediaLibraryImageColumn`)
+- `ImageEntry` infolist entry (including `SpatieMediaLibraryImageEntry`)
+
+<Tip>
+  To preserve the old behavior globally, add this to a service provider's `boot()` method:
+
+  ```php
+  use Filament\Forms\Components\FileUpload;
+  use Filament\Infolists\Components\ImageEntry;
+  use Filament\Tables\Columns\ImageColumn;
+
+  FileUpload::configureUsing(fn (FileUpload $fileUpload) => $fileUpload
+      ->visibility('public'));
+
+  ImageColumn::configureUsing(fn (ImageColumn $imageColumn) => $imageColumn
+      ->visibility('public'));
+
+  ImageEntry::configureUsing(fn (ImageEntry $imageEntry) => $imageEntry
+      ->visibility('public'));
+  ```
+</Tip>
+
+### Custom Themes Must Use Tailwind CSS v4
+
+Previously, custom theme CSS files contained:
+
+```css
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+@config 'tailwind.config.js';
+```
+
+Now they should contain:
+
+```css
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
+```
+
+Use the [Tailwind upgrade tool](https://tailwindcss.com/docs/upgrade-guide#using-the-upgrade-tool) to automatically adjust your configuration:
+
+```bash
+npx @tailwindcss/upgrade
+```
+
+The `tailwind.config.js` file is no longer used. Move any customizations to your CSS file using [Tailwind v4 CSS configuration](https://tailwindcss.com/docs/adding-custom-styles).
+
+### Tailwind Classes Require Custom Theme
+
+In v3, Filament's Blade views contained Tailwind CSS classes directly in the HTML. In v4, these classes have been moved to CSS files using `@apply`.
+
+<Warning>
+  If you're using Tailwind classes in your own Blade views without a custom theme, those styles will no longer work.
+</Warning>
+
+To fix this, create a custom theme:
+
+```bash
+php artisan make:filament-theme
+```
+
+In your theme CSS file, add `@source` entries pointing to your files:
+
+```css
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
+@source '../../../../resources/views/components/**/*'; /* Your custom paths */
+@source '../../../../resources/views/livewire/**/*'; /* Your custom paths */
+```
+
+### Table Filters Are Deferred by Default
+
+The `deferFilters()` method is now the default behavior. Users must click a button before filters are applied.
+
+To disable this behavior:
+
+```php
+use Filament\Tables\Table;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->deferFilters(false);
+}
+```
+
+<Tip>
+  Preserve the old behavior globally:
+
+  ```php
+  use Filament\Tables\Table;
+
+  Table::configureUsing(fn (Table $table) => $table
+      ->deferFilters(false));
+  ```
+</Tip>
+
+### Layout Components No Longer Span Full Width
+
+The `Grid`, `Section`, and `Fieldset` components now only consume one column by default.
+
+To make them span all columns:
+
+```php
+use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+
+Fieldset::make()->columnSpanFull()
+Grid::make()->columnSpanFull()
+Section::make()->columnSpanFull()
+```
+
+<Tip>
+  Preserve the old behavior globally:
+
+  ```php
+  use Filament\Schemas\Components\Fieldset;
+  use Filament\Schemas\Components\Grid;
+  use Filament\Schemas\Components\Section;
+
+  Fieldset::configureUsing(fn (Fieldset $fieldset) => $fieldset->columnSpanFull());
+  Grid::configureUsing(fn (Grid $grid) => $grid->columnSpanFull());
+  Section::configureUsing(fn (Section $section) => $section->columnSpanFull());
+  ```
+</Tip>
+
+## Medium-Impact Breaking Changes
+
+### `columnSpan()` Targets >= `lg` Devices by Default
+
+In v3:
+```php
+TextInput::make()->columnSpan(['lg' => 2])
+```
+
+In v4:
+```php
+TextInput::make()->columnSpan(2) // Now targets >= lg by default
+```
+
+### Enum Field State Always Returns Enum Instance
+
+Fields writing to enum attributes now always return the enum instance (never the value):
+
+```php
+use App\Enums\Status;
+use Filament\Forms\Components\Select;
+
+Select::make('status')
+    ->options(Status::class)
+    ->afterStateUpdated(function (?Status $state) {
+        // $state is now always an instance of Status, or null
+    });
+```
+
+### URL Parameter Names Changed
+
+Filament v4 has renamed URL parameters on resource pages:
+
+- `activeRelationManager` → `relation`
+- `activeTab` → `tab`
+- `isTableReordering` → `reordering`
+- `tableFilters` → `filters`
+- `tableGrouping` → `grouping`
+- `tableGroupingDirection` → `groupingDirection`
+- `tableSearch` → `search`
+- `tableSort` → `sort`
+
+### Automatic Tenancy Scoping
+
+Filament now automatically scopes all queries in a panel to the current tenant and associates new records with the current tenant. See the [tenancy documentation](https://filamentphp.com/docs/panels/tenancy#tenancy-security) for security considerations.
+
+### Radio `inline()` Method Behavior
+
+The `inline()` method now only puts radio buttons inline with each other, not with the label.
+
+For both inline buttons and inline label:
+```php
+Radio::make('status')
+    ->inline()
+    ->inlineLabel()
+```
+
+<Tip>
+  Preserve the old behavior globally:
+
+  ```php
+  use Filament\Forms\Components\Radio;
+
+  Radio::configureUsing(fn (Radio $radio) => $radio
+      ->inlineLabel(fn (): bool => $radio->isInline()));
+  ```
+</Tip>
+
+## Low-Impact Breaking Changes
+
+### Tables Have Default Primary Key Sorting
+
+Tables now automatically sort by primary key to ensure consistent record ordering.
+
+To disable:
+```php
+use Filament\Tables\Table;
+
+public function table(Table $table): Table
+{
+    return $table->defaultKeySort(false);
+}
+```
+
+### `unique()` Validation Ignores Current Record by Default
+
+In v4, `unique()` validation automatically ignores the current form's Eloquent record.
+
+To disable:
+```php
+TextInput::make('email')
+    ->unique(ignoreRecord: false)
+```
+
+### Pagination `all` Option Not Available by Default
+
+The `all` pagination option is no longer available by default.
+
+To add it:
+```php
+use Filament\Tables\Table;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->paginationPageOptions([5, 10, 25, 50, 'all']);
+}
+```
+
+<Warning>
+  Using `all` can cause performance issues with large datasets.
+</Warning>
+
+### Language Code Changes
+
+Several translation language codes have changed:
+
+- European Portuguese: `pt_PT` → `pt`
+- Nepalese: `np` → `ne`
+- Norwegian: `no` → `nb`
+- Khmer: `kh` → `km`
+
+### Spatie Translatable Plugin Deprecated
+
+The official Spatie Translatable Plugin is deprecated in v4. Use the [Lara Zeus Translatable Plugin](https://github.com/lara-zeus/spatie-translatable) as a direct replacement.
+
+The automated upgrade script will suggest commands to migrate.
+
+## Method Signature Changes
+
+Several `make()` methods now accept nullable parameters. If you're overriding these methods, update your signatures:
+
+```php
+// Forms
+public static function make(?string $name = null): static
+
+// Apply to:
+// - Field::make()
+// - MorphToSelect::make()
+// - Placeholder::make()
+// - Builder\Block::make()
+// - Entry::make() (infolists)
+// - Column::make() (tables)
+// - Constraint::make() (tables)
+// - ExportColumn::make() (actions)
+// - ImportColumn::make() (actions)
+```
+
+<Tip>
+  Instead of overriding `make()`, override `getDefaultName()` to provide a default name, or override `setUp()` to configure the component after instantiation.
+</Tip>
+
+## Testing Your Upgrade
+
+After upgrading, thoroughly test your application:
+
+<Steps>
+  <Step title="Run your test suite">
+    ```bash
+    php artisan test
+    ```
+  </Step>
+
+  <Step title="Test critical user flows">
+    - Log in to the admin panel
+    - Create, edit, and delete records
+    - Test filters and search
+    - Verify file uploads
+    - Check custom pages and widgets
+  </Step>
+
+  <Step title="Check browser console">
+    Look for JavaScript errors that might indicate missing assets or configuration issues.
+  </Step>
+
+  <Step title="Review logs">
+    Check `storage/logs/laravel.log` for any warnings or errors.
+  </Step>
+</Steps>
+
+## Getting Help
+
+If you encounter issues during the upgrade:
+
+- Check the [GitHub Discussions](https://github.com/filamentphp/filament/discussions) for similar issues
+- Join the [Discord community](https://filamentphp.com/discord) for real-time help
+- Review the [full upgrade guide](https://github.com/filamentphp/filament/blob/4.x/docs/14-upgrade-guide.md) for additional details
+
+<Note>
+  Remember to update any custom plugins or packages you've built to be compatible with v4.
+</Note>

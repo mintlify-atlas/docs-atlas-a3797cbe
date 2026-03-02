@@ -1,0 +1,412 @@
+---
+title: Listing Records
+description: Configuring tables, tabs, filters, and actions on the List page
+---
+
+## The List Page
+
+The List page displays a table of all records. It's defined in the `ListCustomers.php` page class:
+
+```php packages/panels/src/Resources/Pages/ListRecords.php
+class ListRecords extends Page implements Tables\Contracts\HasTable
+{
+    use Tables\Concerns\InteractsWithTable;
+    
+    public function table(Table $table): Table
+    {
+        return $table;
+    }
+}
+```
+
+## Table Configuration
+
+Tables are configured in your resource's `table()` method:
+
+```php
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteBulkAction;
+
+public static function table(Table $table): Table
+{
+    return $table
+        ->columns([
+            TextColumn::make('name')
+                ->searchable()
+                ->sortable(),
+            TextColumn::make('email')
+                ->searchable(),
+            TextColumn::make('created_at')
+                ->dateTime()
+                ->sortable(),
+        ])
+        ->recordActions([
+            EditAction::make(),
+        ])
+        ->toolbarActions([
+            BulkActionGroup::make([
+                DeleteBulkAction::make(),
+            ]),
+        ]);
+}
+```
+
+## Tabs
+
+Add tabs above the table to filter records:
+
+```php packages/panels/src/Resources/Pages/ListRecords.php
+use Filament\Schemas\Components\Tabs\Tab;
+use Illuminate\Database\Eloquent\Builder;
+
+public function getTabs(): array
+{
+    return [
+        'all' => Tab::make('All customers'),
+        'active' => Tab::make('Active customers')
+            ->modifyQueryUsing(fn (Builder $query) => $query->where('active', true)),
+        'inactive' => Tab::make('Inactive customers')
+            ->modifyQueryUsing(fn (Builder $query) => $query->where('active', false)),
+    ];
+}
+```
+
+### Tab Badges
+
+Add count badges to tabs:
+
+```php
+Tab::make('Active')
+    ->modifyQueryUsing(fn (Builder $query) => $query->where('active', true))
+    ->badge(Customer::query()->where('active', true)->count())
+    ->badgeColor('success')
+```
+
+#### Deferred Badge Loading
+
+For expensive queries, load badges asynchronously:
+
+```php
+Tab::make('All customers')
+    ->badge(static fn (): int => Customer::query()->count())
+    ->deferBadge()
+```
+
+<Warning>
+The `badge()` value must be returned from a function when using `deferBadge()`. Raw values like `badge(Customer::query()->count())` will execute immediately.
+</Warning>
+
+### Tab Icons
+
+```php
+use Filament\Support\Enums\IconPosition;
+
+Tab::make('Active')
+    ->icon('heroicon-m-check-circle')
+    ->iconPosition(IconPosition::After)
+```
+
+### Default Active Tab
+
+```php
+public function getDefaultActiveTab(): string | int | null
+{
+    return 'active';
+}
+```
+
+### Excluding Tab Queries When Resolving Records
+
+When a record's state changes, you may want actions to still work:
+
+```php
+Tab::make('active')
+    ->modifyQueryUsing(fn (Builder $query) => $query->where('active', true))
+    ->excludeQueryWhenResolvingRecord()
+```
+
+<Warning>
+Do not use `excludeQueryWhenResolvingRecord()` on tabs that enforce authorization rules (tenant filtering, user ownership, etc.).
+</Warning>
+
+## Customizing the Query
+
+Modify the table query for the List page:
+
+```php
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+
+public static function table(Table $table): Table
+{
+    return $table
+        ->modifyQueryUsing(fn (Builder $query) => $query->withoutGlobalScopes())
+        ->columns([
+            // ...
+        ]);
+}
+```
+
+Or customize it only on the List page:
+
+```php
+use Illuminate\Database\Eloquent\Builder;
+
+protected function modifyQueryWithActiveTab(Builder $query): Builder
+{
+    return $query->latest();
+}
+```
+
+## Table Features
+
+<Tabs>
+  <Tab title="Search">
+    Make columns searchable:
+
+    ```php
+    TextColumn::make('name')
+        ->searchable()
+        ->searchable(['first_name', 'last_name'])
+    ```
+  </Tab>
+  
+  <Tab title="Sorting">
+    Allow column sorting:
+
+    ```php
+    TextColumn::make('created_at')
+        ->sortable()
+        ->sortable(['created_at', 'updated_at'])
+    ```
+  </Tab>
+  
+  <Tab title="Filters">
+    Add filters to narrow results:
+
+    ```php
+    use Filament\Tables\Filters\Filter;
+
+    $table->filters([
+        Filter::make('verified')
+            ->query(fn (Builder $query): Builder => 
+                $query->whereNotNull('email_verified_at')
+            ),
+    ])
+    ```
+  </Tab>
+  
+  <Tab title="Actions">
+    Add row-level actions:
+
+    ```php
+    use Filament\Actions\EditAction;
+    use Filament\Actions\ViewAction;
+    use Filament\Actions\DeleteAction;
+
+    $table->recordActions([
+        ViewAction::make(),
+        EditAction::make(),
+        DeleteAction::make(),
+    ])
+    ```
+  </Tab>
+</Tabs>
+
+## Bulk Actions
+
+Actions that operate on multiple selected records:
+
+```php
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\Action;
+
+$table->toolbarActions([
+    BulkActionGroup::make([
+        DeleteBulkAction::make(),
+        Action::make('markAsActive')
+            ->action(function (Collection $records) {
+                $records->each->update(['active' => true]);
+            }),
+    ]),
+])
+```
+
+## Record URLs
+
+By default, clicking a row opens the Edit or View page. The List page automatically determines which action is available:
+
+```php packages/panels/src/Resources/Pages/ListRecords.php
+$table->recordUrl(function (Model $record, Table $table): ?string {
+    foreach (['view', 'edit'] as $action) {
+        $action = $table->getAction($action);
+        
+        if (! $action || $action->isHidden()) {
+            continue;
+        }
+        
+        $url = $action->getUrl();
+        
+        if ($url) {
+            return $url;
+        }
+    }
+    
+    return null;
+})
+```
+
+Customize this behavior:
+
+```php
+public static function table(Table $table): Table
+{
+    return $table
+        ->recordUrl(fn (Customer $record) => 
+            CustomerResource::getUrl('view', ['record' => $record])
+        )
+        ->columns([
+            // ...
+        ]);
+}
+```
+
+## Reordering Records
+
+Allow drag-and-drop reordering:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+public static function table(Table $table): Table
+{
+    return $table
+        ->reorderable('sort_order')
+        ->columns([
+            // ...
+        ]);
+}
+```
+
+Authorize reordering with a policy method:
+
+```php
+public function reorder(User $user): bool
+{
+    return $user->can('reorder customers');
+}
+```
+
+## Custom Page Content
+
+The List page schema contains these components by default:
+
+```php packages/panels/src/Resources/Pages/ListRecords.php
+use Filament\Schemas\Components\EmbeddedTable;
+use Filament\Schemas\Schema;
+
+public function content(Schema $schema): Schema
+{
+    return $schema
+        ->components([
+            $this->getTabsContentComponent(),
+            EmbeddedTable::make(),
+        ]);
+}
+```
+
+Add custom components:
+
+```php
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+
+public function content(Schema $schema): Schema
+{
+    return $schema
+        ->components([
+            Section::make('Customer Overview')
+                ->description('Manage your customer database')
+                ->schema([
+                    // Custom widgets or components
+                ]),
+            $this->getTabsContentComponent(),
+            EmbeddedTable::make(),
+        ]);
+}
+```
+
+## Header Actions
+
+Add actions to the page header:
+
+```php
+use Filament\Actions;
+
+protected function getHeaderActions(): array
+{
+    return [
+        Actions\CreateAction::make(),
+        Actions\ImportAction::make()
+            ->importer(CustomerImporter::class),
+    ];
+}
+```
+
+## Empty State
+
+Customize what shows when there are no records:
+
+```php
+public static function table(Table $table): Table
+{
+    return $table
+        ->emptyStateHeading('No customers yet')
+        ->emptyStateDescription('Create your first customer to get started.')
+        ->emptyStateIcon('heroicon-o-user-group')
+        ->emptyStateActions([
+            CreateAction::make(),
+        ])
+        ->columns([
+            // ...
+        ]);
+}
+```
+
+## Polling
+
+Auto-refresh the table at intervals:
+
+```php
+public static function table(Table $table): Table
+{
+    return $table
+        ->poll('10s')
+        ->columns([
+            // ...
+        ]);
+}
+```
+
+## Authorization
+
+Users can access the List page if the `viewAny()` method of the model policy returns `true`:
+
+```php
+public function viewAny(User $user): bool
+{
+    return $user->can('view customers');
+}
+```
+
+The `reorder()` method controls record reordering:
+
+```php
+public function reorder(User $user): bool
+{
+    return $user->can('reorder customers');
+}
+```

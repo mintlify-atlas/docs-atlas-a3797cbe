@@ -1,122 +1,199 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Filament",
+  "theme": "palm",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#F59E0B",
+    "light": "#FCD34D",
+    "dark": "#D97706"
   },
-  "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/filamentphp/filament"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/filamentphp/filament",
+      "discord": "https://filamentphp.com/discord",
+      "x": "https://twitter.com/filamentphp"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Getting Started",
             "pages": [
-              "index",
+              "introduction",
+              "installation",
               "quickstart",
-              "development"
+              "upgrading"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Panel Builder",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "panels/overview",
+              "panels/resources",
+              "panels/pages",
+              "panels/navigation",
+              "panels/configuration",
+              "panels/authentication",
+              "panels/tenancy",
+              "panels/themes",
+              "panels/deployment"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Core Concepts",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "resources/overview",
+              "resources/creating-records",
+              "resources/listing-records",
+              "resources/editing-records",
+              "resources/viewing-records",
+              "resources/deleting-records",
+              "resources/relationships",
+              "resources/global-search"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Building Blocks",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "forms/overview",
+              "forms/fields",
+              "forms/layout",
+              "forms/validation",
+              "forms/advanced",
+              "tables/overview",
+              "tables/columns",
+              "tables/filters",
+              "tables/actions",
+              "actions/overview",
+              "actions/modals",
+              "actions/prebuilt",
+              "notifications/overview",
+              "notifications/sending",
+              "infolists/overview",
+              "infolists/entries",
+              "widgets/overview",
+              "widgets/charts",
+              "widgets/stats"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/custom-fields",
+              "advanced/custom-columns",
+              "advanced/custom-actions",
+              "advanced/plugins",
+              "advanced/testing",
+              "advanced/performance"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "Components",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Form Components",
             "pages": [
-              "api-reference/introduction"
+              "components/forms/text-input",
+              "components/forms/select",
+              "components/forms/checkbox",
+              "components/forms/toggle",
+              "components/forms/radio",
+              "components/forms/date-time-picker",
+              "components/forms/file-upload",
+              "components/forms/rich-editor",
+              "components/forms/markdown-editor",
+              "components/forms/repeater",
+              "components/forms/builder",
+              "components/forms/tags-input",
+              "components/forms/textarea",
+              "components/forms/color-picker",
+              "components/forms/key-value"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Table Components",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "components/tables/text-column",
+              "components/tables/image-column",
+              "components/tables/icon-column",
+              "components/tables/badge-column",
+              "components/tables/color-column",
+              "components/tables/select-column",
+              "components/tables/checkbox-column",
+              "components/tables/toggle-column"
+            ]
+          },
+          {
+            "group": "Layout Components",
+            "pages": [
+              "components/layout/section",
+              "components/layout/fieldset",
+              "components/layout/tabs",
+              "components/layout/wizard",
+              "components/layout/grid",
+              "components/layout/split"
+            ]
+          },
+          {
+            "group": "Infolist Components",
+            "pages": [
+              "components/infolists/text-entry",
+              "components/infolists/image-entry",
+              "components/infolists/icon-entry",
+              "components/infolists/badge-entry",
+              "components/infolists/color-entry"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Core Classes",
+            "pages": [
+              "api/panel",
+              "api/resource",
+              "api/page",
+              "api/livewire-component"
+            ]
+          },
+          {
+            "group": "Form Builder",
+            "pages": [
+              "api/form",
+              "api/field",
+              "api/component"
+            ]
+          },
+          {
+            "group": "Table Builder",
+            "pages": [
+              "api/table",
+              "api/column",
+              "api/filter"
+            ]
+          },
+          {
+            "group": "Actions",
+            "pages": [
+              "api/action",
+              "api/bulk-action"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

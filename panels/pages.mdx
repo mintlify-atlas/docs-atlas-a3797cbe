@@ -1,0 +1,391 @@
+---
+title: Pages
+description: Creating custom pages in your Filament panel
+---
+
+## Introduction
+
+Pages are full-page Livewire components that can be added to your panel. They provide a blank canvas for building custom functionality beyond standard CRUD operations.
+
+## Creating a page
+
+Generate a page using the Artisan command:
+
+```bash
+php artisan make:filament-page Settings
+```
+
+This creates a page class at `app/Filament/Pages/Settings.php`:
+
+```php
+use Filament\Pages\Page;
+
+class Settings extends Page
+{
+    protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
+
+    protected static string $view = 'filament.pages.settings';
+}
+```
+
+## Routing
+
+Pages automatically register routes based on their class name. For example, `Settings` will be accessible at `/settings`.
+
+### Custom route slugs
+
+Override the slug with the `getRoutePath()` method:
+
+```php
+public static function getRoutePath(): string
+{
+    return 'app-settings';
+}
+```
+
+Now the page is accessible at `/app-settings`.
+
+### Route parameters
+
+Define route parameters in the `routes()` method:
+
+```php
+use Illuminate\Support\Facades\Route;
+use Filament\Panel;
+
+public static function routes(Panel $panel, ?PageConfiguration $configuration = null): void
+{
+    Route::get('/{category}', static::class)
+        ->name(static::getRelativeRouteName($panel));
+}
+```
+
+Access parameters in your page:
+
+```php
+public ?string $category = null;
+
+public function mount(string $category): void
+{
+    $this->category = $category;
+}
+```
+
+## Navigation
+
+### Customizing navigation
+
+Control how the page appears in the sidebar:
+
+```php
+protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
+
+protected static ?string $navigationLabel = 'App Settings';
+
+protected static ?int $navigationSort = 10;
+
+protected static ?string $navigationGroup = 'Settings';
+```
+
+### Hiding from navigation
+
+To prevent a page from appearing in navigation:
+
+```php
+protected static bool $shouldRegisterNavigation = false;
+```
+
+You can still access the page via its URL.
+
+### Navigation badges
+
+Add badges to navigation items:
+
+```php
+public static function getNavigationBadge(): ?string
+{
+    return static::getModel()::where('is_pending', true)->count();
+}
+
+public static function getNavigationBadgeColor(): string|array|null
+{
+    return 'warning';
+}
+```
+
+### Parent navigation items
+
+Nest a page under another navigation item:
+
+```php
+protected static ?string $navigationParentItem = 'Settings';
+```
+
+## Page header
+
+### Title
+
+Customize the page title:
+
+```php
+protected static ?string $title = 'Application Settings';
+
+public function getTitle(): string | Htmlable
+{
+    return 'Settings for ' . auth()->user()->name;
+}
+```
+
+### Heading
+
+The heading is separate from the title (used in the browser tab):
+
+```php
+public function getHeading(): string | Htmlable
+{
+    return 'Manage Settings';
+}
+```
+
+### Subheading
+
+Add a subheading below the heading:
+
+```php
+protected static ?string $subheading = 'Customize your application preferences';
+
+public function getSubheading(): ?string
+{
+    return 'Updated ' . now()->diffForHumans();
+}
+```
+
+## Header actions
+
+Add action buttons to the page header:
+
+```php
+use Filament\Actions\Action;
+
+protected function getHeaderActions(): array
+{
+    return [
+        Action::make('save')
+            ->action('save'),
+        Action::make('reset')
+            ->color('danger')
+            ->requiresConfirmation()
+            ->action('reset'),
+    ];
+}
+
+public function save(): void
+{
+    // Save logic
+    $this->notify('Settings saved successfully');
+}
+
+public function reset(): void
+{
+    // Reset logic
+    $this->notify('Settings reset to defaults');
+}
+```
+
+## Page content
+
+### Using Blade views
+
+By default, pages use a Blade view for content:
+
+```php
+protected static string $view = 'filament.pages.settings';
+```
+
+Create the view at `resources/views/filament/pages/settings.blade.php`:
+
+```blade
+<x-filament-panels::page>
+    <div>
+        Your page content here
+    </div>
+</x-filament-panels::page>
+```
+
+### Using schema builder
+
+You can build page content using Filament's schema builder:
+
+```php
+use Filament\Schemas\Components\Card;
+use Filament\Schemas\Components\TextInput;
+use Filament\Schemas\Schema;
+
+public function content(Schema $schema): Schema
+{
+    return $schema
+        ->schema([
+            Card::make()
+                ->schema([
+                    TextInput::make('site_name')
+                        ->label('Site Name')
+                        ->required(),
+                    TextInput::make('site_description')
+                        ->label('Site Description'),
+                ]),
+        ]);
+}
+```
+
+## Widgets
+
+Add widgets to your page header or footer:
+
+```php
+use App\Filament\Widgets\StatsOverview;
+
+protected function getHeaderWidgets(): array
+{
+    return [
+        StatsOverview::class,
+    ];
+}
+
+protected function getFooterWidgets(): array
+{
+    return [
+        // Footer widgets
+    ];
+}
+```
+
+Control widget columns:
+
+```php
+public function getHeaderWidgetsColumns(): int | array
+{
+    return 3;
+}
+```
+
+## Authorization
+
+Restrict access to pages using the `canAccess()` method:
+
+```php
+public static function canAccess(): bool
+{
+    return auth()->user()->can('view_settings');
+}
+```
+
+## Breadcrumbs
+
+Customize breadcrumbs for the page:
+
+```php
+public function getBreadcrumbs(): array
+{
+    return [
+        '/admin' => 'Dashboard',
+        '/admin/settings' => 'Settings',
+        '/admin/settings/general' => 'General',
+    ];
+}
+```
+
+## Page lifecycle
+
+Pages are Livewire components, so you can use standard Livewire lifecycle hooks:
+
+```php
+public function mount(): void
+{
+    $this->form->fill([
+        'site_name' => config('app.name'),
+        'site_description' => config('app.description'),
+    ]);
+}
+
+public function updated($propertyName): void
+{
+    $this->validateOnly($propertyName);
+}
+
+public function hydrate(): void
+{
+    // Called on subsequent requests
+}
+```
+
+## Page clusters
+
+Group related pages together using clusters:
+
+```php
+use App\Filament\Clusters\Settings;
+
+class GeneralSettings extends Page
+{
+    protected static ?string $cluster = Settings::class;
+
+    // ...
+}
+```
+
+Generate a page within a cluster:
+
+```bash
+php artisan make:filament-page GeneralSettings --cluster=Settings
+```
+
+## Custom page classes
+
+Extend page styling with custom CSS classes:
+
+```php
+public function getPageClasses(): array
+{
+    return [
+        'settings-page',
+        'max-w-7xl',
+    ];
+}
+```
+
+## Modal pages
+
+You can create pages that open in modals using actions:
+
+```php
+use Filament\Actions\Action;
+
+Action::make('openSettings')
+    ->modalContent(view('filament.modals.settings'))
+    ->modalWidth('2xl')
+    ->action(function (array $data) {
+        // Handle form submission
+    })
+```
+
+## Multiple page configurations
+
+Register multiple configurations of the same page:
+
+```php
+// In your panel provider
+->pages([
+    Settings::make('general'),
+    Settings::make('advanced'),
+])
+```
+
+Access the configuration in your page:
+
+```php
+public function mount(): void
+{
+    $configuration = static::getConfiguration();
+    $key = $configuration?->getKey(); // 'general' or 'advanced'
+}
+```

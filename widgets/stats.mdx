@@ -1,0 +1,470 @@
+---
+title: Stats Overview Widgets
+---
+
+## Introduction
+
+Stats overview widgets provide a clean, organized way to display key metrics and statistics in your Filament application. These widgets are perfect for dashboards, showing important numbers at a glance with optional trend indicators and inline charts.
+
+Each stats overview widget can display multiple stat cards in a responsive grid layout, making it easy to showcase various metrics together.
+
+## Creating a Stats Overview Widget
+
+Generate a stats overview widget using the Artisan command:
+
+```bash
+php artisan make:filament-widget StatsOverview --stats-overview
+```
+
+This creates a widget class in `app/Filament/Widgets/`:
+
+```php
+namespace App\Filament\Widgets;
+
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
+use Filament\Widgets\StatsOverviewWidget\Stat;
+
+class StatsOverview extends BaseWidget
+{
+    protected function getStats(): array
+    {
+        return [
+            Stat::make('Unique views', '192.1k'),
+            Stat::make('Bounce rate', '21%'),
+            Stat::make('Average time on page', '3:12'),
+        ];
+    }
+}
+```
+
+## Creating Stats
+
+Each stat is created using the `Stat::make()` method with a label and value:
+
+```php
+Stat::make('Total Revenue', '$45,234')
+Stat::make('Active Users', '1,234')
+Stat::make('Conversion Rate', '3.2%')
+```
+
+### Dynamic Stat Values
+
+Generate stat values from your database:
+
+```php
+use App\Models\Order;
+use App\Models\User;
+
+protected function getStats(): array
+{
+    return [
+        Stat::make('Total Orders', Order::count()),
+        Stat::make('Active Users', User::where('active', true)->count()),
+        Stat::make('Revenue', '$' . number_format(Order::sum('total'), 2)),
+    ];
+}
+```
+
+### Formatting Numbers
+
+Format large numbers for readability:
+
+```php
+protected function getStats(): array
+{
+    $totalOrders = 192543;
+    $formattedOrders = number_format($totalOrders / 1000, 1) . 'k';
+
+    return [
+        Stat::make('Total Orders', $formattedOrders),
+    ];
+}
+```
+
+## Adding Descriptions
+
+Provide context with descriptions and trend indicators:
+
+```php
+Stat::make('Unique views', '192.1k')
+    ->description('32k increase')
+    ->descriptionIcon('heroicon-m-arrow-trending-up')
+```
+
+### Description Icon Position
+
+Place icons before the description:
+
+```php
+use Filament\Support\Enums\IconPosition;
+
+Stat::make('Unique views', '192.1k')
+    ->description('32k increase')
+    ->descriptionIcon('heroicon-m-arrow-trending-up', IconPosition::Before)
+```
+
+### Multiple Descriptions
+
+Show multiple trend indicators:
+
+```php
+protected function getStats(): array
+{
+    return [
+        Stat::make('Revenue', '$45,234')
+            ->description('12% increase from last month')
+            ->descriptionIcon('heroicon-m-arrow-trending-up'),
+        Stat::make('Orders', '1,234')
+            ->description('5% decrease from last week')
+            ->descriptionIcon('heroicon-m-arrow-trending-down'),
+    ];
+}
+```
+
+## Stat Colors
+
+Apply colors to emphasize stat meaning:
+
+```php
+Stat::make('Revenue', '$45,234')
+    ->description('12% increase')
+    ->descriptionIcon('heroicon-m-arrow-trending-up')
+    ->color('success')
+
+Stat::make('Bounce rate', '21%')
+    ->description('7% increase')
+    ->descriptionIcon('heroicon-m-arrow-trending-down')
+    ->color('danger')
+```
+
+Available colors: `primary`, `success`, `warning`, `danger`, `info`, `gray`.
+
+### Dynamic Colors
+
+Set colors based on conditions:
+
+```php
+protected function getStats(): array
+{
+    $revenueChange = 12; // percentage change
+
+    return [
+        Stat::make('Revenue', '$45,234')
+            ->description($revenueChange . '% change')
+            ->descriptionIcon(
+                $revenueChange >= 0 
+                    ? 'heroicon-m-arrow-trending-up' 
+                    : 'heroicon-m-arrow-trending-down'
+            )
+            ->color($revenueChange >= 0 ? 'success' : 'danger'),
+    ];
+}
+```
+
+## Adding Charts to Stats
+
+Display trend charts within stat cards:
+
+```php
+Stat::make('Revenue', '$45,234')
+    ->description('12% increase')
+    ->descriptionIcon('heroicon-m-arrow-trending-up')
+    ->chart([7, 3, 10, 5, 15, 4, 17])
+    ->color('success')
+```
+
+The chart displays as a small line graph showing the trend.
+
+### Generating Chart Data
+
+Use the `laravel-trend` package to generate chart data:
+
+```php
+use Flowframe\Trend\Trend;
+use Flowframe\Trend\TrendValue;
+use App\Models\Order;
+
+protected function getStats(): array
+{
+    $orderTrend = Trend::model(Order::class)
+        ->between(start: now()->subDays(7), end: now())
+        ->perDay()
+        ->count();
+
+    return [
+        Stat::make('Orders', Order::count())
+            ->description('Last 7 days')
+            ->chart($orderTrend->map(fn (TrendValue $value) => $value->aggregate)->toArray())
+            ->color('success'),
+    ];
+}
+```
+
+## Extra HTML Attributes
+
+Add custom attributes for styling or interactions:
+
+```php
+Stat::make('Processed', '192.1k')
+    ->color('success')
+    ->extraAttributes([
+        'class' => 'cursor-pointer',
+        'wire:click' => "\$dispatch('setStatusFilter', { filter: 'processed' })",
+    ])
+```
+
+Note: Escape the `$` in `$dispatch()` with `\$` since this is passed to HTML, not evaluated as PHP.
+
+## Widget Heading and Description
+
+Add a heading and description above the stats:
+
+```php
+protected ?string $heading = 'Analytics Overview';
+
+protected ?string $description = 'Key metrics for the current month';
+```
+
+Or use methods for dynamic values:
+
+```php
+protected function getHeading(): ?string
+{
+    return 'Analytics - ' . now()->format('F Y');
+}
+
+protected function getDescription(): ?string
+{
+    return 'Last updated ' . now()->diffForHumans();
+}
+```
+
+## Live Updating (Polling)
+
+Stats widgets refresh every 5 seconds by default:
+
+```php
+// Refresh every 10 seconds
+protected ?string $pollingInterval = '10s';
+
+// Disable polling
+protected ?string $pollingInterval = null;
+```
+
+## Lazy Loading
+
+Stats widgets are lazy-loaded by default. Disable if needed:
+
+```php
+protected static bool $isLazy = false;
+```
+
+## Stats Grid Layout
+
+The widget automatically arranges stats in a responsive grid. The grid adapts based on the number of stats:
+
+- 1-2 stats: Full width
+- 3+ stats: 3 columns on large screens
+- Automatically adjusts to 4 columns if the count is optimal
+
+### Customizing Grid Columns
+
+Override the `$columns` property to customize the grid:
+
+```php
+protected int | array | null $columns = 2;
+
+// Or responsive
+protected int | array | null $columns = [
+    'md' => 2,
+    'xl' => 4,
+];
+```
+
+## Common Stat Patterns
+
+### Revenue Statistics
+
+```php
+use App\Models\Order;
+use Flowframe\Trend\Trend;
+use Flowframe\Trend\TrendValue;
+
+protected function getStats(): array
+{
+    $currentMonthRevenue = Order::whereMonth('created_at', now()->month)
+        ->sum('total');
+    
+    $lastMonthRevenue = Order::whereMonth('created_at', now()->subMonth()->month)
+        ->sum('total');
+    
+    $percentageChange = $lastMonthRevenue > 0 
+        ? (($currentMonthRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100 
+        : 0;
+
+    $trend = Trend::model(Order::class)
+        ->between(start: now()->subDays(30), end: now())
+        ->perDay()
+        ->sum('total');
+
+    return [
+        Stat::make('Monthly Revenue', '$' . number_format($currentMonthRevenue, 2))
+            ->description(round($percentageChange, 1) . '% from last month')
+            ->descriptionIcon(
+                $percentageChange >= 0 
+                    ? 'heroicon-m-arrow-trending-up' 
+                    : 'heroicon-m-arrow-trending-down'
+            )
+            ->chart($trend->map(fn (TrendValue $value) => $value->aggregate)->toArray())
+            ->color($percentageChange >= 0 ? 'success' : 'danger'),
+    ];
+}
+```
+
+### User Growth
+
+```php
+use App\Models\User;
+use Flowframe\Trend\Trend;
+use Flowframe\Trend\TrendValue;
+
+protected function getStats(): array
+{
+    $totalUsers = User::count();
+    $newUsersThisWeek = User::where('created_at', '>=', now()->subWeek())->count();
+    
+    $userTrend = Trend::model(User::class)
+        ->between(start: now()->subWeeks(12), end: now())
+        ->perWeek()
+        ->count();
+
+    return [
+        Stat::make('Total Users', number_format($totalUsers))
+            ->description($newUsersThisWeek . ' new this week')
+            ->descriptionIcon('heroicon-m-arrow-trending-up')
+            ->chart($userTrend->map(fn (TrendValue $value) => $value->aggregate)->toArray())
+            ->color('success'),
+    ];
+}
+```
+
+### Conversion Metrics
+
+```php
+use App\Models\Visit;
+use App\Models\Conversion;
+
+protected function getStats(): array
+{
+    $totalVisits = Visit::count();
+    $totalConversions = Conversion::count();
+    $conversionRate = $totalVisits > 0 
+        ? ($totalConversions / $totalVisits) * 100 
+        : 0;
+
+    return [
+        Stat::make('Conversion Rate', round($conversionRate, 2) . '%')
+            ->description($totalConversions . ' conversions from ' . $totalVisits . ' visits')
+            ->color(
+                $conversionRate >= 5 ? 'success' : 
+                ($conversionRate >= 2 ? 'warning' : 'danger')
+            ),
+    ];
+}
+```
+
+### Inventory Status
+
+```php
+use App\Models\Product;
+
+protected function getStats(): array
+{
+    $lowStockCount = Product::where('stock', '<', 10)->count();
+    $outOfStockCount = Product::where('stock', 0)->count();
+    $totalProducts = Product::count();
+
+    return [
+        Stat::make('Total Products', $totalProducts)
+            ->description('In inventory')
+            ->color('primary'),
+        
+        Stat::make('Low Stock', $lowStockCount)
+            ->description('Products below 10 units')
+            ->descriptionIcon('heroicon-m-exclamation-triangle')
+            ->color('warning'),
+        
+        Stat::make('Out of Stock', $outOfStockCount)
+            ->description('Requires restocking')
+            ->descriptionIcon('heroicon-m-x-circle')
+            ->color('danger'),
+    ];
+}
+```
+
+## Using Stats with Dashboard Filters
+
+Access dashboard filters to filter stat data:
+
+```php
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
+
+class RevenueStats extends StatsOverviewWidget
+{
+    use InteractsWithPageFilters;
+
+    protected function getStats(): array
+    {
+        $startDate = $this->pageFilters['startDate'] ?? now()->subDays(30);
+        $endDate = $this->pageFilters['endDate'] ?? now();
+
+        $revenue = Order::whereBetween('created_at', [$startDate, $endDate])
+            ->sum('total');
+
+        return [
+            Stat::make('Revenue', '$' . number_format($revenue, 2))
+                ->description('For selected period'),
+        ];
+    }
+}
+```
+
+## Best Practices
+
+1. **Keep Numbers Meaningful**: Format large numbers (use 'k' for thousands, 'M' for millions)
+2. **Show Trends**: Include descriptions with percentage changes or counts
+3. **Use Appropriate Colors**: Green for positive metrics, red for negative, gray for neutral
+4. **Add Context**: Descriptions should explain what the number represents
+5. **Include Charts**: Small charts help visualize trends at a glance
+6. **Limit Stats Count**: 3-6 stats per widget for optimal readability
+7. **Update Regularly**: Use polling for real-time data or cache expensive queries
+8. **Consistent Formatting**: Use the same number format across related stats
+9. **Icon Consistency**: Use trending-up for positive, trending-down for negative
+10. **Responsive Design**: Test stats display on different screen sizes
+
+## Performance Optimization
+
+For expensive stat calculations, use caching:
+
+```php
+use Illuminate\Support\Facades\Cache;
+
+protected function getStats(): array
+{
+    $totalRevenue = Cache::remember(
+        'stats.total-revenue',
+        now()->addMinutes(5),
+        fn () => Order::sum('total')
+    );
+
+    return [
+        Stat::make('Total Revenue', '$' . number_format($totalRevenue, 2)),
+    ];
+}
+```
+
+## Next Steps
+
+- Learn about [Chart Widgets](/widgets/charts) for detailed data visualization
+- Explore [Dashboard Filters](/widgets/overview#filtering-widget-data) to filter stats
+- Review [Widget Polling](/widgets/overview#widget-polling) for real-time updates

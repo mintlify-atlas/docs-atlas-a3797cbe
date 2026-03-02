@@ -1,0 +1,582 @@
+---
+title: Testing Filament Applications
+description: Learn how to test Filament resources, pages, forms, and tables
+---
+
+## Introduction
+
+Filament provides excellent testing support through Laravel's testing features and Livewire's testing utilities. You can test resources, forms, tables, actions, and more using Pest or PHPUnit.
+
+## Setting up tests
+
+Filament integrates seamlessly with Pest (recommended) or PHPUnit. Install Pest if you haven't already:
+
+```bash
+composer require pestphp/pest --dev --with-all-dependencies
+composer require pestphp/pest-plugin-laravel --dev
+php artisan pest:install
+```
+
+Create a test file:
+
+```bash
+php artisan make:test --pest PostResourceTest
+```
+
+## Testing resources
+
+Test your Filament resources to ensure they work correctly:
+
+<CodeGroup>
+
+```php List Page Tests
+use App\Filament\Resources\PostResource;
+use App\Models\Post;
+use function Pest\Livewire\livewire;
+
+it('can render the posts list page', function () {
+    $this->get(PostResource::getUrl('index'))
+        ->assertSuccessful();
+});
+
+it('can list posts', function () {
+    $posts = Post::factory()->count(10)->create();
+
+    livewire(PostResource\Pages\ListPosts::class)
+        ->assertCanSeeTableRecords($posts);
+});
+
+it('can sort posts by title', function () {
+    $posts = Post::factory()->count(10)->create();
+
+    livewire(PostResource\Pages\ListPosts::class)
+        ->sortTable('title')
+        ->assertCanSeeTableRecords($posts->sortBy('title'), inOrder: true)
+        ->sortTable('title', 'desc')
+        ->assertCanSeeTableRecords($posts->sortByDesc('title'), inOrder: true);
+});
+
+it('can search posts by title', function () {
+    $posts = Post::factory()->count(10)->create();
+    $searchTerm = $posts->first()->title;
+
+    livewire(PostResource\Pages\ListPosts::class)
+        ->searchTable($searchTerm)
+        ->assertCanSeeTableRecords($posts->where('title', $searchTerm))
+        ->assertCanNotSeeTableRecords($posts->where('title', '!=', $searchTerm));
+});
+
+it('can filter posts by status', function () {
+    $publishedPosts = Post::factory()->count(5)->published()->create();
+    $draftPosts = Post::factory()->count(5)->draft()->create();
+
+    livewire(PostResource\Pages\ListPosts::class)
+        ->filterTable('status', 'published')
+        ->assertCanSeeTableRecords($publishedPosts)
+        ->assertCanNotSeeTableRecords($draftPosts);
+});
+```
+
+```php Create Page Tests
+use App\Filament\Resources\PostResource;
+use App\Models\Post;
+use function Pest\Livewire\livewire;
+
+it('can render the create post page', function () {
+    $this->get(PostResource::getUrl('create'))
+        ->assertSuccessful();
+});
+
+it('can create a post', function () {
+    $newData = Post::factory()->make();
+
+    livewire(PostResource\Pages\CreatePost::class)
+        ->fillForm([
+            'title' => $newData->title,
+            'slug' => $newData->slug,
+            'content' => $newData->content,
+            'published_at' => $newData->published_at,
+        ])
+        ->call('create')
+        ->assertHasNoFormErrors();
+
+    $this->assertDatabaseHas(Post::class, [
+        'title' => $newData->title,
+        'slug' => $newData->slug,
+    ]);
+});
+
+it('can validate input when creating a post', function () {
+    livewire(PostResource\Pages\CreatePost::class)
+        ->fillForm([
+            'title' => null,
+        ])
+        ->call('create')
+        ->assertHasFormErrors(['title' => 'required']);
+});
+
+it('can validate unique slug when creating a post', function () {
+    $existingPost = Post::factory()->create();
+
+    livewire(PostResource\Pages\CreatePost::class)
+        ->fillForm([
+            'title' => 'New Post',
+            'slug' => $existingPost->slug,
+        ])
+        ->call('create')
+        ->assertHasFormErrors(['slug' => 'unique']);
+});
+```
+
+```php Edit Page Tests
+use App\Filament\Resources\PostResource;
+use App\Models\Post;
+use function Pest\Livewire\livewire;
+
+it('can render the edit post page', function () {
+    $post = Post::factory()->create();
+
+    $this->get(PostResource::getUrl('edit', ['record' => $post]))
+        ->assertSuccessful();
+});
+
+it('can retrieve data from the database', function () {
+    $post = Post::factory()->create();
+
+    livewire(PostResource\Pages\EditPost::class, [
+        'record' => $post->getRouteKey(),
+    ])
+        ->assertFormSet([
+            'title' => $post->title,
+            'slug' => $post->slug,
+            'content' => $post->content,
+        ]);
+});
+
+it('can save changes to a post', function () {
+    $post = Post::factory()->create();
+    $newData = Post::factory()->make();
+
+    livewire(PostResource\Pages\EditPost::class, [
+        'record' => $post->getRouteKey(),
+    ])
+        ->fillForm([
+            'title' => $newData->title,
+            'slug' => $newData->slug,
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($post->refresh())
+        ->title->toBe($newData->title)
+        ->slug->toBe($newData->slug);
+});
+
+it('can validate input when editing a post', function () {
+    $post = Post::factory()->create();
+
+    livewire(PostResource\Pages\EditPost::class, [
+        'record' => $post->getRouteKey(),
+    ])
+        ->fillForm([
+            'title' => null,
+        ])
+        ->call('save')
+        ->assertHasFormErrors(['title' => 'required']);
+});
+```
+
+</CodeGroup>
+
+## Testing actions
+
+Test actions in tables, forms, and pages:
+
+```php
+use App\Filament\Resources\PostResource;
+use App\Models\Post;
+use function Pest\Livewire\livewire;
+
+it('can delete a post', function () {
+    $post = Post::factory()->create();
+
+    livewire(PostResource\Pages\EditPost::class, [
+        'record' => $post->getRouteKey(),
+    ])
+        ->callAction('delete');
+
+    $this->assertModelMissing($post);
+});
+
+it('requires confirmation before deleting', function () {
+    $post = Post::factory()->create();
+
+    livewire(PostResource\Pages\EditPost::class, [
+        'record' => $post->getRouteKey(),
+    ])
+        ->assertActionVisible('delete')
+        ->assertActionRequiresConfirmation('delete');
+});
+
+it('can publish a post', function () {
+    $post = Post::factory()->create(['published_at' => null]);
+
+    livewire(PostResource\Pages\EditPost::class, [
+        'record' => $post->getRouteKey(),
+    ])
+        ->callAction('publish')
+        ->assertHasNoActionErrors();
+
+    expect($post->refresh()->published_at)->not->toBeNull();
+});
+
+it('can bulk delete posts', function () {
+    $posts = Post::factory()->count(10)->create();
+
+    livewire(PostResource\Pages\ListPosts::class)
+        ->callTableBulkAction('delete', $posts)
+        ->assertHasNoTableBulkActionErrors();
+
+    foreach ($posts as $post) {
+        $this->assertModelMissing($post);
+    }
+});
+
+it('can execute custom table action', function () {
+    $post = Post::factory()->create();
+
+    livewire(PostResource\Pages\ListPosts::class)
+        ->callTableAction('duplicate', $post);
+
+    $this->assertDatabaseCount(Post::class, 2);
+});
+
+it('can fill and submit action modal form', function () {
+    $post = Post::factory()->create();
+
+    livewire(PostResource\Pages\EditPost::class, [
+        'record' => $post->getRouteKey(),
+    ])
+        ->callAction('schedule', data: [
+            'published_at' => now()->addDay(),
+        ])
+        ->assertHasNoActionErrors();
+
+    expect($post->refresh()->published_at)->not->toBeNull();
+});
+```
+
+## Testing forms
+
+Test form behavior, validation, and state management:
+
+```php
+use App\Filament\Resources\PostResource;
+use App\Models\Category;
+use App\Models\Post;
+use function Pest\Livewire\livewire;
+
+it('can validate minimum length', function () {
+    livewire(PostResource\Pages\CreatePost::class)
+        ->fillForm([
+            'title' => 'Ab',
+        ])
+        ->call('create')
+        ->assertHasFormErrors(['title' => 'min']);
+});
+
+it('can validate maximum length', function () {
+    livewire(PostResource\Pages\CreatePost::class)
+        ->fillForm([
+            'title' => str_repeat('a', 256),
+        ])
+        ->call('create')
+        ->assertHasFormErrors(['title' => 'max']);
+});
+
+it('can validate email format', function () {
+    livewire(PostResource\Pages\CreatePost::class)
+        ->fillForm([
+            'author_email' => 'invalid-email',
+        ])
+        ->call('create')
+        ->assertHasFormErrors(['author_email' => 'email']);
+});
+
+it('can auto-generate slug from title', function () {
+    $title = 'My Awesome Post';
+
+    livewire(PostResource\Pages\CreatePost::class)
+        ->fillForm([
+            'title' => $title,
+        ])
+        ->assertFormSet([
+            'slug' => str($title)->slug(),
+        ]);
+});
+
+it('can populate options in dependent select', function () {
+    $category = Category::factory()->create();
+
+    livewire(PostResource\Pages\CreatePost::class)
+        ->fillForm([
+            'category_id' => $category->id,
+        ])
+        ->assertFormFieldExists('subcategory_id');
+});
+```
+
+## Testing tables
+
+Test table columns, filters, and bulk actions:
+
+```php
+use App\Filament\Resources\PostResource;
+use App\Models\Post;
+use function Pest\Livewire\livewire;
+
+it('can render table columns', function () {
+    $post = Post::factory()->create();
+
+    livewire(PostResource\Pages\ListPosts::class)
+        ->assertTableColumnExists('title')
+        ->assertTableColumnExists('author.name')
+        ->assertTableColumnExists('published_at');
+});
+
+it('can display correct column data', function () {
+    $post = Post::factory()->create();
+
+    livewire(PostResource\Pages\ListPosts::class)
+        ->assertTableColumnStateSet('title', $post->title, record: $post)
+        ->assertTableColumnFormattedStateSet(
+            'published_at',
+            $post->published_at->format('M d, Y'),
+            record: $post
+        );
+});
+
+it('can paginate table', function () {
+    Post::factory()->count(50)->create();
+
+    livewire(PostResource\Pages\ListPosts::class)
+        ->assertCountTableRecords(10)
+        ->call('gotoPage', 2)
+        ->assertCountTableRecords(10);
+});
+
+it('can select table records', function () {
+    $posts = Post::factory()->count(3)->create();
+
+    livewire(PostResource\Pages\ListPosts::class)
+        ->selectTableRecords($posts)
+        ->assertTableRecordsSelected($posts);
+});
+
+it('can display empty state when no records exist', function () {
+    livewire(PostResource\Pages\ListPosts::class)
+        ->assertTableEmpty();
+});
+```
+
+## Testing widgets
+
+Test dashboard widgets and their data:
+
+```php
+use App\Filament\Widgets\StatsOverview;
+use App\Models\Post;
+use function Pest\Livewire\livewire;
+
+it('can render the stats overview widget', function () {
+    livewire(StatsOverview::class)
+        ->assertSuccessful();
+});
+
+it('displays correct post count', function () {
+    Post::factory()->count(10)->create();
+
+    livewire(StatsOverview::class)
+        ->assertSee('10')
+        ->assertSee('Total Posts');
+});
+
+it('displays correct published post count', function () {
+    Post::factory()->count(7)->published()->create();
+    Post::factory()->count(3)->draft()->create();
+
+    livewire(StatsOverview::class)
+        ->assertSee('7')
+        ->assertSee('Published Posts');
+});
+```
+
+## Testing authorization
+
+Ensure authorization rules are enforced:
+
+```php
+use App\Filament\Resources\PostResource;
+use App\Models\Post;
+use App\Models\User;
+use function Pest\Livewire\livewire;
+
+it('prevents unauthorized users from accessing the resource', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(PostResource::getUrl('index'))
+        ->assertForbidden();
+});
+
+it('allows authorized users to access the resource', function () {
+    $user = User::factory()->admin()->create();
+
+    $this->actingAs($user)
+        ->get(PostResource::getUrl('index'))
+        ->assertSuccessful();
+});
+
+it('hides actions from unauthorized users', function () {
+    $post = Post::factory()->create();
+    $user = User::factory()->create();
+
+    $this->actingAs($user);
+
+    livewire(PostResource\Pages\EditPost::class, [
+        'record' => $post->getRouteKey(),
+    ])
+        ->assertActionHidden('delete');
+});
+
+it('prevents unauthorized users from editing posts', function () {
+    $post = Post::factory()->create();
+    $user = User::factory()->create();
+
+    $this->actingAs($user);
+
+    livewire(PostResource\Pages\EditPost::class, [
+        'record' => $post->getRouteKey(),
+    ])
+        ->fillForm(['title' => 'New Title'])
+        ->call('save')
+        ->assertForbidden();
+});
+```
+
+## Testing relation managers
+
+Test relation manager functionality:
+
+```php
+use App\Filament\Resources\PostResource;
+use App\Models\Comment;
+use App\Models\Post;
+use function Pest\Livewire\livewire;
+
+it('can list comments', function () {
+    $post = Post::factory()
+        ->has(Comment::factory()->count(10))
+        ->create();
+
+    livewire(PostResource\RelationManagers\CommentsRelationManager::class, [
+        'ownerRecord' => $post,
+    ])
+        ->assertCanSeeTableRecords($post->comments);
+});
+
+it('can create a comment', function () {
+    $post = Post::factory()->create();
+    $newComment = Comment::factory()->make();
+
+    livewire(PostResource\RelationManagers\CommentsRelationManager::class, [
+        'ownerRecord' => $post,
+    ])
+        ->callTableAction('create', data: [
+            'content' => $newComment->content,
+        ])
+        ->assertHasNoTableActionErrors();
+
+    $this->assertDatabaseHas(Comment::class, [
+        'post_id' => $post->id,
+        'content' => $newComment->content,
+    ]);
+});
+
+it('can edit a comment', function () {
+    $post = Post::factory()
+        ->has(Comment::factory()->count(1))
+        ->create();
+
+    $comment = $post->comments->first();
+    $newContent = 'Updated content';
+
+    livewire(PostResource\RelationManagers\CommentsRelationManager::class, [
+        'ownerRecord' => $post,
+    ])
+        ->callTableAction('edit', $comment, data: [
+            'content' => $newContent,
+        ])
+        ->assertHasNoTableActionErrors();
+
+    expect($comment->refresh()->content)->toBe($newContent);
+});
+```
+
+## Testing custom pages
+
+Test custom Filament pages:
+
+```php
+use App\Filament\Pages\Settings;
+use function Pest\Livewire\livewire;
+
+it('can render the settings page', function () {
+    $this->get(Settings::getUrl())
+        ->assertSuccessful();
+});
+
+it('can save settings', function () {
+    livewire(Settings::class)
+        ->fillForm([
+            'site_name' => 'My Site',
+            'site_description' => 'A great site',
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(setting('site_name'))->toBe('My Site');
+});
+```
+
+## Best practices
+
+- Use descriptive test names with backticks for code references: `it('can use \`publish()\` action')`
+- Test both happy paths and edge cases
+- Use factories for creating test data
+- Test validation rules thoroughly
+- Test authorization at multiple levels (pages, actions, records)
+- Use database transactions to keep tests isolated
+- Test custom components and actions separately
+- Mock external services to keep tests fast
+- Use `assertHasNoFormErrors()` and `assertHasNoActionErrors()` to catch unexpected validation issues
+- Test accessibility by checking for proper labels and ARIA attributes
+- Group related tests using `describe()` blocks in Pest
+
+## Running tests
+
+Run your tests with Pest:
+
+```bash
+# Run all tests
+./vendor/bin/pest
+
+# Run specific test file
+./vendor/bin/pest tests/Feature/PostResourceTest.php
+
+# Run tests matching a pattern
+./vendor/bin/pest --filter="can create"
+
+# Run tests with coverage
+./vendor/bin/pest --coverage
+```

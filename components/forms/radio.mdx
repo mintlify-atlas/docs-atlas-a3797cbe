@@ -1,0 +1,140 @@
+---
+title: Radio
+---
+
+The radio component provides a radio button group for selecting a single value from a list of options.
+
+## Basic Usage
+
+```php
+use Filament\Forms\Components\Radio;
+
+Radio::make('status')
+    ->options([
+        'draft' => 'Draft',
+        'scheduled' => 'Scheduled',
+        'published' => 'Published',
+    ])
+```
+
+## Available Methods
+
+<ParamField path="options" type="method">
+  Sets the available options.
+  
+  ```php
+  Radio::make('status')
+      ->options([
+          'draft' => 'Draft',
+          'published' => 'Published',
+      ])
+  ```
+</ParamField>
+
+<ParamField path="descriptions" type="method">
+  Adds descriptions to options.
+  
+  ```php
+  Radio::make('status')
+      ->options([
+          'draft' => 'Draft',
+          'published' => 'Published',
+      ])
+      ->descriptions([
+          'draft' => 'Not visible to users',
+          'published' => 'Visible to everyone',
+      ])
+  ```
+</ParamField>
+
+<ParamField path="inline" type="method">
+  Displays options inline instead of stacked.
+  
+  ```php
+  Radio::make('feedback')
+      ->boolean()
+      ->inline()
+  ```
+</ParamField>
+
+<ParamField path="boolean" type="method">
+  Creates a boolean radio group with Yes/No options.
+  
+  ```php
+  Radio::make('feedback')
+      ->label('Like this post?')
+      ->boolean()
+  
+  // Customize labels
+  Radio::make('feedback')
+      ->boolean(
+          trueLabel: 'Absolutely!',
+          falseLabel: 'Not at all!'
+      )
+  ```
+</ParamField>
+
+<ParamField path="disableOptionWhen" type="method">
+  Disables specific options.
+  
+  ```php
+  Radio::make('status')
+      ->options([
+          'draft' => 'Draft',
+          'published' => 'Published',
+      ])
+      ->disableOptionWhen(fn (string $value): bool => $value === 'published')
+  ```
+</ParamField>
+
+## Common Patterns
+
+### Simple Choice
+
+```php
+Radio::make('status')
+    ->options([
+        'active' => 'Active',
+        'inactive' => 'Inactive',
+    ])
+    ->required()
+```
+
+### With Descriptions
+
+```php
+Radio::make('plan')
+    ->options([
+        'basic' => 'Basic',
+        'premium' => 'Premium',
+        'enterprise' => 'Enterprise',
+    ])
+    ->descriptions([
+        'basic' => '$9/month - Perfect for individuals',
+        'premium' => '$29/month - Great for small teams',
+        'enterprise' => '$99/month - For large organizations',
+    ])
+    ->required()
+```
+
+### Boolean Radio
+
+```php
+Radio::make('newsletter_subscription')
+    ->label('Subscribe to our newsletter?')
+    ->boolean()
+    ->inline()
+```
+
+### Inline Options
+
+```php
+Radio::make('size')
+    ->options([
+        'sm' => 'Small',
+        'md' => 'Medium',
+        'lg' => 'Large',
+        'xl' => 'Extra Large',
+    ])
+    ->inline()
+```

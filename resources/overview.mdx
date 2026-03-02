@@ -1,0 +1,349 @@
+---
+title: Overview
+description: Understanding Filament Resources and how they provide CRUD interfaces for your Eloquent models
+---
+
+## What are Resources?
+
+Resources are static classes that build complete CRUD (Create, Read, Update, Delete) interfaces for your Eloquent models. They describe how administrators interact with data using forms, tables, and pages.
+
+Each resource in Filament:
+
+- Connects to an Eloquent model
+- Defines form schemas for creating and editing records
+- Configures table layouts for listing records
+- Manages multiple pages (List, Create, Edit, View)
+- Handles relationships with other models
+
+<Note>
+Resources use a declarative API pattern. You define what you want, and Filament handles the implementation details.
+</Note>
+
+## Creating a Resource
+
+To create a resource for the `App\Models\Customer` model:
+
+```bash
+php artisan make:filament-resource Customer
+```
+
+This creates several files in `app/Filament/Resources`:
+
+```
+Customers/
+├── CustomerResource.php      # Main resource class
+├── Pages/
+│   ├── CreateCustomer.php   # Create page
+│   ├── EditCustomer.php     # Edit page
+│   └── ListCustomers.php    # List page
+├── Schemas/
+│   └── CustomerForm.php     # Form definition
+└── Tables/
+    └── CustomersTable.php   # Table configuration
+```
+
+<Tabs>
+  <Tab title="Simple Resource">
+    For models that only need basic CRUD in modals:
+
+    ```bash
+    php artisan make:filament-resource Customer --simple
+    ```
+
+    This creates a single "Manage" page with modal-based create/edit operations.
+  </Tab>
+  
+  <Tab title="With View Page">
+    To add a read-only View page:
+
+    ```bash
+    php artisan make:filament-resource Customer --view
+    ```
+  </Tab>
+  
+  <Tab title="With Soft Deletes">
+    For models using soft deletes:
+
+    ```bash
+    php artisan make:filament-resource Customer --soft-deletes
+    ```
+  </Tab>
+</Tabs>
+
+## Resource Structure
+
+### The Resource Class
+
+Your main resource class (`CustomerResource.php`) contains configuration and references to other components:
+
+```php packages/panels/src/Resources/Resource.php
+use Filament\Resources\Resource;
+
+abstract class Resource
+{
+    protected static ?string $model = null;
+    
+    public static function form(Schema $schema): Schema
+    {
+        return $schema;
+    }
+    
+    public static function table(Table $table): Table
+    {
+        return $table;
+    }
+    
+    public static function getEloquentQuery(): Builder
+    {
+        return static::getModel()::query();
+    }
+}
+```
+
+### Form Schemas
+
+Forms define how users create and edit records. By default, form definitions live in separate schema files:
+
+```php
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Schema;
+
+public static function configure(Schema $schema): Schema
+{
+    return $schema
+        ->components([
+            TextInput::make('name')->required(),
+            TextInput::make('email')->email()->required(),
+        ]);
+}
+```
+
+<Accordion title="Inline form definitions">
+You can also define forms directly in the resource class:
+
+```php
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Schema;
+
+public static function form(Schema $schema): Schema
+{
+    return $schema
+        ->components([
+            TextInput::make('name')->required(),
+            TextInput::make('email')->email()->required(),
+        ]);
+}
+```
+</Accordion>
+
+### Tables
+
+Tables display records on the List page. Like forms, they can be defined in separate files or inline:
+
+```php
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+
+public static function configure(Table $table): Table
+{
+    return $table
+        ->columns([
+            TextColumn::make('name'),
+            TextColumn::make('email'),
+        ]);
+}
+```
+
+## Record Titles
+
+Set a `$recordTitleAttribute` to identify records throughout the UI:
+
+```php
+protected static ?string $recordTitleAttribute = 'name';
+```
+
+This is used in:
+- Global search results
+- Breadcrumbs
+- Delete confirmation modals
+- Relationship selects
+
+<Note>
+You can specify an [Eloquent accessor](https://laravel.com/docs/eloquent-mutators#defining-an-accessor) if a single column isn't sufficient.
+</Note>
+
+## Model Labels
+
+Filament automatically generates labels from your model name. Customize them if needed:
+
+```php
+protected static ?string $modelLabel = 'client';
+protected static ?string $pluralModelLabel = 'clients';
+```
+
+For dynamic labels:
+
+```php
+public static function getModelLabel(): string
+{
+    return __('filament/resources/customer.label');
+}
+
+public static function getPluralModelLabel(): string
+{
+    return __('filament/resources/customer.plural_label');
+}
+```
+
+## Navigation
+
+Resources automatically appear in the navigation menu. Customize the navigation item:
+
+```php
+protected static ?string $navigationIcon = 'heroicon-o-user-group';
+protected static ?string $navigationLabel = 'My Customers';
+protected static ?string $navigationGroup = 'Shop';
+protected static ?int $navigationSort = 2;
+```
+
+<Steps>
+  <Step title="Set the icon">
+    Use any Blade component name. Heroicons are included by default.
+
+    ```php
+    protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
+    ```
+  </Step>
+  
+  <Step title="Group related items">
+    Group multiple resources under a common label:
+
+    ```php
+    protected static ?string $navigationGroup = 'Shop';
+    ```
+  </Step>
+  
+  <Step title="Control the order">
+    Lower numbers appear first:
+
+    ```php
+    protected static ?int $navigationSort = 1;
+    ```
+  </Step>
+</Steps>
+
+## Customizing the Eloquent Query
+
+Every query to your resource starts with `getEloquentQuery()`. Override it to apply global constraints:
+
+```php packages/panels/src/Resources/Resource.php
+public static function getEloquentQuery(): Builder
+{
+    return parent::getEloquentQuery()->where('is_active', true);
+}
+```
+
+### Disabling Global Scopes
+
+Remove all global scopes:
+
+```php
+public static function getEloquentQuery(): Builder
+{
+    return parent::getEloquentQuery()->withoutGlobalScopes();
+}
+```
+
+Or remove specific scopes:
+
+```php
+public static function getEloquentQuery(): Builder
+{
+    return parent::getEloquentQuery()
+        ->withoutGlobalScopes([ActiveScope::class]);
+}
+```
+
+## Generating URLs
+
+Use `getUrl()` to generate URLs to resource pages:
+
+```php
+// List page
+CustomerResource::getUrl(); // /admin/customers
+
+// Create page
+CustomerResource::getUrl('create'); // /admin/customers/create
+
+// Edit page
+CustomerResource::getUrl('edit', ['record' => $customer]); // /admin/customers/edit/1
+
+// View page
+CustomerResource::getUrl('view', ['record' => $customer]); // /admin/customers/1
+```
+
+### URLs for Modals
+
+Generate URLs that open modals:
+
+```php
+use Filament\Actions\EditAction;
+
+CustomerResource::getUrl(parameters: [
+    'tableAction' => EditAction::getDefaultName(),
+    'tableActionRecord' => $customer,
+]); // /admin/customers?tableAction=edit&tableActionRecord=1
+```
+
+## Authorization
+
+Filament respects [Laravel model policies](https://laravel.com/docs/authorization#creating-policies):
+
+- `viewAny()` - Controls resource visibility in navigation
+- `create()` - Controls access to Create page
+- `update()` - Controls access to Edit page
+- `view()` - Controls access to View page
+- `delete()` - Controls delete actions
+- `deleteAny()` - Controls bulk delete actions
+- `forceDelete()` / `forceDeleteAny()` - Controls force delete for soft-deleted records
+- `restore()` / `restoreAny()` - Controls restore for soft-deleted records
+
+<Warning>
+If you have a model policy, you must return `true` from `viewAny()` for the resource to appear in navigation.
+</Warning>
+
+### Skipping Authorization
+
+```php
+protected static bool $shouldSkipAuthorization = true;
+```
+
+## Pages
+
+Resources consist of multiple pages defined in `getPages()`:
+
+```php
+public static function getPages(): array
+{
+    return [
+        'index' => ListCustomers::route('/'),
+        'create' => CreateCustomer::route('/create'),
+        'edit' => EditCustomer::route('/{record}/edit'),
+        'view' => ViewCustomer::route('/{record}'),
+    ];
+}
+```
+
+You can delete pages you don't need. Just remove the file and its entry from `getPages()`.
+
+## Auto-Generating Resources
+
+Filament can inspect your database and generate forms and tables automatically:
+
+```bash
+php artisan make:filament-resource Customer --generate
+```
+
+<Note>
+This works best with well-structured databases that follow Laravel conventions.
+</Note>

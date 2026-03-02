@@ -1,0 +1,232 @@
+---
+title: Infolists Overview
+---
+
+## Introduction
+
+Filament's infolists package lets you display a read-only list of data for a specific entity. It's integrated into other Filament packages, such as inside panel resources, relation managers, and action modals. Understanding how to use the infolist builder will save you time when building custom Livewire applications or working with other Filament features.
+
+Infolists are designed to present structured data in a clean, organized format without the complexity of forms or the interactivity of tables. They excel at displaying detailed information about a single record, such as a user profile, product details, or order summary.
+
+## Use Cases
+
+Infolists are ideal for:
+
+- **View Pages**: Display detailed information about a specific record in a panel resource
+- **Action Modals**: Show read-only data in modal dialogs
+- **Relation Managers**: Present related record information
+- **Custom Livewire Components**: Build custom information displays in your application
+- **Dashboard Widgets**: Show key information in dashboard panels
+
+## Creating an Infolist
+
+Infolists are built using entry components from the `Filament\Infolists\Components` namespace. Each entry displays a specific type of data:
+
+```php
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\IconEntry;
+
+public function infolist(Infolist $infolist): Infolist
+{
+    return $infolist
+        ->schema([
+            TextEntry::make('title'),
+            TextEntry::make('author.name'),
+            ImageEntry::make('featured_image')
+                ->imageHeight(200),
+            IconEntry::make('is_published')
+                ->boolean(),
+        ]);
+}
+```
+
+## Entry State
+
+The data that an entry displays is called its "state". When using a panel resource, the infolist is aware of the record it is displaying, and the state is automatically set based on the attribute value.
+
+### Accessing Relationships
+
+You can use dot notation to access values from relationships:
+
+```php
+TextEntry::make('author.name')
+TextEntry::make('category.title')
+```
+
+### Accessing JSON Data
+
+Dot notation also works for accessing values within JSON or array columns:
+
+```php
+TextEntry::make('meta.description')
+TextEntry::make('settings.theme')
+```
+
+### Custom State
+
+You can manually set the state of an entry using the `state()` method:
+
+```php
+TextEntry::make('custom_field')
+    ->state(fn ($record) => $record->calculated_value)
+```
+
+## Entry Labels
+
+By default, entry labels are automatically generated from the entry name. You can customize labels:
+
+```php
+TextEntry::make('created_at')
+    ->label('Published Date')
+```
+
+For localization, use translation strings:
+
+```php
+TextEntry::make('title')
+    ->label(__('posts.fields.title'))
+```
+
+You can hide labels visually while maintaining accessibility:
+
+```php
+TextEntry::make('description')
+    ->hiddenLabel()
+```
+
+## Inline Labels
+
+Display labels next to entry content instead of above it:
+
+```php
+TextEntry::make('email')
+    ->inlineLabel()
+```
+
+Apply inline labels to all entries in a section:
+
+```php
+Section::make('Contact Information')
+    ->inlineLabel()
+    ->schema([
+        TextEntry::make('email'),
+        TextEntry::make('phone'),
+        TextEntry::make('website'),
+    ])
+```
+
+## Placeholder and Default Values
+
+Display placeholder text when an entry has no value:
+
+```php
+TextEntry::make('bio')
+    ->placeholder('No bio provided')
+```
+
+Or set a default value that is treated as real data:
+
+```php
+TextEntry::make('status')
+    ->default('draft')
+```
+
+## Actions and URLs
+
+Make entries clickable to navigate to a URL:
+
+```php
+TextEntry::make('title')
+    ->url(fn ($record) => route('posts.show', $record))
+    ->openUrlInNewTab()
+```
+
+## Conditional Visibility
+
+Hide entries based on conditions:
+
+```php
+TextEntry::make('admin_notes')
+    ->hidden(fn () => ! auth()->user()->isAdmin())
+
+TextEntry::make('published_at')
+    ->visible(fn ($record) => $record->is_published)
+```
+
+Hide based on the current operation:
+
+```php
+IconEntry::make('is_featured')
+    ->boolean()
+    ->hiddenOn('create')
+    ->visibleOn(['edit', 'view'])
+```
+
+## Tooltips
+
+Add helpful tooltips to entries:
+
+```php
+TextEntry::make('api_key')
+    ->tooltip('This key is used for API authentication')
+```
+
+## Alignment
+
+Control the alignment of entry content:
+
+```php
+TextEntry::make('price')
+    ->alignEnd()
+
+TextEntry::make('description')
+    ->alignCenter()
+```
+
+## Extra Content Slots
+
+Add additional content around entries using various slots:
+
+```php
+use Filament\Schemas\Components\Text;
+use Filament\Support\Enums\FontWeight;
+
+TextEntry::make('title')
+    ->belowContent(
+        Text::make('Featured post')
+            ->weight(FontWeight::Bold)
+    )
+    ->afterLabel(
+        Icon::make(Heroicon::Star)
+    )
+```
+
+Available slots:
+- `aboveLabel()` - Content above the label
+- `beforeLabel()` - Content before the label (inline)
+- `afterLabel()` - Content after the label (inline)
+- `belowLabel()` - Content below the label
+- `aboveContent()` - Content above the entry value
+- `beforeContent()` - Content before the entry value (inline)
+- `afterContent()` - Content after the entry value (inline)
+- `belowContent()` - Content below the entry value
+
+## Global Configuration
+
+Configure all instances of an entry type globally in a service provider:
+
+```php
+use Filament\Infolists\Components\TextEntry;
+
+public function boot(): void
+{
+    TextEntry::configureUsing(function (TextEntry $entry): void {
+        $entry->words(10);
+    });
+}
+```
+
+## Next Steps
+
+Now that you understand the basics of infolists, explore the available [entry types](/infolists/entries) to learn about the different ways you can display data.

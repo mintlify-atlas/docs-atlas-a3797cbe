@@ -1,0 +1,507 @@
+---
+title: Columns
+description: Display and format data in Filament tables with a variety of column types including text, icons, images, and editable columns.
+---
+
+## Introduction
+
+Columns define how data is displayed in each row of your table. Filament provides several built-in column types, all located in the `Filament\Tables\Columns` namespace.
+
+## Available column types
+
+<CardGroup cols={2}>
+  <Card title="Text Column" icon="text">
+    Display text with formatting, badges, colors, and icons
+  </Card>
+  <Card title="Icon Column" icon="star">
+    Show icons or boolean states with customizable colors
+  </Card>
+  <Card title="Image Column" icon="image">
+    Display images with various layouts and styles
+  </Card>
+  <Card title="Color Column" icon="palette">
+    Preview color values as visual swatches
+  </Card>
+</CardGroup>
+
+### Editable columns
+
+These columns allow users to update data directly in the table:
+
+<CardGroup cols={2}>
+  <Card title="Select Column" icon="chevron-down">
+    Dropdown selection for quick updates
+  </Card>
+  <Card title="Toggle Column" icon="toggle-on">
+    Boolean switch for instant toggling
+  </Card>
+  <Card title="Text Input Column" icon="keyboard">
+    Inline text editing
+  </Card>
+  <Card title="Checkbox Column" icon="check-square">
+    Checkbox for boolean values
+  </Card>
+</CardGroup>
+
+## Text Column
+
+The most common column type for displaying text content:
+
+```php
+use Filament\Tables\Columns\TextColumn;
+
+TextColumn::make('title')
+```
+
+### Formatting text
+
+<Tabs>
+  <Tab title="Colors">
+    Apply colors to text using the `color()` method:
+
+    ```php
+    TextColumn::make('status')
+        ->color('primary')
+
+    // Dynamic colors
+    TextColumn::make('status')
+        ->color(fn (string $state): string => match ($state) {
+            'draft' => 'gray',
+            'reviewing' => 'warning',
+            'published' => 'success',
+            'rejected' => 'danger',
+        })
+    ```
+  </Tab>
+
+  <Tab title="Badges">
+    Display text in badge format:
+
+    ```php
+    TextColumn::make('status')
+        ->badge()
+        ->color(fn (string $state): string => match ($state) {
+            'draft' => 'gray',
+            'reviewing' => 'warning',
+            'published' => 'success',
+            'rejected' => 'danger',
+        })
+    ```
+  </Tab>
+
+  <Tab title="Icons">
+    Add icons to text columns:
+
+    ```php
+    use Filament\Support\Enums\IconPosition;
+    use Filament\Support\Icons\Heroicon;
+
+    TextColumn::make('email')
+        ->icon(Heroicon::Envelope)
+        ->iconPosition(IconPosition::After)
+        ->iconColor('primary')
+    ```
+  </Tab>
+
+  <Tab title="Dates">
+    Format dates and times:
+
+    ```php
+    TextColumn::make('created_at')
+        ->date()
+
+    TextColumn::make('created_at')
+        ->dateTime()
+
+    TextColumn::make('created_at')
+        ->time()
+
+    // Custom format
+    TextColumn::make('created_at')
+        ->dateTime('F j, Y g:i A')
+    ```
+  </Tab>
+</Tabs>
+
+### Text column methods
+
+#### `badge(bool | Closure $condition = true)`
+Display the text as a badge with background color.
+
+#### `color(string | array | Closure $color)`
+Set the text color. Accepts color names like `'primary'`, `'success'`, `'danger'`, etc.
+
+#### `icon(string | Closure $icon)`
+Add an icon to the column.
+
+#### `iconColor(string | array | Closure $color)`
+Set the icon color independently from text color.
+
+#### `iconPosition(IconPosition | Closure $position)`
+Position the icon before or after text.
+
+#### `date(string $format = null)`
+Format the value as a date.
+
+#### `dateTime(string $format = null)`
+Format the value as a date and time.
+
+#### `time(string $format = null)`
+Format the value as a time.
+
+#### `money(string $currency = 'USD', int $divideBy = 0)`
+Format as currency.
+
+#### `numeric(int $decimalPlaces = 0)`
+Format as a number with separators.
+
+#### `formatStateUsing(Closure $callback)`
+Custom formatting function.
+
+#### `limit(int $length = 100, string $end = '...')`
+Truncate long text.
+
+#### `words(int $words = 100, string $end = '...')`
+Limit by word count.
+
+#### `wrap()`
+Allow text to wrap onto multiple lines.
+
+#### `copyable()`
+Add a copy-to-clipboard button.
+
+#### `description(string | Closure $description)`
+Add helper text below the column value.
+
+## Icon Column
+
+Display icons or boolean states:
+
+```php
+use Filament\Tables\Columns\IconColumn;
+
+IconColumn::make('is_active')
+    ->boolean()
+```
+
+### Boolean icons
+
+```php
+IconColumn::make('is_featured')
+    ->boolean()
+    ->trueIcon('heroicon-o-check-circle')
+    ->falseIcon('heroicon-o-x-circle')
+    ->trueColor('success')
+    ->falseColor('danger')
+```
+
+### Custom icon mappings
+
+```php
+use Filament\Support\Icons\Heroicon;
+
+IconColumn::make('status')
+    ->icon(fn (string $state): string => match ($state) {
+        'draft' => Heroicon::DocumentText,
+        'reviewing' => Heroicon::Eye,
+        'published' => Heroicon::CheckCircle,
+    })
+    ->color(fn (string $state): string => match ($state) {
+        'draft' => 'gray',
+        'reviewing' => 'warning',
+        'published' => 'success',
+    })
+```
+
+### Icon column methods
+
+#### `boolean(bool | Closure $condition = true)`
+Configure as a boolean column.
+
+#### `trueIcon(string | Closure $icon)`
+Icon to display when value is true.
+
+#### `falseIcon(string | Closure $icon)`
+Icon to display when value is false.
+
+#### `trueColor(string | array | Closure $color)`
+Color for true state.
+
+#### `falseColor(string | array | Closure $color)`
+Color for false state.
+
+#### `size(IconSize | string | Closure $size)`
+Set icon size.
+
+## Image Column
+
+Display images from storage or URLs:
+
+```php
+use Filament\Tables\Columns\ImageColumn;
+
+ImageColumn::make('avatar')
+    ->circular()
+```
+
+### Image layouts
+
+<Tabs>
+  <Tab title="Circular">
+    ```php
+    ImageColumn::make('avatar')
+        ->circular()
+    ```
+  </Tab>
+
+  <Tab title="Square">
+    ```php
+    ImageColumn::make('thumbnail')
+        ->square()
+        ->imageWidth(64)
+        ->imageHeight(64)
+    ```
+  </Tab>
+
+  <Tab title="Stacked">
+    ```php
+    ImageColumn::make('team.members.avatar')
+        ->circular()
+        ->stacked()
+        ->limit(3)
+        ->limitedRemainingText()
+    ```
+  </Tab>
+</Tabs>
+
+### Storage configuration
+
+```php
+ImageColumn::make('photo')
+    ->disk('s3')
+    ->visibility('private')
+```
+
+### Image column methods
+
+#### `circular(bool | Closure $condition = true)`
+Display image as a circle.
+
+#### `square(bool | Closure $condition = true)`
+Force square aspect ratio.
+
+#### `imageWidth(int | string | Closure $width)`
+Set image width in pixels.
+
+#### `imageHeight(int | string | Closure $height)`
+Set image height in pixels.
+
+#### `disk(string | Closure $disk)`
+Specify storage disk.
+
+#### `visibility(string | Closure $visibility)`
+Set visibility (`'public'` or `'private'`).
+
+#### `stacked(bool | Closure $condition = true)`
+Stack multiple images.
+
+#### `limit(int | Closure $limit)`
+Limit number of visible images.
+
+#### `limitedRemainingText(bool | Closure $condition = true)`
+Show "+X more" text for stacked images.
+
+#### `defaultImageUrl(string | Closure $url)`
+Fallback image when value is null.
+
+## Color Column
+
+Display color values as visual swatches:
+
+```php
+use Filament\Tables\Columns\ColorColumn;
+
+ColorColumn::make('color')
+```
+
+### Copyable colors
+
+```php
+ColorColumn::make('color')
+    ->copyable()
+    ->copyMessage('Color copied')
+    ->copyMessageDuration(1500)
+```
+
+## Editable Columns
+
+### Select Column
+
+Allow inline editing with a dropdown:
+
+```php
+use Filament\Tables\Columns\SelectColumn;
+
+SelectColumn::make('status')
+    ->options([
+        'draft' => 'Draft',
+        'reviewing' => 'Reviewing',
+        'published' => 'Published',
+    ])
+```
+
+### Toggle Column
+
+Quick boolean toggle:
+
+```php
+use Filament\Tables\Columns\ToggleColumn;
+
+ToggleColumn::make('is_active')
+```
+
+### Text Input Column
+
+Inline text editing:
+
+```php
+use Filament\Tables\Columns\TextInputColumn;
+
+TextInputColumn::make('title')
+    ->rules(['required', 'max:255'])
+```
+
+### Checkbox Column
+
+Checkbox for boolean values:
+
+```php
+use Filament\Tables\Columns\CheckboxColumn;
+
+CheckboxColumn::make('is_featured')
+```
+
+## Common column methods
+
+These methods are available on all column types:
+
+#### `label(string | Closure $label)`
+Set the column header label.
+
+#### `sortable(bool | array | Closure $condition = true)`
+Make the column sortable.
+
+#### `searchable(bool | array | Closure $condition = true)`
+Make the column searchable.
+
+#### `toggleable(bool $condition = true, bool $isToggledHiddenByDefault = false)`
+Allow users to show/hide the column.
+
+#### `alignStart()` / `alignCenter()` / `alignEnd()`
+Set horizontal alignment.
+
+#### `default(mixed $state)`
+Default value when state is null.
+
+#### `placeholder(string | Closure $placeholder)`
+Placeholder text for empty values.
+
+#### `tooltip(string | Closure $tooltip)`
+Add tooltip on hover.
+
+#### `url(string | Closure $url, bool $shouldOpenInNewTab = false)`
+Make column clickable.
+
+#### `action(Action | Closure $action)`
+Trigger an action when clicked.
+
+#### `width(string | Closure $width)`
+Set column width.
+
+#### `grow(bool $condition = true)`
+Allow column to consume extra space.
+
+#### `hidden(bool | Closure $condition = true)`
+Conditionally hide the column.
+
+#### `visible(bool | Closure $condition = true)`
+Conditionally show the column.
+
+## Relationships
+
+Access related model data using dot notation:
+
+```php
+TextColumn::make('author.name')
+TextColumn::make('category.parent.name')
+```
+
+### Counting relationships
+
+```php
+TextColumn::make('comments_count')
+    ->counts('comments')
+```
+
+### Checking existence
+
+```php
+TextColumn::make('comments_exists')
+    ->exists('comments')
+```
+
+### Aggregating relationships
+
+```php
+TextColumn::make('orders_avg_total')
+    ->avg('orders', 'total')
+    ->money()
+
+TextColumn::make('orders_sum_total')
+    ->sum('orders', 'total')
+    ->money()
+
+TextColumn::make('orders_max_total')
+    ->max('orders', 'total')
+    ->money()
+
+TextColumn::make('orders_min_total')
+    ->min('orders', 'total')
+    ->money()
+```
+
+## Column groups
+
+Group multiple columns under a single heading:
+
+```php
+use Filament\Tables\Columns\ColumnGroup;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+
+ColumnGroup::make('Visibility', [
+    TextColumn::make('status'),
+    IconColumn::make('is_featured'),
+])
+```
+
+## Custom columns
+
+Create custom columns using Blade views:
+
+```php
+use Filament\Tables\Columns\ViewColumn;
+
+ViewColumn::make('status')
+    ->view('filament.tables.columns.status-badge')
+```
+
+In your view file:
+
+```blade
+<div>
+    <x-filament::badge :color="$getState() === 'published' ? 'success' : 'gray'">
+        {{ $getState() }}
+    </x-filament::badge>
+</div>
+```

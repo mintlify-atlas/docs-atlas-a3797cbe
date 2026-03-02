@@ -1,0 +1,277 @@
+---
+title: Filter
+description: Filter class API reference for table filtering
+---
+
+The `Filter` class provides simple filtering functionality for Filament tables. It creates a checkbox or toggle-based filter that can be used to filter table records.
+
+## Namespace
+
+```php
+Filament\Tables\Filters\Filter
+```
+
+## Inheritance
+
+Extends: `Filament\Tables\Filters\BaseFilter`
+
+## Usage
+
+The Filter class creates a simple boolean filter with a checkbox or toggle interface.
+
+**Example:**
+
+```php
+use Filament\Tables\Filters\Filter;
+use Illuminate\Database\Eloquent\Builder;
+
+Filter::make('is_featured')
+    ->label('Featured')
+    ->query(fn (Builder $query): Builder => $query->where('is_featured', true));
+```
+
+## Methods
+
+### toggle()
+
+Use a toggle switch instead of a checkbox.
+
+```php
+public function toggle(): static
+```
+
+<ParamField path="return" type="static">
+  Returns the filter instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+Filter::make('is_active')
+    ->toggle()
+    ->query(fn (Builder $query): Builder => $query->where('is_active', true));
+```
+
+### checkbox()
+
+Use a checkbox (default behavior).
+
+```php
+public function checkbox(): static
+```
+
+<ParamField path="return" type="static">
+  Returns the filter instance for method chaining.
+</ParamField>
+
+### formComponent()
+
+Set a custom form component for the filter.
+
+```php
+public function formComponent(string $component): static
+```
+
+<ParamField path="component" type="string">
+  The fully qualified class name of a field component (e.g., `Checkbox::class` or `Toggle::class`).
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the filter instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+use Filament\Forms\Components\Checkbox;
+
+Filter::make('verified')
+    ->formComponent(Checkbox::class)
+    ->query(fn (Builder $query): Builder => $query->whereNotNull('email_verified_at'));
+```
+
+### getFormField()
+
+Get the form field component for this filter.
+
+```php
+public function getFormField(): Field
+```
+
+<ParamField path="return" type="Field">
+  Returns the configured form field component.
+</ParamField>
+
+### getResetState()
+
+Get the state to use when resetting the filter.
+
+```php
+public function getResetState(): array
+```
+
+<ParamField path="return" type="array<string, mixed>">
+  Returns an array with the reset state (typically `['isActive' => false]`).
+</ParamField>
+
+## Inherited Methods
+
+The Filter class inherits methods from `BaseFilter`:
+
+### make()
+
+Create a new filter instance.
+
+```php
+public static function make(string $name): static
+```
+
+<ParamField path="name" type="string">
+  The unique identifier for this filter.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the filter instance.
+</ParamField>
+
+### label()
+
+Set the filter label.
+
+```php
+public function label(string | Htmlable | Closure | null $label): static
+```
+
+<ParamField path="label" type="string | Htmlable | Closure | null">
+  The label to display for this filter.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the filter instance for method chaining.
+</ParamField>
+
+### query()
+
+Define the query modification when the filter is active.
+
+```php
+public function query(Closure | null $callback): static
+```
+
+<ParamField path="callback" type="Closure | null">
+  A callback that receives the query builder and modifies it. The callback should accept `Builder $query` and optionally `array $state`.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the filter instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+Filter::make('verified')
+    ->query(fn (Builder $query): Builder => $query->whereNotNull('email_verified_at'));
+```
+
+### default()
+
+Set the filter as active by default.
+
+```php
+public function default(bool | Closure $condition = true): static
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether the filter should be active by default.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the filter instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+Filter::make('active')
+    ->default()
+    ->query(fn (Builder $query): Builder => $query->where('status', 'active'));
+```
+
+### indicator()
+
+Set a custom indicator for when the filter is active.
+
+```php
+public function indicator(string | Indicator | Closure $indicator): static
+```
+
+<ParamField path="indicator" type="string | Indicator | Closure">
+  The indicator text or an Indicator instance.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the filter instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+Filter::make('is_featured')
+    ->indicator('Featured items')
+    ->query(fn (Builder $query): Builder => $query->where('is_featured', true));
+```
+
+## Filter State
+
+The Filter class manages a simple state structure:
+
+```php
+[
+    'isActive' => true, // or false
+]
+```
+
+You can access this state in the query callback:
+
+```php
+Filter::make('verified')
+    ->query(function (Builder $query, array $state): Builder {
+        if ($state['isActive'] ?? false) {
+            return $query->whereNotNull('email_verified_at');
+        }
+        
+        return $query;
+    });
+```
+
+## Complete Example
+
+```php
+use Filament\Tables\Filters\Filter;
+use Illuminate\Database\Eloquent\Builder;
+
+Filter::make('is_featured')
+    ->label('Featured Posts')
+    ->toggle()
+    ->default()
+    ->query(fn (Builder $query): Builder => $query->where('is_featured', true))
+    ->indicator('Showing featured posts');
+```
+
+## Properties
+
+### $formComponent
+
+```php
+protected string $formComponent = Checkbox::class;
+```
+
+The form component class to use for the filter input.
+
+## Related Classes
+
+- [Table](/api/table) - Table builder
+- [Column](/api/column) - Table columns
+- `BaseFilter` - Base filter class with additional functionality
+- `SelectFilter` - Filter with select dropdown
+- `TernaryFilter` - Three-state filter (yes/no/all)

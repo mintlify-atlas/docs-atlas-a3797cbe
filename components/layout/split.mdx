@@ -1,0 +1,161 @@
+---
+title: Split (Flex)
+---
+
+## Introduction
+
+The Split component (also known as Flex) creates flexible layouts using flexbox:
+
+```php
+use Filament\Schemas\Components\Flex;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+
+Flex::make([
+    Section::make([
+        TextInput::make('title'),
+        Textarea::make('content'),
+    ]),
+    Section::make([
+        Toggle::make('is_published'),
+        Toggle::make('is_featured'),
+    ])->grow(false),
+])->from('md')
+```
+
+This creates a flexible sidebar layout where the first section grows to fill available space.
+
+## Breakpoint
+
+Control when the horizontal layout starts:
+
+```php
+Flex::make([
+    // ...
+])->from('lg')
+```
+
+<ParamField path="breakpoint" type="string | Closure" default="'md'">
+  The Tailwind breakpoint (`sm`, `md`, `lg`, `xl`, `2xl`).
+</ParamField>
+
+On smaller devices, components stack vertically.
+
+## Controlling growth
+
+By default, all components in a Flex grow to fill space. Prevent growth:
+
+```php
+Section::make([
+    // ...
+])->grow(false)
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether the component should grow.
+</ParamField>
+
+## Sidebar layouts
+
+Create a common sidebar pattern:
+
+```php
+Flex::make([
+    // Main content area (grows)
+    Section::make([
+        TextInput::make('title'),
+        Textarea::make('content'),
+        RichEditor::make('body'),
+    ]),
+    
+    // Fixed-width sidebar
+    Section::make([
+        Toggle::make('is_published'),
+        Select::make('category_id'),
+        FileUpload::make('featured_image'),
+    ])->grow(false),
+])->from('md')
+```
+
+## Alignment
+
+Control how components align:
+
+```php
+Flex::make([
+    // ...
+])
+    ->alignItems('start') // top
+    ->justifyContent('between') // space between
+```
+
+## Direction
+
+Control flex direction:
+
+```php
+Flex::make([
+    // ...
+])
+    ->direction('column') // vertical on all sizes
+```
+
+Or use responsive direction:
+
+```php
+Flex::make([
+    // ...
+])
+    ->from('md') // horizontal from md up, vertical below
+```
+
+## Gap
+
+Control spacing between items:
+
+```php
+Flex::make([
+    // ...
+])
+    ->gap('xl') // larger gap
+```
+
+## Use cases
+
+### Content with metadata sidebar
+
+```php
+Flex::make([
+    Section::make('Content')
+        ->schema([
+            TextInput::make('title'),
+            RichEditor::make('body'),
+        ]),
+    Section::make('Metadata')
+        ->schema([
+            DateTimePicker::make('published_at'),
+            Select::make('status'),
+        ])
+        ->grow(false),
+])->from('lg')
+```
+
+### Compact forms
+
+```php
+Flex::make([
+    TextInput::make('first_name'),
+    TextInput::make('last_name'),
+])->from('sm')
+```
+
+### Dashboard cards
+
+```php
+Flex::make([
+    Card::make()->schema([/* stats */]),
+    Card::make()->schema([/* chart */])->grow(false),
+])
+```

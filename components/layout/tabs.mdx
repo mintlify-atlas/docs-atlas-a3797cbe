@@ -1,0 +1,256 @@
+---
+title: Tabs
+---
+
+## Introduction
+
+Tabs organize content into multiple panels, reducing visible complexity:
+
+```php
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+
+Tabs::make('Tabs')
+    ->tabs([
+        Tab::make('Tab 1')
+            ->schema([
+                // ...
+            ]),
+        Tab::make('Tab 2')
+            ->schema([
+                // ...
+            ]),
+        Tab::make('Tab 3')
+            ->schema([
+                // ...
+            ]),
+    ])
+```
+
+<ParamField path="label" type="string | Htmlable | Closure">
+  The tabs container label.
+</ParamField>
+
+<ParamField path="tabs" type="array | Closure">
+  An array of Tab components.
+</ParamField>
+
+## Default active tab
+
+Set which tab is open by default:
+
+```php
+Tabs::make('Tabs')
+    ->tabs([
+        // ...
+    ])
+    ->activeTab(2)
+```
+
+<ParamField path="activeTab" type="int | Closure" default="1">
+  The index of the active tab (1-based).
+</ParamField>
+
+## Tab icons
+
+Add icons to tabs:
+
+```php
+use Filament\Support\Icons\Heroicon;
+
+Tabs::make('Tabs')
+    ->tabs([
+        Tab::make('Notifications')
+            ->icon(Heroicon::Bell)
+            ->schema([
+                // ...
+            ]),
+    ])
+```
+
+<ParamField path="icon" type="string | BackedEnum | Htmlable | Closure">
+  The icon to display.
+</ParamField>
+
+### Icon position
+
+Control icon position:
+
+```php
+use Filament\Support\Enums\IconPosition;
+
+Tab::make('Notifications')
+    ->icon(Heroicon::Bell)
+    ->iconPosition(IconPosition::After)
+```
+
+<ParamField path="position" type="IconPosition | Closure" default="IconPosition::Before">
+  The icon position (Before or After).
+</ParamField>
+
+## Tab badges
+
+Display badges on tabs:
+
+```php
+Tab::make('Notifications')
+    ->badge(5)
+```
+
+<ParamField path="badge" type="string | int | float | Closure">
+  The badge content.
+</ParamField>
+
+### Badge color
+
+Customize badge colors:
+
+```php
+Tab::make('Notifications')
+    ->badge(5)
+    ->badgeColor('info')
+```
+
+<ParamField path="color" type="string | array | Closure">
+  The badge color.
+</ParamField>
+
+### Deferred badges
+
+Load badges asynchronously for better performance:
+
+```php
+Tabs::make('Tabs')
+    ->key('notifications-tabs')
+    ->tabs([
+        Tab::make('Notifications')
+            ->badge(static fn (): int => Notification::query()->where('unread', true)->count())
+            ->deferBadge()
+            ->schema([
+                // ...
+            ]),
+    ])
+```
+
+<Warning>
+  The badge value must be from a closure when using `deferBadge()`. The Tabs component must have a `key()` set.
+</Warning>
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to defer badge loading.
+</ParamField>
+
+## Grid columns in tabs
+
+Customize the grid within tabs:
+
+```php
+Tab::make('Tab 1')
+    ->schema([
+        // ...
+    ])
+    ->columns(3)
+```
+
+<ParamField path="columns" type="int | array | Closure">
+  The number of columns or responsive configuration.
+</ParamField>
+
+## Scrollable tabs
+
+By default, tabs scroll horizontally. Disable scrolling:
+
+```php
+Tabs::make('Tabs')
+    ->tabs([
+        // ...
+    ])
+    ->scrollable(false)
+```
+
+When disabled, overflow tabs appear in a dropdown.
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether tabs are scrollable.
+</ParamField>
+
+## Vertical tabs
+
+Render tabs vertically:
+
+```php
+Tabs::make('Tabs')
+    ->tabs([
+        // ...
+    ])
+    ->vertical()
+```
+
+<ParamField path="condition" type="bool | Closure" default="false">
+  Whether to render tabs vertically.
+</ParamField>
+
+## Removing the container
+
+Remove the styled container:
+
+```php
+Tabs::make('Tabs')
+    ->tabs([
+        // ...
+    ])
+    ->contained(false)
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to use a container.
+</ParamField>
+
+## Persisting the active tab
+
+### In local storage
+
+Persist the current tab in local storage:
+
+```php
+Tabs::make('Tabs')
+    ->tabs([
+        // ...
+    ])
+    ->persistTab()
+    ->id('order-tabs')
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to persist the tab.
+</ParamField>
+
+<ParamField path="id" type="string | Closure">
+  A unique ID for the tabs (required for persistence).
+</ParamField>
+
+### In query string
+
+Persist the current tab in the URL:
+
+```php
+Tabs::make('Tabs')
+    ->tabs([
+        // ...
+    ])
+    ->persistTabInQueryString()
+```
+
+Customize the query parameter:
+
+```php
+Tabs::make('Tabs')
+    ->tabs([
+        // ...
+    ])
+    ->persistTabInQueryString('settings-tab')
+```
+
+<ParamField path="key" type="string | Closure" default="'tab'">
+  The query string parameter name.
+</ParamField>

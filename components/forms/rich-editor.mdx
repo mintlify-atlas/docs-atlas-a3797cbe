@@ -1,0 +1,134 @@
+---
+title: RichEditor
+---
+
+The rich editor component provides a WYSIWYG editing experience using TipTap.
+
+## Basic Usage
+
+```php
+use Filament\Forms\Components\RichEditor;
+
+RichEditor::make('content')
+```
+
+## Available Methods
+
+<ParamField path="toolbarButtons" type="method">
+  Sets which toolbar buttons are available.
+  
+  ```php
+  RichEditor::make('content')
+      ->toolbarButtons([
+          'bold',
+          'italic',
+          'underline',
+          'strike',
+          'link',
+          'bulletList',
+          'orderedList',
+          'h2',
+          'h3',
+          'blockquote',
+          'codeBlock',
+      ])
+  ```
+</ParamField>
+
+<ParamField path="disableToolbarButtons" type="method">
+  Disables specific toolbar buttons.
+  
+  ```php
+  RichEditor::make('content')
+      ->disableToolbarButtons(['codeBlock', 'strike'])
+  ```
+</ParamField>
+
+<ParamField path="fileAttachmentsDisk" type="method">
+  Sets the disk for file attachments.
+  
+  ```php
+  RichEditor::make('content')
+      ->fileAttachmentsDisk('s3')
+  ```
+</ParamField>
+
+<ParamField path="fileAttachmentsDirectory" type="method">
+  Sets the directory for file attachments.
+  
+  ```php
+  RichEditor::make('content')
+      ->fileAttachmentsDirectory('attachments')
+  ```
+</ParamField>
+
+<ParamField path="fileAttachmentsVisibility" type="method">
+  Sets visibility for file attachments.
+  
+  ```php
+  RichEditor::make('content')
+      ->fileAttachmentsVisibility('private')
+  ```
+</ParamField>
+
+<ParamField path="disableGrammarly" type="method">
+  Disables Grammarly.
+  
+  ```php
+  RichEditor::make('content')
+      ->disableGrammarly()
+  ```
+</ParamField>
+
+<ParamField path="maxContentWidth" type="method">
+  Sets maximum content width.
+  
+  ```php
+  RichEditor::make('content')
+      ->maxContentWidth('5xl')
+  ```
+</ParamField>
+
+## Common Patterns
+
+### Blog Post Editor
+
+```php
+RichEditor::make('content')
+    ->toolbarButtons([
+        'bold',
+        'italic',
+        'link',
+        'bulletList',
+        'orderedList',
+        'h2',
+        'h3',
+        'blockquote',
+    ])
+    ->fileAttachmentsDisk('public')
+    ->fileAttachmentsDirectory('blog-attachments')
+    ->required()
+```
+
+### Simple Editor
+
+```php
+RichEditor::make('description')
+    ->toolbarButtons([
+        'bold',
+        'italic',
+        'link',
+        'bulletList',
+    ])
+    ->maxContentWidth('full')
+```
+
+### Full-Featured Editor
+
+```php
+RichEditor::make('content')
+    ->fileAttachmentsDisk('s3')
+    ->fileAttachmentsDirectory('documents')
+    ->maxContentWidth('5xl')
+    ->required()
+```

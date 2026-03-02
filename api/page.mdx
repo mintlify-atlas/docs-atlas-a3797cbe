@@ -1,0 +1,440 @@
+---
+title: Page
+description: Page class API reference for creating custom pages in Filament panels
+---
+
+The `Page` class is the foundation for creating custom pages in Filament panels. Pages can include forms, widgets, actions, and custom content, and can be organized within navigation groups and clusters.
+
+## Namespace
+
+```php
+Filament\Pages\Page
+```
+
+## Inheritance
+
+Extends: `Filament\Pages\BasePage`
+
+Implements: `HasActions`, `HasRenderHookScopes`, `HasSchemas`
+
+## Type Parameters
+
+- `TConfiguration` - The page configuration class (extends `PageConfiguration`)
+
+## Static Methods
+
+### getUrl()
+
+Generate a URL to this page.
+
+```php
+public static function getUrl(
+    array $parameters = [],
+    bool $isAbsolute = true,
+    ?string $panel = null,
+    ?Model $tenant = null,
+    bool $shouldGuessMissingParameters = false,
+    ?string $configuration = null
+): string
+```
+
+<ParamField path="parameters" type="array<mixed>" default="[]">
+  Additional route parameters.
+</ParamField>
+
+<ParamField path="isAbsolute" type="bool" default="true">
+  Whether to generate an absolute URL.
+</ParamField>
+
+<ParamField path="panel" type="string | null" default="null">
+  The panel ID. Defaults to the current panel.
+</ParamField>
+
+<ParamField path="tenant" type="Model | null" default="null">
+  The tenant model for multi-tenancy.
+</ParamField>
+
+<ParamField path="shouldGuessMissingParameters" type="bool" default="false">
+  Whether to guess missing route parameters.
+</ParamField>
+
+<ParamField path="configuration" type="string | null" default="null">
+  The configuration key.
+</ParamField>
+
+<ParamField path="return" type="string">
+  Returns the generated URL.
+</ParamField>
+
+### registerRoutes()
+
+Register the routes for this page.
+
+```php
+public static function registerRoutes(
+    Panel $panel,
+    ?PageConfiguration $configuration = null
+): void
+```
+
+<ParamField path="panel" type="Panel">
+  The panel instance.
+</ParamField>
+
+<ParamField path="configuration" type="PageConfiguration | null">
+  Optional page configuration.
+</ParamField>
+
+### registerNavigationItems()
+
+Register navigation items for this page.
+
+```php
+public static function registerNavigationItems(): void
+```
+
+This method is called automatically to register the page in the panel navigation.
+
+### getNavigationItems()
+
+Get the navigation items for this page.
+
+```php
+public static function getNavigationItems(): array
+```
+
+<ParamField path="return" type="array<NavigationItem>">
+  Returns an array of navigation items.
+</ParamField>
+
+### getRouteName()
+
+Get the route name for this page.
+
+```php
+public static function getRouteName(?Panel $panel = null): string
+```
+
+<ParamField path="panel" type="Panel | null">
+  The panel instance. Defaults to the current panel.
+</ParamField>
+
+<ParamField path="return" type="string">
+  Returns the route name.
+</ParamField>
+
+### getNavigationLabel()
+
+Get the navigation label for this page.
+
+```php
+public static function getNavigationLabel(): string
+```
+
+<ParamField path="return" type="string">
+  Returns the navigation label.
+</ParamField>
+
+### getNavigationIcon()
+
+Get the navigation icon for this page.
+
+```php
+public static function getNavigationIcon(): string | BackedEnum | Htmlable | null
+```
+
+<ParamField path="return" type="string | BackedEnum | Htmlable | null">
+  Returns the icon identifier.
+</ParamField>
+
+### getNavigationGroup()
+
+Get the navigation group for this page.
+
+```php
+public static function getNavigationGroup(): string | UnitEnum | null
+```
+
+<ParamField path="return" type="string | UnitEnum | null">
+  Returns the navigation group name.
+</ParamField>
+
+### getNavigationSort()
+
+Get the navigation sort order for this page.
+
+```php
+public static function getNavigationSort(): ?int
+```
+
+<ParamField path="return" type="int | null">
+  Returns the sort order.
+</ParamField>
+
+### getNavigationBadge()
+
+Get the navigation badge for this page.
+
+```php
+public static function getNavigationBadge(): ?string
+```
+
+<ParamField path="return" type="string | null">
+  Returns the badge content.
+</ParamField>
+
+### getNavigationBadgeColor()
+
+Get the navigation badge color.
+
+```php
+public static function getNavigationBadgeColor(): string | array | null
+```
+
+<ParamField path="return" type="string | array<string> | null">
+  Returns the badge color.
+</ParamField>
+
+### shouldRegisterNavigation()
+
+Check if this page should register navigation items.
+
+```php
+public static function shouldRegisterNavigation(): bool
+```
+
+<ParamField path="return" type="bool">
+  Returns `true` if navigation should be registered.
+</ParamField>
+
+### isDiscovered()
+
+Check if this page should be automatically discovered.
+
+```php
+public static function isDiscovered(): bool
+```
+
+<ParamField path="return" type="bool">
+  Returns `true` if the page should be discovered.
+</ParamField>
+
+### getCluster()
+
+Get the cluster this page belongs to.
+
+```php
+public static function getCluster(): ?string
+```
+
+<ParamField path="return" type="class-string<Cluster> | null">
+  Returns the cluster class name or `null`.
+</ParamField>
+
+## Instance Methods
+
+### getLayout()
+
+Get the layout view for this page.
+
+```php
+public function getLayout(): string
+```
+
+<ParamField path="return" type="string">
+  Returns the layout view name.
+</ParamField>
+
+### getBreadcrumbs()
+
+Get the breadcrumbs for this page.
+
+```php
+public function getBreadcrumbs(): array
+```
+
+<ParamField path="return" type="array<string>">
+  Returns an array of breadcrumb labels.
+</ParamField>
+
+### getFooter()
+
+Get the footer view for this page.
+
+```php
+public function getFooter(): ?View
+```
+
+<ParamField path="return" type="View | null">
+  Returns the footer view or `null`.
+</ParamField>
+
+### getHeader()
+
+Get the header view for this page.
+
+```php
+public function getHeader(): ?View
+```
+
+<ParamField path="return" type="View | null">
+  Returns the header view or `null`.
+</ParamField>
+
+### content()
+
+Define the content schema for this page.
+
+```php
+public function content(Schema $schema): Schema
+```
+
+<ParamField path="schema" type="Schema">
+  The schema instance to configure.
+</ParamField>
+
+<ParamField path="return" type="Schema">
+  Returns the configured schema.
+</ParamField>
+
+**Example:**
+
+```php
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+
+public function content(Schema $schema): Schema
+{
+    return $schema
+        ->components([
+            Section::make('Content')
+                ->schema([
+                    // Components...
+                ]),
+        ]);
+}
+```
+
+### getHeaderWidgets()
+
+Get the widgets to display in the page header.
+
+```php
+protected function getHeaderWidgets(): array
+```
+
+<ParamField path="return" type="array<class-string<Widget> | WidgetConfiguration>">
+  Returns an array of widget configurations.
+</ParamField>
+
+### getFooterWidgets()
+
+Get the widgets to display in the page footer.
+
+```php
+protected function getFooterWidgets(): array
+```
+
+<ParamField path="return" type="array<class-string<Widget> | WidgetConfiguration>">
+  Returns an array of widget configurations.
+</ParamField>
+
+### getHeaderWidgetsColumns()
+
+Get the column configuration for header widgets.
+
+```php
+public function getHeaderWidgetsColumns(): int | array
+```
+
+<ParamField path="return" type="int | array<string, ?int>">
+  Returns the number of columns or responsive column configuration.
+</ParamField>
+
+### getFooterWidgetsColumns()
+
+Get the column configuration for footer widgets.
+
+```php
+public function getFooterWidgetsColumns(): int | array
+```
+
+<ParamField path="return" type="int | array<string, ?int>">
+  Returns the number of columns or responsive column configuration.
+</ParamField>
+
+### getWidgetData()
+
+Get data to pass to page widgets.
+
+```php
+public function getWidgetData(): array
+```
+
+<ParamField path="return" type="array<string, mixed>">
+  Returns an array of data to pass to widgets.
+</ParamField>
+
+## Properties
+
+### $cluster
+
+```php
+protected static ?string $cluster = null;
+```
+
+The cluster class this page belongs to.
+
+### $navigationGroup
+
+```php
+protected static string | UnitEnum | null $navigationGroup = null;
+```
+
+The navigation group for this page.
+
+### $navigationIcon
+
+```php
+protected static string | BackedEnum | null $navigationIcon = null;
+```
+
+The navigation icon for this page.
+
+### $navigationLabel
+
+```php
+protected static ?string $navigationLabel = null;
+```
+
+The navigation label for this page.
+
+### $navigationSort
+
+```php
+protected static ?int $navigationSort = null;
+```
+
+The navigation sort order.
+
+### $shouldRegisterNavigation
+
+```php
+protected static bool $shouldRegisterNavigation = true;
+```
+
+Whether this page should register navigation items.
+
+## Traits
+
+- `CanAuthorizeAccess` - Authorization checks
+- `HasErrorNotifications` - Error notification handling
+- `HasRoutes` - Route management
+- `HasSubNavigation` - Sub-navigation support
+- `InteractsWithHeaderActions` - Header action management
+
+## Related Classes
+
+- [Resource](/api/resource) - For CRUD pages
+- [Panel](/api/panel) - Panel configuration
+- [Action](/api/action) - Page actions

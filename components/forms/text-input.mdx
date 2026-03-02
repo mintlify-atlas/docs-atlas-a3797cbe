@@ -1,0 +1,376 @@
+---
+title: TextInput
+---
+
+The text input component allows you to interact with a string value.
+
+## Basic Usage
+
+```php
+use Filament\Forms\Components\TextInput;
+
+TextInput::make('name')
+```
+
+## Available Methods
+
+<ParamField path="email" type="method">
+  Sets the input type to email and adds email validation.
+  
+  ```php
+  TextInput::make('email')
+      ->email()
+  ```
+</ParamField>
+
+<ParamField path="numeric" type="method">
+  Sets the input type to numeric and adds numeric validation.
+  
+  ```php
+  TextInput::make('price')
+      ->numeric()
+  ```
+</ParamField>
+
+<ParamField path="integer" type="method">
+  Sets the input type to integer and adds integer validation.
+  
+  ```php
+  TextInput::make('quantity')
+      ->integer()
+  ```
+</ParamField>
+
+<ParamField path="password" type="method">
+  Sets the input type to password.
+  
+  ```php
+  TextInput::make('password')
+      ->password()
+  ```
+</ParamField>
+
+<ParamField path="tel" type="method">
+  Sets the input type to tel and adds phone number validation.
+  
+  ```php
+  TextInput::make('phone')
+      ->tel()
+  ```
+</ParamField>
+
+<ParamField path="url" type="method">
+  Sets the input type to URL and adds URL validation.
+  
+  ```php
+  TextInput::make('website')
+      ->url()
+  ```
+</ParamField>
+
+<ParamField path="type" type="method">
+  Sets a custom HTML input type.
+  
+  ```php
+  TextInput::make('color')
+      ->type('color')
+  ```
+</ParamField>
+
+<ParamField path="mask" type="method">
+  Applies an input mask using Alpine.js.
+  
+  ```php
+  use Filament\Support\RawJs;
+  
+  TextInput::make('birthday')
+      ->mask('99/99/9999')
+      ->placeholder('MM/DD/YYYY')
+  
+  TextInput::make('cardNumber')
+      ->mask(RawJs::make('$input.startsWith("34") ? "9999 999999 99999" : "9999 9999 9999 9999"'))
+  ```
+</ParamField>
+
+<ParamField path="prefix" type="method">
+  Adds text before the input.
+  
+  ```php
+  TextInput::make('domain')
+      ->prefix('https://')
+  ```
+</ParamField>
+
+<ParamField path="suffix" type="method">
+  Adds text after the input.
+  
+  ```php
+  TextInput::make('domain')
+      ->suffix('.com')
+  ```
+</ParamField>
+
+<ParamField path="prefixIcon" type="method">
+  Adds an icon before the input.
+  
+  ```php
+  use Filament\Support\Icons\Heroicon;
+  
+  TextInput::make('email')
+      ->prefixIcon(Heroicon::Envelope)
+  ```
+</ParamField>
+
+<ParamField path="suffixIcon" type="method">
+  Adds an icon after the input.
+  
+  ```php
+  use Filament\Support\Icons\Heroicon;
+  
+  TextInput::make('website')
+      ->suffixIcon(Heroicon::GlobeAlt)
+  ```
+</ParamField>
+
+<ParamField path="prefixIconColor" type="method">
+  Sets the color of the prefix icon.
+  
+  ```php
+  TextInput::make('email')
+      ->prefixIcon(Heroicon::Envelope)
+      ->prefixIconColor('primary')
+  ```
+</ParamField>
+
+<ParamField path="suffixIconColor" type="method">
+  Sets the color of the suffix icon.
+  
+  ```php
+  TextInput::make('status')
+      ->suffixIcon(Heroicon::CheckCircle)
+      ->suffixIconColor('success')
+  ```
+</ParamField>
+
+<ParamField path="revealable" type="method">
+  Makes password inputs revealable with a toggle button.
+  
+  ```php
+  TextInput::make('password')
+      ->password()
+      ->revealable()
+  ```
+</ParamField>
+
+<ParamField path="copyable" type="method">
+  Adds a copy-to-clipboard button.
+  
+  ```php
+  TextInput::make('apiKey')
+      ->copyable(copyMessage: 'Copied!', copyMessageDuration: 1500)
+  ```
+</ParamField>
+
+<ParamField path="datalist" type="method">
+  Adds datalist autocomplete options.
+  
+  ```php
+  TextInput::make('manufacturer')
+      ->datalist(['BMW', 'Ford', 'Mercedes-Benz', 'Toyota'])
+  ```
+</ParamField>
+
+<ParamField path="autocomplete" type="method">
+  Sets the autocomplete attribute.
+  
+  ```php
+  TextInput::make('password')
+      ->password()
+      ->autocomplete('new-password')
+  ```
+</ParamField>
+
+<ParamField path="autocapitalize" type="method">
+  Sets the autocapitalize attribute.
+  
+  ```php
+  TextInput::make('name')
+      ->autocapitalize('words')
+  ```
+</ParamField>
+
+<ParamField path="inputMode" type="method">
+  Sets the inputmode attribute.
+  
+  ```php
+  TextInput::make('amount')
+      ->numeric()
+      ->inputMode('decimal')
+  ```
+</ParamField>
+
+<ParamField path="step" type="method">
+  Sets the step attribute for numeric inputs.
+  
+  ```php
+  TextInput::make('price')
+      ->numeric()
+      ->step(0.01)
+  ```
+</ParamField>
+
+<ParamField path="minValue" type="method">
+  Sets the minimum value for numeric inputs.
+  
+  ```php
+  TextInput::make('quantity')
+      ->numeric()
+      ->minValue(1)
+  ```
+</ParamField>
+
+<ParamField path="maxValue" type="method">
+  Sets the maximum value for numeric inputs.
+  
+  ```php
+  TextInput::make('quantity')
+      ->numeric()
+      ->maxValue(100)
+  ```
+</ParamField>
+
+<ParamField path="minLength" type="method">
+  Sets the minimum length validation.
+  
+  ```php
+  TextInput::make('name')
+      ->minLength(2)
+  ```
+</ParamField>
+
+<ParamField path="maxLength" type="method">
+  Sets the maximum length validation.
+  
+  ```php
+  TextInput::make('name')
+      ->maxLength(255)
+  ```
+</ParamField>
+
+<ParamField path="length" type="method">
+  Sets the exact length validation.
+  
+  ```php
+  TextInput::make('code')
+      ->length(8)
+  ```
+</ParamField>
+
+<ParamField path="telRegex" type="method">
+  Sets a custom regex for tel validation.
+  
+  ```php
+  TextInput::make('phone')
+      ->tel()
+      ->telRegex('/^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\.\\/0-9]*$/')
+  ```
+</ParamField>
+
+<ParamField path="currentPassword" type="method">
+  Adds current password validation.
+  
+  ```php
+  TextInput::make('current_password')
+      ->password()
+      ->currentPassword()
+  ```
+</ParamField>
+
+<ParamField path="stripCharacters" type="method">
+  Strips specific characters from the input.
+  
+  ```php
+  TextInput::make('amount')
+      ->mask(RawJs::make('$money($input)'))
+      ->stripCharacters(',')
+      ->numeric()
+  ```
+</ParamField>
+
+<ParamField path="trim" type="method">
+  Trims whitespace from the input.
+  
+  ```php
+  TextInput::make('name')
+      ->trim()
+  ```
+</ParamField>
+
+<ParamField path="readOnly" type="method">
+  Makes the input read-only.
+  
+  ```php
+  TextInput::make('slug')
+      ->readOnly()
+  ```
+</ParamField>
+
+<ParamField path="placeholder" type="method">
+  Sets the placeholder text.
+  
+  ```php
+  TextInput::make('name')
+      ->placeholder('Enter your name')
+  ```
+</ParamField>
+
+## Common Patterns
+
+### Email Input
+
+```php
+TextInput::make('email')
+    ->email()
+    ->required()
+    ->maxLength(255)
+```
+
+### Password Input
+
+```php
+TextInput::make('password')
+    ->password()
+    ->revealable()
+    ->required()
+    ->minLength(8)
+```
+
+### Numeric Input with Range
+
+```php
+TextInput::make('quantity')
+    ->numeric()
+    ->minValue(1)
+    ->maxValue(100)
+    ->default(1)
+```
+
+### Currency Input
+
+```php
+use Filament\Support\RawJs;
+
+TextInput::make('price')
+    ->prefix('$')
+    ->numeric()
+    ->minValue(0)
+    ->step(0.01)
+```
+
+### Phone Number Input
+
+```php
+TextInput::make('phone')
+    ->tel()
+    ->maxLength(20)
+```

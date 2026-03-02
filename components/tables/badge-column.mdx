@@ -1,0 +1,84 @@
+---
+title: Badge Column
+---
+
+<Note>
+  The `BadgeColumn` is deprecated. Use `TextColumn` with the `badge()` method instead.
+</Note>
+
+## Migration
+
+To migrate from `BadgeColumn` to `TextColumn`:
+
+<CodeGroup>
+```php Before
+use Filament\Tables\Columns\BadgeColumn;
+
+BadgeColumn::make('status')
+    ->colors([
+        'danger' => 'draft',
+        'warning' => 'reviewing',
+        'success' => 'published',
+    ])
+```
+
+```php After
+use Filament\Tables\Columns\TextColumn;
+
+TextColumn::make('status')
+    ->badge()
+    ->color(fn (string $state): string => match ($state) {
+        'draft' => 'danger',
+        'reviewing' => 'warning',
+        'published' => 'success',
+    })
+```
+</CodeGroup>
+
+## TextColumn with badges
+
+The `TextColumn` provides more flexibility with the `badge()` method:
+
+```php
+use Filament\Tables\Columns\TextColumn;
+
+TextColumn::make('status')
+    ->badge()
+    ->color(fn (string $state): string => match ($state) {
+        'draft' => 'gray',
+        'reviewing' => 'warning',
+        'published' => 'success',
+        'rejected' => 'danger',
+    })
+```
+
+### Adding icons to badges
+
+You can combine badges with icons:
+
+```php
+use Filament\Support\Icons\Heroicon;
+
+TextColumn::make('status')
+    ->badge()
+    ->icon(fn (string $state): Heroicon => match ($state) {
+        'draft' => Heroicon::OutlinedPencil,
+        'published' => Heroicon::OutlinedCheckCircle,
+    })
+    ->color(fn (string $state): string => match ($state) {
+        'draft' => 'gray',
+        'published' => 'success',
+    })
+```
+
+### Multiple badges
+
+Display multiple badges from an array:
+
+```php
+TextColumn::make('tags')
+    ->badge()
+    ->separator(',')
+```
+
+See the [Text Column documentation](/components/tables/text-column) for more details.

@@ -1,0 +1,465 @@
+---
+title: Creating Records
+description: Building create pages with forms, validation, and lifecycle hooks
+---
+
+## The Create Page
+
+The Create page displays a form for creating new records. When you generate a resource, Filament creates a `CreateCustomer.php` page class:
+
+```php packages/panels/src/Resources/Pages/CreateRecord.php
+class CreateRecord extends Page
+{
+    public ?array $data = [];
+    
+    protected static bool $canCreateAnother = true;
+    
+    public function create(bool $another = false): void
+    {
+        // Creation logic
+    }
+}
+```
+
+## Form Definition
+
+The create form is defined in your resource's `form()` method. This is typically referenced from a separate schema file:
+
+```php
+use App\Filament\Resources\Customers\Schemas\CustomerForm;
+use Filament\Schemas\Schema;
+
+public static function form(Schema $schema): Schema
+{
+    return CustomerForm::configure($schema);
+}
+```
+
+In the form schema file:
+
+```php
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Schema;
+
+public static function configure(Schema $schema): Schema
+{
+    return $schema
+        ->components([
+            TextInput::make('name')
+                ->required()
+                ->maxLength(255),
+            TextInput::make('email')
+                ->email()
+                ->required(),
+        ]);
+}
+```
+
+## Validation
+
+Validation is handled automatically through field rules:
+
+```php
+TextInput::make('email')
+    ->email()
+    ->required()
+    ->unique(Customer::class, 'email'),
+
+TextInput::make('phone')
+    ->tel()
+    ->rules(['regex:/^[0-9]{10}$/']),
+```
+
+Validation runs when the form is submitted, before `beforeCreate()` hook.
+
+## Lifecycle Hooks
+
+Hooks allow you to execute code at specific points in the creation process:
+
+```php packages/panels/src/Resources/Pages/CreateRecord.php
+protected function beforeFill(): void
+{
+    // Runs before the form fields are populated with default values
+}
+
+protected function afterFill(): void
+{
+    // Runs after the form fields are populated with default values
+}
+
+protected function beforeValidate(): void
+{
+    // Runs before the form fields are validated
+}
+
+protected function afterValidate(): void
+{
+    // Runs after the form fields are validated
+}
+
+protected function beforeCreate(): void
+{
+    // Runs before the form fields are saved to the database
+}
+
+protected function afterCreate(): void
+{
+    // Runs after the form fields are saved to the database
+}
+```
+
+<Tabs>
+  <Tab title="Adding User ID">
+    ```php
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['user_id'] = auth()->id();
+        
+        return $data;
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Sending Email">
+    ```php
+    protected function afterCreate(): void
+    {
+        Mail::to($this->record->email)
+            ->send(new WelcomeEmail($this->record));
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Logging Activity">
+    ```php
+    protected function afterCreate(): void
+    {
+        activity()
+            ->performedOn($this->record)
+            ->log('Customer created');
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Mutating Data
+
+Modify form data before saving:
+
+```php packages/panels/src/Resources/Pages/CreateRecord.php
+protected function mutateFormDataBeforeCreate(array $data): array
+{
+    $data['user_id'] = auth()->id();
+    $data['status'] = 'pending';
+    
+    return $data;
+}
+```
+
+## Customizing Creation Process
+
+Override how records are created:
+
+```php packages/panels/src/Resources/Pages/CreateRecord.php
+protected function handleRecordCreation(array $data): Model
+{
+    $record = new ($this->getModel())($data);
+    
+    if ($parentRecord = $this->getParentRecord()) {
+        return $this->associateRecordWithParent($record, $parentRecord);
+    }
+    
+    $record->save();
+    
+    return $record;
+}
+```
+
+For custom creation logic:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+protected function handleRecordCreation(array $data): Model
+{
+    // Custom creation logic
+    $customer = Customer::create([
+        'name' => $data['name'],
+        'email' => $data['email'],
+    ]);
+    
+    // Create related records
+    $customer->settings()->create([
+        'theme' => 'dark',
+    ]);
+    
+    return $customer;
+}
+```
+
+## Redirects After Creation
+
+By default, users are redirected to the Edit page (or View page if it exists).
+
+### Redirect to List Page
+
+```php
+protected function getRedirectUrl(): string
+{
+    return $this->getResource()::getUrl('index');
+}
+```
+
+### Redirect to View Page
+
+```php
+protected function getRedirectUrl(): string
+{
+    return $this->getResource()::getUrl('view', ['record' => $this->getRecord()]);
+}
+```
+
+### Redirect to Previous Page
+
+```php
+protected function getRedirectUrl(): string
+{
+    return $this->previousUrl ?? $this->getResource()::getUrl('index');
+}
+```
+
+### Global Redirect Configuration
+
+Set a default redirect for all resources:
+
+```php
+use Filament\Panel;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->resourceCreatePageRedirect('index') // or 'view' or 'edit'
+        // ...
+}
+```
+
+## Success Notifications
+
+Customize the success notification:
+
+```php packages/panels/src/Resources/Pages/CreateRecord.php
+protected function getCreatedNotificationTitle(): ?string
+{
+    return 'Customer registered successfully';
+}
+```
+
+For complete customization:
+
+```php
+use Filament\Notifications\Notification;
+
+protected function getCreatedNotification(): ?Notification
+{
+    return Notification::make()
+        ->success()
+        ->title('Customer registered')
+        ->body('The customer has been created successfully.');
+}
+```
+
+To disable notifications:
+
+```php
+protected function getCreatedNotification(): ?Notification
+{
+    return null;
+}
+```
+
+## Create Another
+
+The "Create & create another" button allows users to create multiple records quickly.
+
+### Disabling Create Another
+
+```php
+protected static bool $canCreateAnother = false;
+```
+
+Or dynamically:
+
+```php
+public function canCreateAnother(): bool
+{
+    return auth()->user()->can('create_multiple_customers');
+}
+```
+
+### Preserving Form Data
+
+Keep some fields filled when creating another record:
+
+```php packages/panels/src/Resources/Pages/CreateRecord.php
+use Illuminate\Support\Arr;
+
+protected function preserveFormDataWhenCreatingAnother(array $data): array
+{
+    return Arr::only($data, ['organization_id', 'country']);
+}
+```
+
+To preserve all data:
+
+```php
+protected function preserveFormDataWhenCreatingAnother(array $data): array
+{
+    return $data;
+}
+```
+
+## Halting Creation
+
+Stop the creation process at any point:
+
+```php
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+
+protected function beforeCreate(): void
+{
+    if (! auth()->user()->team->subscribed()) {
+        Notification::make()
+            ->warning()
+            ->title('You don\'t have an active subscription!')
+            ->body('Choose a plan to continue.')
+            ->persistent()
+            ->actions([
+                Action::make('subscribe')
+                    ->button()
+                    ->url(route('subscribe'), shouldOpenInNewTab: true),
+            ])
+            ->send();
+        
+        $this->halt();
+    }
+}
+```
+
+## Wizards
+
+Transform the create page into a multi-step wizard:
+
+<Steps>
+  <Step title="Add the trait">
+    ```php packages/panels/src/Resources/Pages/CreateRecord.php
+    use App\Filament\Resources\Categories\CategoryResource;
+    use Filament\Resources\Pages\CreateRecord;
+
+    class CreateCategory extends CreateRecord
+    {
+        use CreateRecord\Concerns\HasWizard;
+        
+        protected static string $resource = CategoryResource::class;
+    }
+    ```
+  </Step>
+  
+  <Step title="Define steps">
+    ```php
+    use Filament\Forms\Components\TextInput;
+    use Filament\Schemas\Components\Wizard\Step;
+
+    protected function getSteps(): array
+    {
+        return [
+            Step::make('Name')
+                ->description('Give the category a clear and unique name')
+                ->schema([
+                    TextInput::make('name')->required(),
+                    TextInput::make('slug')->required(),
+                ]),
+            Step::make('Description')
+                ->schema([
+                    // ...
+                ]),
+        ];
+    }
+    ```
+  </Step>
+  
+  <Step title="Allow skipping (optional)">
+    ```php
+    public function hasSkippableSteps(): bool
+    {
+        return true;
+    }
+    ```
+  </Step>
+</Steps>
+
+## Custom Actions
+
+Add custom buttons to the form:
+
+### Header Actions
+
+```php
+use Filament\Actions;
+
+protected function getHeaderActions(): array
+{
+    return [
+        Actions\ImportAction::make()
+            ->importer(CustomerImporter::class),
+    ];
+}
+```
+
+### Form Actions
+
+```php
+use Filament\Actions\Action;
+
+protected function getFormActions(): array
+{
+    return [
+        ...parent::getFormActions(),
+        Action::make('createAndEmail')
+            ->action('createAndEmail'),
+    ];
+}
+
+public function createAndEmail(): void
+{
+    // Custom logic
+}
+```
+
+### Moving Create to Header
+
+```php
+protected function getHeaderActions(): array
+{
+    return [
+        $this->getCreateFormAction()
+            ->formId('form'),
+    ];
+}
+
+protected function getFormActions(): array
+{
+    return [];
+}
+```
+
+## Authorization
+
+Users can access the Create page if the `create()` method of the model policy returns `true`:
+
+```php
+public function create(User $user): bool
+{
+    return $user->can('create customers');
+}
+```

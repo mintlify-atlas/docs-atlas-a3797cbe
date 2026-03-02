@@ -1,0 +1,247 @@
+---
+title: Badge Entry
+description: Display text as styled badges in Filament infolists.
+---
+
+## Introduction
+
+Badge entries display text with a colored background, making them perfect for statuses, tags, and categories. Badges are created using the `badge()` method on TextEntry.
+
+<CodeGroup>
+```php Basic usage
+use Filament\Infolists\Components\TextEntry;
+
+TextEntry::make('status')
+    ->badge()
+```
+</CodeGroup>
+
+## Available Methods
+
+Badge entries use the TextEntry component with the `badge()` modifier. All TextEntry methods are available.
+
+### Badge Configuration
+
+<ParamField path="badge()" type="bool|Closure">
+  Enable badge display mode.
+
+  ```php
+  TextEntry::make('status')
+      ->badge()
+  ```
+</ParamField>
+
+<ParamField path="color()" type="string|array|Closure">
+  Set the badge color. Works with Filament's color system.
+
+  ```php
+  TextEntry::make('status')
+      ->badge()
+      ->color(fn (string $state): string => match ($state) {
+          'draft' => 'gray',
+          'reviewing' => 'warning',
+          'published' => 'success',
+          'rejected' => 'danger',
+      })
+  ```
+</ParamField>
+
+<ParamField path="icon()" type="string|Htmlable|Closure">
+  Add an icon to the badge.
+
+  ```php
+  use Filament\Support\Icons\Heroicon;
+
+  TextEntry::make('status')
+      ->badge()
+      ->icon(fn (string $state): string => match ($state) {
+          'published' => Heroicon::OutlinedCheckCircle,
+          'draft' => Heroicon::OutlinedPencil,
+      })
+  ```
+</ParamField>
+
+<ParamField path="iconPosition()" type="IconPosition">
+  Set the icon position within the badge.
+
+  ```php
+  use Filament\Support\Enums\IconPosition;
+
+  TextEntry::make('status')
+      ->badge()
+      ->icon(Heroicon::OutlinedCheckCircle)
+      ->iconPosition(IconPosition::After)
+  ```
+</ParamField>
+
+<ParamField path="size()" type="TextSize">
+  Set the badge size.
+
+  ```php
+  use Filament\Support\Enums\TextSize;
+
+  TextEntry::make('status')
+      ->badge()
+      ->size(TextSize::Large)
+  ```
+</ParamField>
+
+### Multiple Badges
+
+<ParamField path="separator()" type="string|Closure">
+  Split a single value into multiple badges using a separator.
+
+  ```php
+  TextEntry::make('tags')
+      ->badge()
+      ->separator(',')
+  ```
+</ParamField>
+
+<ParamField path="listWithLineBreaks()" type="bool|Closure">
+  Display multiple badge values with line breaks.
+
+  ```php
+  TextEntry::make('categories.name')
+      ->badge()
+      ->listWithLineBreaks()
+  ```
+</ParamField>
+
+<ParamField path="limitList()" type="int|Closure">
+  Limit the number of badges displayed.
+
+  ```php
+  TextEntry::make('tags')
+      ->badge()
+      ->separator(',')
+      ->limitList(3)
+  ```
+</ParamField>
+
+### Formatting
+
+All TextEntry formatting methods work with badges:
+
+<ParamField path="formatStateUsing()" type="Closure">
+  Format badge text with a custom closure.
+
+  ```php
+  TextEntry::make('status')
+      ->badge()
+      ->formatStateUsing(fn (string $state): string => strtoupper($state))
+  ```
+</ParamField>
+
+## Examples
+
+### Status Badge
+
+<CodeGroup>
+```php Order status
+TextEntry::make('status')
+    ->badge()
+    ->color(fn (string $state): string => match ($state) {
+        'pending' => 'gray',
+        'processing' => 'warning',
+        'completed' => 'success',
+        'cancelled' => 'danger',
+    })
+    ->formatStateUsing(fn (string $state): string => ucfirst($state))
+```
+</CodeGroup>
+
+### Tags with Color Coding
+
+<CodeGroup>
+```php Product tags
+TextEntry::make('tags')
+    ->badge()
+    ->separator(',')
+    ->color(fn (string $state): string => match ($state) {
+        'featured' => 'warning',
+        'new' => 'success',
+        'sale' => 'danger',
+        default => 'primary',
+    })
+```
+</CodeGroup>
+
+### Category Badges
+
+<CodeGroup>
+```php Article categories
+TextEntry::make('categories.name')
+    ->badge()
+    ->color('primary')
+    ->limitList(3)
+```
+</CodeGroup>
+
+### Priority Badge
+
+<CodeGroup>
+```php Task priority with icon
+use Filament\Support\Icons\Heroicon;
+
+TextEntry::make('priority')
+    ->badge()
+    ->color(fn (string $state): string => match ($state) {
+        'low' => 'gray',
+        'medium' => 'primary',
+        'high' => 'warning',
+        'urgent' => 'danger',
+    })
+    ->icon(fn (string $state): string => match ($state) {
+        'low' => Heroicon::OutlinedArrowDown,
+        'medium' => Heroicon::OutlinedMinus,
+        'high' => Heroicon::OutlinedArrowUp,
+        'urgent' => Heroicon::OutlinedExclamationTriangle,
+    })
+    ->formatStateUsing(fn (string $state): string => strtoupper($state))
+```
+</CodeGroup>
+
+### User Roles
+
+<CodeGroup>
+```php Multiple role badges
+TextEntry::make('roles.name')
+    ->badge()
+    ->color(fn (string $state): string => match ($state) {
+        'admin' => 'danger',
+        'editor' => 'warning',
+        'author' => 'success',
+        'subscriber' => 'gray',
+        default => 'primary',
+    })
+```
+</CodeGroup>
+
+### Skill Tags
+
+<CodeGroup>
+```php Skills with limit
+TextEntry::make('skills')
+    ->badge()
+    ->separator(',')
+    ->color('primary')
+    ->limitList(5)
+    ->listWithLineBreaks()
+```
+</CodeGroup>
+
+### Verification Badge
+
+<CodeGroup>
+```php Email verified badge
+use Filament\Support\Icons\Heroicon;
+
+TextEntry::make('email_verified')
+    ->badge()
+    ->color('success')
+    ->icon(Heroicon::OutlinedCheckBadge)
+    ->formatStateUsing(fn (): string => 'Verified')
+    ->visible(fn ($record): bool => $record->email_verified_at !== null)
+```
+</CodeGroup>

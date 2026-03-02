@@ -1,0 +1,242 @@
+---
+title: Wizard
+---
+
+## Introduction
+
+Wizards create multistep forms with validation between steps:
+
+```php
+use Filament\Schemas\Components\Wizard;
+use Filament\Schemas\Components\Wizard\Step;
+
+Wizard::make([
+    Step::make('Order')
+        ->schema([
+            // ...
+        ]),
+    Step::make('Delivery')
+        ->schema([
+            // ...
+        ]),
+    Step::make('Billing')
+        ->schema([
+            // ...
+        ]),
+])
+```
+
+<Note>
+  For panel resources or action modals, see the specific documentation for those contexts.
+</Note>
+
+## Submit button
+
+Render a submit button on the last step:
+
+```php
+use Illuminate\Support\HtmlString;
+
+Wizard::make([
+    // ...
+])->submitAction(view('order-form.submit-button'))
+
+Wizard::make([
+    // ...
+])->submitAction(new HtmlString('<button type="submit">Submit</button>'))
+```
+
+Using the Filament button component:
+
+```php
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\HtmlString;
+
+Wizard::make([
+    // ...
+])->submitAction(new HtmlString(Blade::render(<<<BLADE
+    <x-filament::button
+        type="submit"
+        size="sm"
+    >
+        Submit
+    </x-filament::button>
+BLADE)))
+```
+
+<ParamField path="action" type="string | Htmlable">
+  The HTML or view for the submit button.
+</ParamField>
+
+## Step icons
+
+Add icons to steps:
+
+```php
+use Filament\Support\Icons\Heroicon;
+
+Step::make('Order')
+    ->icon(Heroicon::ShoppingBag)
+    ->schema([
+        // ...
+    ])
+```
+
+<ParamField path="icon" type="string | BackedEnum | Htmlable | Closure">
+  The icon to display.
+</ParamField>
+
+### Completed icons
+
+Customize icons for completed steps:
+
+```php
+Step::make('Order')
+    ->completedIcon(Heroicon::HandThumbUp)
+    ->schema([
+        // ...
+    ])
+```
+
+<ParamField path="icon" type="string | BackedEnum | Htmlable | Closure">
+  The icon for completed steps.
+</ParamField>
+
+## Step descriptions
+
+Add descriptions to steps:
+
+```php
+Step::make('Order')
+    ->description('Review your basket')
+    ->schema([
+        // ...
+    ])
+```
+
+<ParamField path="description" type="string | Htmlable | Closure">
+  The step description.
+</ParamField>
+
+## Default active step
+
+Set which step loads by default:
+
+```php
+Wizard::make([
+    // ...
+])->startOnStep(2)
+```
+
+<ParamField path="startStep" type="int | Closure" default="1">
+  The starting step index.
+</ParamField>
+
+## Skippable steps
+
+Allow free navigation between steps:
+
+```php
+Wizard::make([
+    // ...
+])->skippable()
+```
+
+<ParamField path="condition" type="bool | Closure" default="false">
+  Whether steps can be skipped.
+</ParamField>
+
+## Persisting the current step
+
+Persist the current step in the URL query string:
+
+```php
+Wizard::make([
+    // ...
+])->persistStepInQueryString()
+```
+
+Customize the query parameter:
+
+```php
+Wizard::make([
+    // ...
+])->persistStepInQueryString('wizard-step')
+```
+
+<ParamField path="key" type="string | Closure" default="'step'">
+  The query string parameter name.
+</ParamField>
+
+## Step lifecycle hooks
+
+Run code before and after step validation:
+
+```php
+Step::make('Order')
+    ->afterValidation(function () {
+        // ...
+    })
+    ->beforeValidation(function () {
+        // ...
+    })
+    ->schema([
+        // ...
+    ])
+```
+
+### Preventing navigation
+
+Throw `Halt` to prevent moving to the next step:
+
+```php
+use Filament\Support\Exceptions\Halt;
+
+Step::make('Order')
+    ->afterValidation(function () {
+        if (true) {
+            throw new Halt();
+        }
+    })
+    ->schema([
+        // ...
+    ])
+```
+
+## Grid columns in steps
+
+Customize the grid within steps:
+
+```php
+Step::make('Order')
+    ->columns(2)
+    ->schema([
+        // ...
+    ])
+```
+
+<ParamField path="columns" type="int | array | Closure">
+  The number of columns or responsive configuration.
+</ParamField>
+
+## Customizing actions
+
+Customize the next and previous buttons:
+
+```php
+use Filament\Actions\Action;
+
+Wizard::make([
+    // ...
+])
+    ->nextAction(
+        fn (Action $action) => $action->label('Next step'),
+    )
+    ->previousAction(
+        fn (Action $action) => $action->label('Previous step'),
+    )
+```
+
+<ParamField path="callback" type="Closure">
+  A closure that receives and modifies the action.
+</ParamField>

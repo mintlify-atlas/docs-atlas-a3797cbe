@@ -1,0 +1,242 @@
+---
+title: Form
+description: Form class API reference - Filament v4 uses Schema instead of Form
+---
+
+<Aside variant="info">
+  Filament v4 has transitioned from the `Form` class to the `Schema` system. Forms are now built using the `Schema` class with form field components. This page documents the pattern for reference.
+</Aside>
+
+## Schema-Based Forms
+
+In Filament v4, forms are defined using the `Schema` class rather than a dedicated `Form` class. This provides a unified approach for forms, infolists, and other component layouts.
+
+### Basic Usage
+
+```php
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+
+public static function form(Schema $schema): Schema
+{
+    return $schema
+        ->components([
+            TextInput::make('name')
+                ->required(),
+            Select::make('status')
+                ->options([
+                    'draft' => 'Draft',
+                    'published' => 'Published',
+                ]),
+        ]);
+}
+```
+
+## Schema Class
+
+The `Schema` class is the foundation for building form layouts in Filament v4.
+
+### Namespace
+
+```php
+Filament\Schemas\Schema
+```
+
+### Methods
+
+#### components()
+
+Define the components in the schema.
+
+```php
+public function components(array $components): static
+```
+
+<ParamField path="components" type="array">
+  An array of form field components.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the schema instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+$schema->components([
+    TextInput::make('email')->email(),
+    TextInput::make('password')->password(),
+]);
+```
+
+#### operation()
+
+Set the operation context for the schema.
+
+```php
+public function operation(string $operation): static
+```
+
+<ParamField path="operation" type="string">
+  The operation name (e.g., 'create', 'edit', 'view').
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the schema instance for method chaining.
+</ParamField>
+
+#### statePath()
+
+Set the state path for the schema.
+
+```php
+public function statePath(?string $path): static
+```
+
+<ParamField path="path" type="string | null">
+  The state path for data binding.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the schema instance for method chaining.
+</ParamField>
+
+#### columns()
+
+Set the number of columns for the schema layout.
+
+```php
+public function columns(int | array $columns): static
+```
+
+<ParamField path="columns" type="int | array">
+  Number of columns or responsive column configuration.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the schema instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+$schema->columns([
+    'sm' => 1,
+    'md' => 2,
+    'lg' => 3,
+]);
+```
+
+## Form Context
+
+Forms in Filament operate within different contexts:
+
+### Operations
+
+- `create` - Creating a new record
+- `edit` - Editing an existing record
+- `view` - Viewing a record (read-only)
+
+**Example:**
+
+```php
+use Filament\Forms\Components\TextInput;
+
+TextInput::make('name')
+    ->disabled(fn (string $operation): bool => $operation === 'view');
+```
+
+## Form Fields
+
+All form fields extend the `Field` base class. See the [Field API reference](/api/field) for details.
+
+### Common Form Components
+
+- `TextInput` - Text input field
+- `Textarea` - Multi-line text area
+- `Select` - Dropdown select
+- `Checkbox` - Single checkbox
+- `Toggle` - Toggle switch
+- `Radio` - Radio button group
+- `DatePicker` - Date picker
+- `DateTimePicker` - Date and time picker
+- `FileUpload` - File upload
+- `RichEditor` - Rich text editor
+- `MarkdownEditor` - Markdown editor
+- `ColorPicker` - Color picker
+- `KeyValue` - Key-value pair input
+- `Repeater` - Repeatable field groups
+- `Builder` - Flexible content builder
+
+### Layout Components
+
+- `Section` - Collapsible section
+- `Fieldset` - Fieldset grouping
+- `Grid` - Grid layout
+- `Tabs` - Tabbed interface
+- `Wizard` - Multi-step wizard
+- `Group` - Component grouping
+
+## Data Binding
+
+Forms automatically bind to Livewire properties using the state path.
+
+**Example:**
+
+```php
+// In a resource
+public static function form(Schema $schema): Schema
+{
+    return $schema
+        ->statePath('data')
+        ->components([
+            TextInput::make('name'),
+        ]);
+}
+
+// Data is bound to $this->data['name']
+```
+
+## Validation
+
+Validation rules are defined on field components.
+
+**Example:**
+
+```php
+use Filament\Forms\Components\TextInput;
+
+TextInput::make('email')
+    ->required()
+    ->email()
+    ->maxLength(255);
+```
+
+## Form State
+
+Access and modify form state using closures:
+
+**Example:**
+
+```php
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+
+TextInput::make('price')
+    ->numeric()
+    ->live()
+    ->afterStateUpdated(function (Set $set, ?float $state) {
+        $set('total', $state * 1.2);
+    });
+
+TextInput::make('total')
+    ->disabled();
+```
+
+## Related Classes
+
+- [Field](/api/field) - Base field class
+- [Component](/api/component) - Base component class
+- [Resource](/api/resource) - Resource forms

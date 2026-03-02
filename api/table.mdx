@@ -1,0 +1,437 @@
+---
+title: Table
+description: Table class API reference for building data tables in Filament
+---
+
+The `Table` class is the foundation for building interactive data tables in Filament. It provides functionality for displaying records, searching, filtering, sorting, pagination, bulk actions, and more.
+
+## Namespace
+
+```php
+Filament\Tables\Table
+```
+
+## Inheritance
+
+Extends: `Filament\Support\Components\ViewComponent`
+
+## Static Methods
+
+### make()
+
+Create a new table instance.
+
+```php
+public static function make(HasTable $livewire): static
+```
+
+<ParamField path="livewire" type="HasTable">
+  The Livewire component that implements the `HasTable` contract.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the configured table instance.
+</ParamField>
+
+**Example:**
+
+```php
+use Filament\Tables\Table;
+use Filament\Tables\Contracts\HasTable;
+
+class ListUsers extends Component implements HasTable
+{
+    public function table(Table $table): Table
+    {
+        return $table
+            ->columns([/* ... */])
+            ->filters([/* ... */]);
+    }
+}
+```
+
+## Configuration Methods
+
+The Table class uses multiple traits that provide configuration methods:
+
+### Columns
+
+```php
+public function columns(array | Closure $columns): static
+```
+
+Define the table columns.
+
+**Example:**
+
+```php
+use Filament\Tables\Columns\TextColumn;
+
+$table->columns([
+    TextColumn::make('name')->searchable(),
+    TextColumn::make('email')->sortable(),
+]);
+```
+
+### Filters
+
+```php
+public function filters(array | Closure $filters, ?string $layout = null): static
+```
+
+Define the table filters.
+
+**Example:**
+
+```php
+use Filament\Tables\Filters\SelectFilter;
+
+$table->filters([
+    SelectFilter::make('status')
+        ->options([
+            'active' => 'Active',
+            'inactive' => 'Inactive',
+        ]),
+]);
+```
+
+### Actions
+
+```php
+public function actions(array | Closure $actions, ?string $position = null): static
+```
+
+Define row actions.
+
+**Example:**
+
+```php
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\DeleteAction;
+
+$table->actions([
+    EditAction::make(),
+    DeleteAction::make(),
+]);
+```
+
+### Bulk Actions
+
+```php
+public function bulkActions(array | Closure $actions): static
+```
+
+Define bulk actions for selected records.
+
+**Example:**
+
+```php
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
+
+$table->bulkActions([
+    BulkActionGroup::make([
+        DeleteBulkAction::make(),
+    ]),
+]);
+```
+
+### Header Actions
+
+```php
+public function headerActions(array | Closure $actions): static
+```
+
+Define actions in the table header.
+
+**Example:**
+
+```php
+use Filament\Tables\Actions\CreateAction;
+
+$table->headerActions([
+    CreateAction::make(),
+]);
+```
+
+## Search and Filtering
+
+### searchable()
+
+Enable global search.
+
+```php
+public function searchable(bool | Closure $condition = true): static
+```
+
+### searchPlaceholder()
+
+Set the search input placeholder.
+
+```php
+public function searchPlaceholder(string | Closure | null $placeholder): static
+```
+
+**Example:**
+
+```php
+$table->searchPlaceholder('Search users...');
+```
+
+### searchOnBlur()
+
+Only search when the input loses focus.
+
+```php
+public function searchOnBlur(bool | Closure $condition = true): static
+```
+
+### searchDebounce()
+
+Set the search debounce delay.
+
+```php
+public function searchDebounce(string | Closure | null $debounce): static
+```
+
+**Example:**
+
+```php
+$table->searchDebounce('500ms');
+```
+
+## Sorting
+
+### defaultSort()
+
+Set the default sort column and direction.
+
+```php
+public function defaultSort(string | Closure | null $column, string | Closure $direction = 'asc'): static
+```
+
+**Example:**
+
+```php
+$table->defaultSort('created_at', 'desc');
+```
+
+## Pagination
+
+### paginated()
+
+Enable pagination.
+
+```php
+public function paginated(bool | array | Closure $condition = true): static
+```
+
+**Example:**
+
+```php
+$table->paginated([10, 25, 50, 100]);
+```
+
+### defaultPaginationPageOption()
+
+Set the default number of records per page.
+
+```php
+public function defaultPaginationPageOption(int | Closure | null $option): static
+```
+
+**Example:**
+
+```php
+$table->defaultPaginationPageOption(25);
+```
+
+### paginationPageOptions()
+
+Set the available page size options.
+
+```php
+public function paginationPageOptions(array | Closure $options): static
+```
+
+## Query Modification
+
+### query()
+
+Modify the Eloquent query.
+
+```php
+public function query(Closure | null $callback): static
+```
+
+**Example:**
+
+```php
+$table->query(fn (Builder $query) => $query->where('status', 'active'));
+```
+
+### modifyQueryUsing()
+
+Modify the query using a callback.
+
+```php
+public function modifyQueryUsing(Closure | null $callback): static
+```
+
+## Empty State
+
+### emptyStateHeading()
+
+Set the empty state heading.
+
+```php
+public function emptyStateHeading(string | Htmlable | Closure | null $heading): static
+```
+
+### emptyStateDescription()
+
+Set the empty state description.
+
+```php
+public function emptyStateDescription(string | Htmlable | Closure | null $description): static
+```
+
+### emptyStateIcon()
+
+Set the empty state icon.
+
+```php
+public function emptyStateIcon(string | Closure | null $icon): static
+```
+
+### emptyStateActions()
+
+Set actions for the empty state.
+
+```php
+public function emptyStateActions(array | Closure $actions): static
+```
+
+## Display Options
+
+### striped()
+
+Enable striped rows.
+
+```php
+public function striped(bool | Closure $condition = true): static
+```
+
+### poll()
+
+Automatically refresh the table.
+
+```php
+public function poll(string | Closure | null $interval): static
+```
+
+**Example:**
+
+```php
+$table->poll('10s'); // Refresh every 10 seconds
+```
+
+### deferLoading()
+
+Defer loading until the table is visible.
+
+```php
+public function deferLoading(bool | Closure $condition = true): static
+```
+
+## Record Grouping
+
+### groupingDirectionSettingHidden()
+
+Hide the grouping direction setting.
+
+```php
+public function groupingDirectionSettingHidden(bool | Closure $condition = true): static
+```
+
+## Reordering
+
+### reorderable()
+
+Enable drag-and-drop reordering.
+
+```php
+public function reorderable(string | Closure | null $column): static
+```
+
+**Example:**
+
+```php
+$table->reorderable('sort_order');
+```
+
+## Constants
+
+### LOADING_TARGETS
+
+Livewire loading targets for the table.
+
+```php
+public const LOADING_TARGETS = [
+    'gotoPage',
+    'nextPage',
+    'previousPage',
+    'removeTableFilter',
+    'removeTableFilters',
+    'reorderTable',
+    'resetTableFiltersForm',
+    'sortTable',
+    'tableColumnSearches',
+    'tableFilters',
+    'tableRecordsPerPage',
+    'tableSearch',
+];
+```
+
+## Traits
+
+The Table class uses multiple traits for functionality:
+
+- `BelongsToLivewire` - Livewire component relationship
+- `CanBeStackedOnMobile` - Mobile stacking support
+- `CanBeStriped` - Striped rows
+- `CanDeferLoading` - Deferred loading
+- `CanGroupRecords` - Record grouping
+- `CanPaginateRecords` - Pagination
+- `CanPollRecords` - Auto-refresh polling
+- `CanReorderRecords` - Drag-and-drop reordering
+- `CanSearchRecords` - Search functionality
+- `CanSortRecords` - Column sorting
+- `CanSummarizeRecords` - Record summaries
+- `HasActions` - Row actions
+- `HasArguments` - Table arguments
+- `HasBulkActions` - Bulk actions
+- `HasColumnManager` - Column visibility management
+- `HasColumns` - Column configuration
+- `HasContent` - Content customization
+- `HasEmptyState` - Empty state configuration
+- `HasFilterIndicators` - Filter indicators
+- `HasFilters` - Filter configuration
+- `HasHeader` - Header customization
+- `HasHeaderActions` - Header actions
+- `HasHeadings` - Heading configuration
+- `HasQuery` - Query modification
+- `HasQueryStringIdentifier` - Query string support
+- `HasRecordAction` - Default record action
+- `HasRecordActions` - Record action configuration
+- `HasRecordClasses` - Custom record classes
+- `HasRecords` - Record management
+- `HasRecordUrl` - Record URL generation
+- `HasToolbarActions` - Toolbar actions
+
+## Related Classes
+
+- [Column](/api/column) - Table columns
+- [Filter](/api/filter) - Table filters
+- [Action](/api/action) - Table actions
+- [BulkAction](/api/bulk-action) - Bulk actions

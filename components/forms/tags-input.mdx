@@ -1,0 +1,169 @@
+---
+title: TagsInput
+---
+
+The tags input component allows you to interact with a list of tags.
+
+## Basic Usage
+
+```php
+use Filament\Forms\Components\TagsInput;
+
+TagsInput::make('tags')
+```
+
+## Available Methods
+
+<ParamField path="separator" type="method">
+  Stores tags as separated string instead of JSON.
+  
+  ```php
+  TagsInput::make('tags')
+      ->separator(',')
+  ```
+</ParamField>
+
+<ParamField path="suggestions" type="method">
+  Adds autocomplete suggestions.
+  
+  ```php
+  TagsInput::make('tags')
+      ->suggestions([
+          'tailwindcss',
+          'alpinejs',
+          'laravel',
+          'livewire',
+      ])
+  ```
+</ParamField>
+
+<ParamField path="splitKeys" type="method">
+  Sets keys that create new tags.
+  
+  ```php
+  TagsInput::make('tags')
+      ->splitKeys(['Tab', ' '])
+  ```
+</ParamField>
+
+<ParamField path="tagPrefix" type="method">
+  Adds prefix to displayed tags.
+  
+  ```php
+  TagsInput::make('hashtags')
+      ->tagPrefix('#')
+  ```
+</ParamField>
+
+<ParamField path="tagSuffix" type="method">
+  Adds suffix to displayed tags.
+  
+  ```php
+  TagsInput::make('percentages')
+      ->tagSuffix('%')
+  ```
+</ParamField>
+
+<ParamField path="reorderable" type="method">
+  Allows reordering tags.
+  
+  ```php
+  TagsInput::make('tags')
+      ->reorderable()
+  ```
+</ParamField>
+
+<ParamField path="color" type="method">
+  Sets the color of tags.
+  
+  ```php
+  TagsInput::make('tags')
+      ->color('primary')
+  ```
+</ParamField>
+
+<ParamField path="trim" type="method">
+  Trims whitespace from tags.
+  
+  ```php
+  TagsInput::make('tags')
+      ->trim()
+  ```
+</ParamField>
+
+<ParamField path="nestedRecursiveRules" type="method">
+  Adds validation rules for each tag.
+  
+  ```php
+  TagsInput::make('tags')
+      ->nestedRecursiveRules([
+          'min:3',
+          'max:255',
+      ])
+  ```
+</ParamField>
+
+## Common Patterns
+
+### Blog Post Tags
+
+```php
+TagsInput::make('tags')
+    ->suggestions([
+        'laravel',
+        'php',
+        'javascript',
+        'vue',
+        'react',
+    ])
+    ->color('primary')
+```
+
+### Hashtags
+
+```php
+TagsInput::make('hashtags')
+    ->tagPrefix('#')
+    ->splitKeys(['Tab', ' ', ','])
+    ->nestedRecursiveRules(['alpha_dash'])
+```
+
+### Keywords
+
+```php
+TagsInput::make('keywords')
+    ->reorderable()
+    ->separator(',')
+    ->trim()
+```
+
+### Categories
+
+```php
+TagsInput::make('categories')
+    ->suggestions([
+        'Technology',
+        'Business',
+        'Science',
+        'Health',
+    ])
+    ->color('success')
+```
+
+## Database Casting
+
+For JSON storage, add an `array` cast:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class Post extends Model
+{
+    protected function casts(): array
+    {
+        return [
+            'tags' => 'array',
+        ];
+    }
+}
+```

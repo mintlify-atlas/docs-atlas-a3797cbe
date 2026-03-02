@@ -1,0 +1,483 @@
+---
+title: Managing Relationships
+description: Working with related records using relation managers, selects, and repeaters
+---
+
+## Choosing the Right Tool
+
+Filament offers multiple ways to manage relationships. Your choice depends on:
+
+- The type of relationship
+- The desired user experience
+- The complexity of related data
+
+<Tabs>
+  <Tab title="Relation Managers">
+    **Best for**: `HasMany`, `HasManyThrough`, `BelongsToMany`, `MorphMany`, `MorphToMany`
+
+    Interactive tables below Edit/View pages for complete CRUD operations on related records.
+  </Tab>
+  
+  <Tab title="Select Fields">
+    **Best for**: `BelongsTo`, `MorphTo`, `BelongsToMany`
+
+    Choose from existing records or create new ones in a modal.
+  </Tab>
+  
+  <Tab title="Repeaters">
+    **Best for**: `HasMany`, `MorphMany`
+
+    Create/edit multiple related records inline within the form.
+  </Tab>
+  
+  <Tab title="Layout Components">
+    **Best for**: `BelongsTo`, `HasOne`, `MorphOne`
+
+    Save form fields directly to a single related record.
+  </Tab>
+</Tabs>
+
+## Relation Managers
+
+Relation managers display related records in a table underneath your resource form.
+
+### Creating a Relation Manager
+
+```bash
+php artisan make:filament-relation-manager CategoryResource posts title
+```
+
+Arguments:
+- `CategoryResource` - Parent resource class
+- `posts` - Relationship name
+- `title` - Attribute used to identify records
+
+This creates `CategoryResource/RelationManagers/PostsRelationManager.php`:
+
+```php packages/panels/src/Resources/RelationManagers/RelationManager.php
+use Filament\Forms;
+use Filament\Schemas\Schema;
+use Filament\Tables;
+use Filament\Tables\Table;
+
+public function form(Schema $schema): Schema
+{
+    return $schema
+        ->components([
+            Forms\Components\TextInput::make('title')->required(),
+            // ...
+        ]);
+}
+
+public function table(Table $table): Table
+{
+    return $table
+        ->columns([
+            Tables\Columns\TextColumn::make('title'),
+            // ...
+        ]);
+}
+```
+
+### Registering Relation Managers
+
+```php
+public static function getRelations(): array
+{
+    return [
+        RelationManagers\PostsRelationManager::class,
+    ];
+}
+```
+
+With custom URL parameter:
+
+```php
+public static function getRelations(): array
+{
+    return [
+        'posts' => RelationManagers\PostsRelationManager::class,
+    ];
+}
+```
+
+### Relation Manager Variants
+
+<Accordion title="With Attach/Detach">
+```bash
+php artisan make:filament-relation-manager CategoryResource posts title --attach
+```
+
+For `BelongsToMany` and `MorphToMany` relationships.
+</Accordion>
+
+<Accordion title="With Associate/Dissociate">
+```bash
+php artisan make:filament-relation-manager CategoryResource posts title --associate
+```
+
+For `HasMany` and `MorphMany` relationships.
+</Accordion>
+
+<Accordion title="With Soft Deletes">
+```bash
+php artisan make:filament-relation-manager CategoryResource posts title --soft-deletes
+```
+
+Adds restore, force delete, and trashed filter.
+</Accordion>
+
+<Accordion title="With View Action">
+```bash
+php artisan make:filament-relation-manager CategoryResource posts title --view
+```
+
+Adds a view modal for related records.
+</Accordion>
+
+## Working with Pivot Attributes
+
+For many-to-many relationships with pivot data:
+
+### Displaying Pivot Columns
+
+```php
+use Filament\Tables\Columns\TextColumn;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->columns([
+            TextColumn::make('name'),
+            TextColumn::make('role'), // Pivot attribute
+        ]);
+}
+```
+
+### Editing Pivot Attributes
+
+```php
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Schema;
+
+public function form(Schema $schema): Schema
+{
+    return $schema
+        ->components([
+            TextInput::make('name')->required(),
+            TextInput::make('role')->required(), // Pivot attribute
+        ]);
+}
+```
+
+<Note>
+Ensure pivot attributes are listed in `withPivot()` on both the relationship and inverse relationship.
+</Note>
+
+## Attach and Detach
+
+For `BelongsToMany` and `MorphToMany` relationships:
+
+```php
+use Filament\Actions\AttachAction;
+use Filament\Actions\DetachAction;
+use Filament\Actions\DetachBulkAction;
+use Filament\Tables\Table;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->columns([
+            // ...
+        ])
+        ->headerActions([
+            AttachAction::make(),
+        ])
+        ->recordActions([
+            DetachAction::make(),
+        ])
+        ->toolbarActions([
+            BulkActionGroup::make([
+                DetachBulkAction::make(),
+            ]),
+        ]);
+}
+```
+
+### Attaching with Pivot Data
+
+```php
+use Filament\Actions\AttachAction;
+use Filament\Forms\Components\TextInput;
+
+AttachAction::make()
+    ->schema(fn (AttachAction $action): array => [
+        $action->getRecordSelect(),
+        TextInput::make('role')->required(),
+        TextInput::make('started_at')->date(),
+    ])
+```
+
+### Scoping Attachable Records
+
+```php
+use Illuminate\Database\Eloquent\Builder;
+
+AttachAction::make()
+    ->recordSelectOptionsQuery(fn (Builder $query) => 
+        $query->where('status', 'active')
+    )
+```
+
+### Multiple Attachment
+
+```php
+AttachAction::make()
+    ->multiple()
+```
+
+### Preload Options
+
+```php
+AttachAction::make()
+    ->preloadRecordSelect()
+```
+
+### Search Multiple Columns
+
+```php
+AttachAction::make()
+    ->recordSelectSearchColumns(['title', 'description', 'sku'])
+```
+
+## Associate and Dissociate
+
+For `HasMany` and `MorphMany` relationships:
+
+```php
+use Filament\Actions\AssociateAction;
+use Filament\Actions\DissociateAction;
+use Filament\Actions\DissociateBulkAction;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->headerActions([
+            AssociateAction::make(),
+        ])
+        ->recordActions([
+            DissociateAction::make(),
+        ])
+        ->toolbarActions([
+            BulkActionGroup::make([
+                DissociateBulkAction::make(),
+            ]),
+        ]);
+}
+```
+
+Associate actions work similarly to attach actions but update the foreign key instead of creating pivot records.
+
+## Accessing the Owner Record
+
+Get the parent record in a relation manager:
+
+```php
+$this->getOwnerRecord()
+```
+
+In static methods, use callbacks:
+
+```php
+use Filament\Forms\Components\Select;
+use Filament\Resources\RelationManagers\RelationManager;
+
+Forms\Components\Select::make('store_id')
+    ->options(function (RelationManager $livewire): array {
+        return $livewire->getOwnerRecord()->stores()
+            ->pluck('name', 'id')
+            ->toArray();
+    })
+```
+
+## Relation Manager Features
+
+### Read-Only Mode
+
+On View pages, relation managers are read-only by default. Override this:
+
+```php
+public function isReadOnly(): bool
+{
+    return false;
+}
+```
+
+Or globally:
+
+```php
+use Filament\Panel;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->readOnlyRelationManagersOnResourceViewPagesByDefault(false)
+        // ...
+}
+```
+
+### Customizing the Query
+
+```php
+use Illuminate\Database\Eloquent\Builder;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->modifyQueryUsing(fn (Builder $query) => 
+            $query->where('is_active', true)
+        )
+        ->columns([
+            // ...
+        ]);
+}
+```
+
+### Grouping Relation Managers
+
+```php
+use Filament\Resources\RelationManagers\RelationGroup;
+
+public static function getRelations(): array
+{
+    return [
+        RelationGroup::make('Contacts', [
+            RelationManagers\IndividualsRelationManager::class,
+            RelationManagers\OrganizationsRelationManager::class,
+        ]),
+    ];
+}
+```
+
+### Conditional Visibility
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
+{
+    return $ownerRecord->status === Status::Published;
+}
+```
+
+## Combining with Form Content
+
+Render relation managers as tabs alongside your form:
+
+```php
+public function hasCombinedRelationManagerTabsWithContent(): bool
+{
+    return true;
+}
+```
+
+Customize the form tab:
+
+```php
+use Filament\Schemas\Components\Tabs\Tab;
+
+public function getContentTabComponent(): Tab
+{
+    return Tab::make('Details')
+        ->icon('heroicon-m-information-circle');
+}
+```
+
+## Relation Pages
+
+Alternative to relation managers using dedicated pages:
+
+```bash
+php artisan make:filament-page ManageCustomerAddresses --resource=CustomerResource --type=ManageRelatedRecords
+```
+
+Register it:
+
+```php
+public static function getPages(): array
+{
+    return [
+        'index' => Pages\ListCustomers::route('/'),
+        'create' => Pages\CreateCustomer::route('/create'),
+        'view' => Pages\ViewCustomer::route('/{record}'),
+        'addresses' => Pages\ManageCustomerAddresses::route('/{record}/addresses'),
+    ];
+}
+```
+
+<Note>
+Relation pages and relation managers serve the same purpose. Use pages when you want relationship management separate from the Edit/View page.
+</Note>
+
+## Sharing Resources with Relation Managers
+
+Reuse resource definitions:
+
+```php
+use App\Filament\Resources\Blog\Posts\PostResource;
+
+public function form(Schema $schema): Schema
+{
+    return PostResource::form($schema);
+}
+
+public function table(Table $table): Table
+{
+    return PostResource::table($table)
+        ->headerActions([
+            CreateAction::make(),
+        ]);
+}
+```
+
+### Hiding Shared Components
+
+Hide fields/columns on the relation manager:
+
+```php
+// In the resource form
+Select::make('post_id')
+    ->relationship('post', 'title')
+    ->hiddenOn(CommentsRelationManager::class)
+
+// In the resource table
+TextColumn::make('post.title')
+    ->hiddenOn(CommentsRelationManager::class)
+```
+
+## Performance Optimization
+
+### Lazy Loading
+
+Relation managers lazy-load by default. Disable:
+
+```php
+protected static bool $isLazy = false;
+```
+
+### Eager Loading
+
+```php
+public static function getGlobalSearchEloquentQuery(): Builder
+{
+    return parent::getGlobalSearchEloquentQuery()->with(['author', 'category']);
+}
+```
+
+### Bulk Action Performance
+
+```php
+DetachBulkAction::make()
+    ->chunkSelectedRecords(250)
+    ->fetchSelectedRecords(false) // Skip loading records
+```

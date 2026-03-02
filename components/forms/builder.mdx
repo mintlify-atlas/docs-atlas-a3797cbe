@@ -1,0 +1,321 @@
+---
+title: Builder
+---
+
+The builder component allows you to create repeatable blocks with different schemas.
+
+## Basic Usage
+
+```php
+use Filament\Forms\Components\Builder;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+
+Builder::make('content')
+    ->blocks([
+        Builder\Block::make('heading')
+            ->schema([
+                TextInput::make('content')->required(),
+                Select::make('level')
+                    ->options([
+                        'h1' => 'H1',
+                        'h2' => 'H2',
+                        'h3' => 'H3',
+                    ])
+                    ->required(),
+            ]),
+        Builder\Block::make('paragraph')
+            ->schema([
+                Textarea::make('content')->required(),
+            ]),
+        Builder\Block::make('image')
+            ->schema([
+                FileUpload::make('url')->image()->required(),
+                TextInput::make('alt')->required(),
+            ]),
+    ])
+```
+
+## Available Methods
+
+<ParamField path="blocks" type="method">
+  Defines the available block types.
+  
+  ```php
+  Builder::make('content')
+      ->blocks([
+          Builder\Block::make('text')
+              ->schema([...]),
+          Builder\Block::make('image')
+              ->schema([...]),
+      ])
+  ```
+</ParamField>
+
+<ParamField path="blockNumbers" type="method">
+  Shows block numbers.
+  
+  ```php
+  Builder::make('content')
+      ->blocks([...])
+      ->blockNumbers()
+  ```
+</ParamField>
+
+<ParamField path="blockIcons" type="method">
+  Controls block icons display.
+  
+  ```php
+  Builder::make('content')
+      ->blocks([...])
+      ->blockIcons(false)
+  ```
+</ParamField>
+
+<ParamField path="blockPickerColumns" type="method">
+  Sets columns for block picker.
+  
+  ```php
+  Builder::make('content')
+      ->blocks([...])
+      ->blockPickerColumns(3)
+  ```
+</ParamField>
+
+<ParamField path="blockPickerWidth" type="method">
+  Sets block picker width.
+  
+  ```php
+  Builder::make('content')
+      ->blocks([...])
+      ->blockPickerWidth('2xl')
+  ```
+</ParamField>
+
+<ParamField path="addActionLabel" type="method">
+  Customizes the add button label.
+  
+  ```php
+  Builder::make('content')
+      ->blocks([...])
+      ->addActionLabel('Add block')
+  ```
+</ParamField>
+
+<ParamField path="collapsible" type="method">
+  Makes blocks collapsible.
+  
+  ```php
+  Builder::make('content')
+      ->blocks([...])
+      ->collapsible()
+  ```
+</ParamField>
+
+<ParamField path="collapsed" type="method">
+  Makes blocks collapsed by default.
+  
+  ```php
+  Builder::make('content')
+      ->blocks([...])
+      ->collapsible()
+      ->collapsed()
+  ```
+</ParamField>
+
+<ParamField path="cloneable" type="method">
+  Allows cloning blocks.
+  
+  ```php
+  Builder::make('content')
+      ->blocks([...])
+      ->cloneable()
+  ```
+</ParamField>
+
+<ParamField path="deletable" type="method">
+  Controls whether blocks can be deleted.
+  
+  ```php
+  Builder::make('content')
+      ->blocks([...])
+      ->deletable(false)
+  ```
+</ParamField>
+
+<ParamField path="reorderable" type="method">
+  Controls whether blocks can be reordered.
+  
+  ```php
+  Builder::make('content')
+      ->blocks([...])
+      ->reorderable(false)
+  ```
+</ParamField>
+
+<ParamField path="reorderableWithButtons" type="method">
+  Enables reordering with up/down buttons.
+  
+  ```php
+  Builder::make('content')
+      ->blocks([...])
+      ->reorderableWithButtons()
+  ```
+</ParamField>
+
+<ParamField path="minItems" type="method">
+  Sets minimum number of blocks.
+  
+  ```php
+  Builder::make('content')
+      ->blocks([...])
+      ->minItems(1)
+  ```
+</ParamField>
+
+<ParamField path="maxItems" type="method">
+  Sets maximum number of blocks.
+  
+  ```php
+  Builder::make('content')
+      ->blocks([...])
+      ->maxItems(10)
+  ```
+</ParamField>
+
+## Block Configuration
+
+<ParamField path="Builder\Block::make" type="method">
+  Creates a new block type.
+  
+  ```php
+  Builder\Block::make('heading')
+      ->schema([...])
+      ->label('Heading')
+      ->icon('heroicon-o-h1')
+  ```
+</ParamField>
+
+<ParamField path="schema" type="method">
+  Defines the block fields.
+  
+  ```php
+  Builder\Block::make('text')
+      ->schema([
+          Textarea::make('content'),
+      ])
+  ```
+</ParamField>
+
+<ParamField path="label" type="method">
+  Sets the block label.
+  
+  ```php
+  Builder\Block::make('heading')
+      ->label('Section Heading')
+  ```
+</ParamField>
+
+<ParamField path="icon" type="method">
+  Sets the block icon.
+  
+  ```php
+  use Filament\Support\Icons\Heroicon;
+  
+  Builder\Block::make('image')
+      ->icon(Heroicon::Photo)
+  ```
+</ParamField>
+
+<ParamField path="columns" type="method">
+  Sets grid columns for block fields.
+  
+  ```php
+  Builder\Block::make('columns')
+      ->schema([...])
+      ->columns(2)
+  ```
+</ParamField>
+
+## Common Patterns
+
+### Page Builder
+
+```php
+Builder::make('content')
+    ->blocks([
+        Builder\Block::make('heading')
+            ->schema([
+                TextInput::make('content')->required(),
+                Select::make('level')
+                    ->options(['h2' => 'H2', 'h3' => 'H3'])
+                    ->default('h2'),
+            ])
+            ->icon('heroicon-o-bars-3'),
+        Builder\Block::make('paragraph')
+            ->schema([
+                RichEditor::make('content')->required(),
+            ])
+            ->icon('heroicon-o-document-text'),
+        Builder\Block::make('image')
+            ->schema([
+                FileUpload::make('image')
+                    ->image()
+                    ->required(),
+                TextInput::make('alt'),
+                TextInput::make('caption'),
+            ])
+            ->icon('heroicon-o-photo'),
+    ])
+    ->collapsible()
+    ->blockNumbers()
+```
+
+### Landing Page Builder
+
+```php
+Builder::make('blocks')
+    ->blocks([
+        Builder\Block::make('hero')
+            ->schema([
+                TextInput::make('heading')->required(),
+                Textarea::make('subheading'),
+                FileUpload::make('background')->image(),
+            ]),
+        Builder\Block::make('features')
+            ->schema([
+                Repeater::make('items')
+                    ->schema([
+                        TextInput::make('title'),
+                        Textarea::make('description'),
+                    ])
+                    ->columns(2),
+            ]),
+        Builder\Block::make('cta')
+            ->schema([
+                TextInput::make('text')->required(),
+                TextInput::make('url')->url()->required(),
+            ]),
+    ])
+    ->cloneable()
+    ->collapsible()
+```
+
+## Database Casting
+
+Add an `array` cast:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class Page extends Model
+{
+    protected function casts(): array
+    {
+        return [
+            'content' => 'array',
+        ];
+    }
+}
+```

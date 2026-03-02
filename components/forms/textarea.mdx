@@ -1,0 +1,152 @@
+---
+title: Textarea
+---
+
+The textarea component allows you to interact with multi-line text.
+
+## Basic Usage
+
+```php
+use Filament\Forms\Components\Textarea;
+
+Textarea::make('description')
+```
+
+## Available Methods
+
+<ParamField path="rows" type="method">
+  Sets the number of rows.
+  
+  ```php
+  Textarea::make('description')
+      ->rows(10)
+  ```
+</ParamField>
+
+<ParamField path="cols" type="method">
+  Sets the number of columns.
+  
+  ```php
+  Textarea::make('description')
+      ->cols(20)
+  ```
+</ParamField>
+
+<ParamField path="autosize" type="method">
+  Makes textarea automatically resize.
+  
+  ```php
+  Textarea::make('description')
+      ->autosize()
+  ```
+</ParamField>
+
+<ParamField path="readOnly" type="method">
+  Makes the textarea read-only.
+  
+  ```php
+  Textarea::make('notes')
+      ->readOnly()
+  ```
+</ParamField>
+
+<ParamField path="disableGrammarly" type="method">
+  Disables Grammarly.
+  
+  ```php
+  Textarea::make('code')
+      ->disableGrammarly()
+  ```
+</ParamField>
+
+<ParamField path="trim" type="method">
+  Trims whitespace from the textarea.
+  
+  ```php
+  Textarea::make('description')
+      ->trim()
+  ```
+</ParamField>
+
+<ParamField path="minLength" type="method">
+  Sets minimum length validation.
+  
+  ```php
+  Textarea::make('description')
+      ->minLength(10)
+  ```
+</ParamField>
+
+<ParamField path="maxLength" type="method">
+  Sets maximum length validation.
+  
+  ```php
+  Textarea::make('description')
+      ->maxLength(1000)
+  ```
+</ParamField>
+
+<ParamField path="length" type="method">
+  Sets exact length validation.
+  
+  ```php
+  Textarea::make('tweet')
+      ->length(280)
+  ```
+</ParamField>
+
+<ParamField path="placeholder" type="method">
+  Sets placeholder text.
+  
+  ```php
+  Textarea::make('description')
+      ->placeholder('Enter a detailed description...')
+  ```
+</ParamField>
+
+## Common Patterns
+
+### Product Description
+
+```php
+Textarea::make('description')
+    ->rows(5)
+    ->maxLength(1000)
+    ->required()
+```
+
+### Auto-sizing Notes
+
+```php
+Textarea::make('notes')
+    ->autosize()
+    ->placeholder('Add your notes here...')
+```
+
+### Code Snippet
+
+```php
+Textarea::make('code')
+    ->rows(10)
+    ->disableGrammarly()
+    ->extraAttributes(['class' => 'font-mono'])
+```
+
+### Comment Field
+
+```php
+Textarea::make('comment')
+    ->rows(4)
+    ->minLength(10)
+    ->maxLength(500)
+    ->required()
+```
+
+### Bio Field
+
+```php
+Textarea::make('bio')
+    ->autosize()
+    ->maxLength(500)
+    ->placeholder('Tell us about yourself...')
+```

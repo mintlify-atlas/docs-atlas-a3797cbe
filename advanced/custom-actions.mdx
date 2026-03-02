@@ -1,0 +1,602 @@
+---
+title: Creating Custom Actions
+description: Learn how to create custom action components in Filament
+---
+
+## Introduction
+
+Actions are one of Filament's most powerful features, providing modal-based interactions throughout the framework. Custom actions extend the base `Action` class and can be used in tables, forms, pages, and infolists.
+
+## Understanding the Action base class
+
+All actions extend the `Action` class at `packages/actions/src/Action.php`. This base class provides:
+
+- Modal management
+- Form integration
+- Authorization and visibility
+- Notifications
+- URL redirection
+- Event dispatching
+- Lifecycle hooks
+- Multiple view modes (button, link, icon button, grouped)
+
+## Creating a basic custom action
+
+<Steps>
+
+### Step 1: Create the action class
+
+Create a new class extending `Filament\Actions\Action`:
+
+```php
+use Filament\Actions\Action;
+use Illuminate\Database\Eloquent\Model;
+
+class PublishAction extends Action
+{
+    public static function getDefaultName(): ?string
+    {
+        return 'publish';
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->label('Publish');
+
+        $this->icon('heroicon-o-arrow-up-tray');
+
+        $this->color('success');
+
+        $this->requiresConfirmation();
+
+        $this->modalHeading('Publish this item?');
+
+        $this->modalDescription('This will make the item visible to the public.');
+
+        $this->action(function (Model $record): void {
+            $record->update(['published_at' => now()]);
+
+            $this->success();
+        });
+
+        $this->successNotificationTitle('Published successfully');
+    }
+}
+```
+
+### Step 2: Use your custom action
+
+You can now use your action in tables, forms, or anywhere actions are supported:
+
+```php
+use App\Actions\PublishAction;
+
+// In a table
+public function table(Table $table): Table
+{
+    return $table
+        ->actions([
+            PublishAction::make(),
+        ]);
+}
+
+// In a page header
+protected function getHeaderActions(): array
+{
+    return [
+        PublishAction::make(),
+    ];
+}
+```
+
+</Steps>
+
+## Advanced action configuration
+
+Actions support extensive configuration through the fluent API:
+
+```php
+use Filament\Actions\Action;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\DateTimePicker;
+use Illuminate\Database\Eloquent\Model;
+
+class SchedulePublishAction extends Action
+{
+    public static function getDefaultName(): ?string
+    {
+        return 'schedule';
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->label('Schedule Publication');
+
+        $this->icon('heroicon-o-clock');
+
+        $this->color('warning');
+
+        $this->form([
+            DateTimePicker::make('published_at')
+                ->label('Publish at')
+                ->required()
+                ->minDate(now())
+                ->default(now()->addDay()),
+
+            Textarea::make('notes')
+                ->label('Publication notes')
+                ->rows(3),
+        ]);
+
+        $this->action(function (array $data, Model $record): void {
+            $record->update([
+                'published_at' => $data['published_at'],
+                'publish_notes' => $data['notes'],
+            ]);
+        });
+
+        $this->after(function (): void {
+            // Dispatch event or perform additional actions
+        });
+
+        $this->successNotificationTitle('Publication scheduled');
+
+        $this->visible(fn (Model $record): bool => $record->published_at === null);
+    }
+}
+```
+
+## Creating bulk actions
+
+Bulk actions operate on multiple selected records:
+
+```php
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
+
+class BulkPublishAction extends Action
+{
+    public static function getDefaultName(): ?string
+    {
+        return 'bulkPublish';
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->label('Publish Selected');
+
+        $this->icon('heroicon-o-arrow-up-tray');
+
+        $this->color('success');
+
+        $this->requiresConfirmation();
+
+        $this->modalHeading('Publish selected items?');
+
+        $this->modalDescription(fn (Collection $records) => 
+            "Are you sure you want to publish {$records->count()} items?"
+        );
+
+        $this->action(function (Collection $records): void {
+            DB::transaction(function () use ($records) {
+                $records->each(function (Model $record): void {
+                    $record->update(['published_at' => now()]);
+                });
+            });
+
+            Notification::make()
+                ->title("{$records->count()} items published")
+                ->success()
+                ->send();
+        });
+
+        $this->deselectRecordsAfterCompletion();
+    }
+}
+```
+
+## Using lifecycle hooks
+
+Actions provide comprehensive lifecycle hooks:
+
+```php
+use Filament\Actions\Action;
+use Illuminate\Database\Eloquent\Model;
+
+class ComplexAction extends Action
+{
+    public static function getDefaultName(): ?string
+    {
+        return 'complex';
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->before(function (Model $record): void {
+            // Runs before the modal opens
+            // Useful for pre-loading data
+        });
+
+        $this->beforeFormFilled(function (Model $record): void {
+            // Runs before the form is filled with data
+        });
+
+        $this->afterFormFilled(function (Model $record): void {
+            // Runs after the form is filled
+        });
+
+        $this->beforeFormValidated(function (array $data): void {
+            // Runs before form validation
+            // You can modify $data here
+        });
+
+        $this->afterFormValidated(function (array $data): void {
+            // Runs after form validation passes
+        });
+
+        $this->action(function (array $data, Model $record): void {
+            // Main action logic
+        });
+
+        $this->after(function (Model $record): void {
+            // Runs after the action completes
+            // Useful for cleanup or notifications
+        });
+
+        $this->onSuccess(function (): void {
+            // Runs only if the action succeeds
+        });
+
+        $this->onFailure(function (): void {
+            // Runs if the action fails
+        });
+    }
+}
+```
+
+## Implementing authorization
+
+Control who can see and use your action:
+
+```php
+use Filament\Actions\Action;
+use Illuminate\Database\Eloquent\Model;
+
+class DeleteAction extends Action
+{
+    public static function getDefaultName(): ?string
+    {
+        return 'delete';
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->label('Delete');
+
+        $this->icon('heroicon-o-trash');
+
+        $this->color('danger');
+
+        // Simple authorization
+        $this->visible(fn (Model $record): bool => 
+            auth()->user()->can('delete', $record)
+        );
+
+        // Or use authorize() for a 403 response if hidden
+        $this->authorize(fn (Model $record): bool => 
+            auth()->user()->can('delete', $record)
+        );
+
+        // Conditional disabling
+        $this->disabled(fn (Model $record): bool => 
+            $record->trashed() || $record->is_protected
+        );
+
+        $this->requiresConfirmation();
+
+        $this->action(function (Model $record): void {
+            $record->delete();
+        });
+    }
+}
+```
+
+## Working with action data
+
+Actions can access and manipulate data from multiple sources:
+
+```php
+use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Illuminate\Database\Eloquent\Model;
+
+class TransferOwnershipAction extends Action
+{
+    public static function getDefaultName(): ?string
+    {
+        return 'transferOwnership';
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->label('Transfer Ownership');
+
+        $this->form([
+            Select::make('new_owner_id')
+                ->label('New Owner')
+                ->options(User::pluck('name', 'id'))
+                ->required()
+                ->searchable(),
+
+            Textarea::make('reason')
+                ->label('Reason for transfer')
+                ->required(),
+        ]);
+
+        $this->fillForm(function (Model $record): array {
+            // Pre-fill form data
+            return [
+                'new_owner_id' => null,
+                'reason' => '',
+            ];
+        });
+
+        $this->action(function (array $data, Model $record): void {
+            // Access form data
+            $newOwnerId = $data['new_owner_id'];
+            $reason = $data['reason'];
+
+            // Access the current record
+            $oldOwnerId = $record->user_id;
+
+            // Perform the action
+            $record->update([
+                'user_id' => $newOwnerId,
+                'transfer_reason' => $reason,
+                'transferred_at' => now(),
+            ]);
+
+            // Log the transfer
+            activity()
+                ->performedOn($record)
+                ->causedBy(auth()->user())
+                ->log("Ownership transferred from {$oldOwnerId} to {$newOwnerId}");
+        });
+    }
+}
+```
+
+## Creating action groups
+
+Group related actions together:
+
+```php
+use Filament\Actions\ActionGroup;
+use Filament\Actions\Action;
+
+ActionGroup::make([
+    PublishAction::make(),
+    SchedulePublishAction::make(),
+    Action::make('unpublish')
+        ->icon('heroicon-o-arrow-down-tray')
+        ->color('warning')
+        ->action(fn (Model $record) => $record->update(['published_at' => null])),
+])
+    ->label('Publishing')
+    ->icon('heroicon-o-cog')
+    ->color('primary')
+    ->button()
+```
+
+## Advanced example: Multi-step wizard action
+
+```php
+use Filament\Actions\Action;
+use Filament\Forms\Components\Wizard;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\FileUpload;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+
+class ImportDataAction extends Action
+{
+    public static function getDefaultName(): ?string
+    {
+        return 'import';
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->label('Import Data');
+
+        $this->icon('heroicon-o-arrow-down-tray');
+
+        $this->modalWidth('3xl');
+
+        $this->steps([
+            Wizard\Step::make('Upload')
+                ->schema([
+                    FileUpload::make('file')
+                        ->label('CSV File')
+                        ->acceptedFileTypes(['text/csv'])
+                        ->required(),
+                ]),
+
+            Wizard\Step::make('Configure')
+                ->schema([
+                    Select::make('delimiter')
+                        ->options([
+                            ',' => 'Comma (,)',
+                            ';' => 'Semicolon (;)',
+                            '\t' => 'Tab',
+                        ])
+                        ->default(',')
+                        ->required(),
+
+                    TextInput::make('skip_rows')
+                        ->label('Rows to skip')
+                        ->numeric()
+                        ->default(0),
+                ]),
+
+            Wizard\Step::make('Review')
+                ->schema([
+                    // Preview component here
+                ]),
+        ]);
+
+        $this->action(function (array $data): void {
+            DB::transaction(function () use ($data) {
+                // Import logic here
+            });
+        });
+
+        $this->successNotificationTitle('Data imported successfully');
+    }
+}
+```
+
+## Using database transactions
+
+Ensure data consistency with transactions:
+
+```php
+use Filament\Actions\Action;
+use Illuminate\Database\Eloquent\Model;
+
+class ComplexUpdateAction extends Action
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->databaseTransaction();
+
+        $this->action(function (array $data, Model $record): void {
+            // All operations here will be wrapped in a transaction
+            $record->update($data);
+            $record->logs()->create(['message' => 'Updated']);
+            $record->notify(new RecordUpdated());
+
+            // If any operation fails, all changes will be rolled back
+        });
+    }
+}
+```
+
+## Custom action arguments
+
+Pass custom data to actions:
+
+```php
+use Filament\Actions\Action;
+
+class CustomAction extends Action
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->action(function (array $arguments): void {
+            $customValue = $arguments['custom_value'] ?? null;
+            // Use the custom value
+        });
+    }
+}
+
+// Usage
+CustomAction::make()
+    ->arguments(['custom_value' => 'something'])
+```
+
+## Stopping action execution
+
+You can halt or cancel action execution:
+
+```php
+use Filament\Actions\Action;
+
+class ConditionalAction extends Action
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->before(function (Model $record): void {
+            if (! $record->isReady()) {
+                // Cancel the action - rolls back transaction if enabled
+                $this->cancel();
+
+                // Or halt without rollback
+                $this->halt();
+            }
+        });
+
+        $this->action(function (Model $record): void {
+            // This won't execute if cancelled/halted above
+        });
+    }
+}
+```
+
+## Best practices
+
+- Use `setUp()` for default configuration instead of the constructor
+- Implement `getDefaultName()` for automatic action naming
+- Use lifecycle hooks for complex workflows
+- Always use database transactions for multi-step operations
+- Provide clear modal headings and descriptions
+- Use authorization methods (`visible()`, `authorize()`, `disabled()`)
+- Follow naming conventions: use descriptive names, not abbreviations
+- Use static closures when the closure doesn't use `$this`
+- Provide success/failure notifications
+- Deselect records after bulk actions complete
+- Use `evaluate()` for all properties that support closures
+
+## Testing custom actions
+
+Test your actions using Pest or PHPUnit:
+
+```php
+use function Pest\Livewire\livewire;
+
+it('can publish a record', function () {
+    $record = Post::factory()->create(['published_at' => null]);
+
+    livewire(PostResource\Pages\EditPost::class, [
+        'record' => $record->getRouteKey(),
+    ])
+        ->callAction('publish')
+        ->assertHasNoActionErrors();
+
+    expect($record->refresh()->published_at)->not->toBeNull();
+});
+
+it('requires confirmation before deleting', function () {
+    $record = Post::factory()->create();
+
+    livewire(PostResource\Pages\EditPost::class, [
+        'record' => $record->getRouteKey(),
+    ])
+        ->assertActionVisible('delete')
+        ->assertActionRequiresConfirmation('delete');
+});
+```

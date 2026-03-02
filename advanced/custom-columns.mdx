@@ -1,0 +1,536 @@
+---
+title: Creating Custom Table Columns
+description: Learn how to create custom table column components in Filament
+---
+
+## Introduction
+
+Filament's table system is highly extensible, allowing you to create custom column types that integrate seamlessly with sorting, searching, and all other table features. Custom columns extend the base `Column` class and can display data in any format you need.
+
+## Understanding the Column base class
+
+All table columns extend the `Column` class at `packages/tables/src/Columns/Column.php`. This base class provides:
+
+- State retrieval and formatting
+- Sorting and searching capabilities
+- Alignment and width configuration
+- Action and URL integration
+- Tooltip support
+- Record access and manipulation
+
+## Creating a basic custom column
+
+<Steps>
+
+### Step 1: Create the column class
+
+Create a new class extending `Filament\Tables\Columns\Column`:
+
+```php
+use Filament\Tables\Columns\Column;
+
+class RatingColumn extends Column
+{
+    protected string $view = 'filament.tables.columns.rating-column';
+}
+```
+
+### Step 2: Create the Blade view
+
+Create your view at `resources/views/filament/tables/columns/rating-column.blade.php`:
+
+```blade
+<div class="flex items-center gap-x-1">
+    @for ($i = 1; $i <= 5; $i++)
+        <svg
+            class="h-5 w-5 {{ $i <= $getState() ? 'text-warning-500' : 'text-gray-300' }}"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+        >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+        </svg>
+    @endfor
+</div>
+```
+
+### Step 3: Use your custom column
+
+```php
+use App\Tables\Columns\RatingColumn;
+
+RatingColumn::make('rating')
+    ->label('Customer Rating')
+```
+
+</Steps>
+
+## Adding custom configuration methods
+
+Extend your column with custom methods following Filament's fluent API pattern:
+
+```php
+use Closure;
+use Filament\Tables\Columns\Column;
+
+class ProgressColumn extends Column
+{
+    protected string $view = 'filament.tables.columns.progress-column';
+
+    protected string | Closure | null $color = 'primary';
+
+    protected int | Closure $maxValue = 100;
+
+    protected bool | Closure $showPercentage = true;
+
+    public function color(string | Closure | null $color): static
+    {
+        $this->color = $color;
+
+        return $this;
+    }
+
+    public function maxValue(int | Closure $max): static
+    {
+        $this->maxValue = $max;
+
+        return $this;
+    }
+
+    public function showPercentage(bool | Closure $condition = true): static
+    {
+        $this->showPercentage = $condition;
+
+        return $this;
+    }
+
+    public function getColor(): ?string
+    {
+        return $this->evaluate($this->color);
+    }
+
+    public function getMaxValue(): int
+    {
+        return $this->evaluate($this->maxValue);
+    }
+
+    public function shouldShowPercentage(): bool
+    {
+        return (bool) $this->evaluate($this->showPercentage);
+    }
+
+    public function getPercentage(): float
+    {
+        $state = $this->getState();
+        $max = $this->getMaxValue();
+
+        return $max > 0 ? ($state / $max) * 100 : 0;
+    }
+}
+```
+
+## Using embedded HTML views
+
+For better performance, you can implement `HasEmbeddedView` to render HTML directly without Blade:
+
+```php
+use Filament\Support\Components\Contracts\HasEmbeddedView;
+use Filament\Tables\Columns\Column;
+
+class StatusBadgeColumn extends Column implements HasEmbeddedView
+{
+    protected array | Closure $colorMap = [];
+
+    public function colors(array | Closure $colors): static
+    {
+        $this->colorMap = $colors;
+
+        return $this;
+    }
+
+    public function getColor(mixed $state): ?string
+    {
+        $colorMap = $this->evaluate($this->colorMap);
+
+        return $colorMap[$state] ?? 'gray';
+    }
+
+    public function toEmbeddedHtml(): string
+    {
+        $state = $this->getState();
+        $color = $this->getColor($state);
+
+        $colorClasses = [
+            'primary' => 'bg-primary-500 text-white',
+            'success' => 'bg-success-500 text-white',
+            'warning' => 'bg-warning-500 text-white',
+            'danger' => 'bg-danger-500 text-white',
+            'gray' => 'bg-gray-500 text-white',
+        ];
+
+        $class = $colorClasses[$color] ?? $colorClasses['gray'];
+
+        return <<<HTML
+            <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md {$class}">
+                {$state}
+            </span>
+        HTML;
+    }
+}
+```
+
+<Aside variant="tip">
+Using `HasEmbeddedView` can significantly improve performance for simple columns by avoiding Blade compilation.
+</Aside>
+
+## Implementing sortable columns
+
+Make your column sortable by implementing custom sorting logic:
+
+```php
+class FullNameColumn extends Column
+{
+    protected string $view = 'filament.tables.columns.full-name-column';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->sortable(query: function (Builder $query, string $direction): Builder {
+            return $query->orderBy('first_name', $direction)
+                ->orderBy('last_name', $direction);
+        });
+    }
+}
+```
+
+## Implementing searchable columns
+
+Add search functionality to your custom column:
+
+```php
+class TagsColumn extends Column
+{
+    protected string $view = 'filament.tables.columns.tags-column';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->searchable(query: function (Builder $query, string $search): Builder {
+            return $query->whereHas('tags', function (Builder $query) use ($search) {
+                $query->where('name', 'like', "%{$search}%");
+            });
+        });
+    }
+}
+```
+
+## Accessing state and formatting
+
+You can format column state before display:
+
+```php
+class CurrencyColumn extends Column
+{
+    protected string $view = 'filament.tables.columns.currency-column';
+
+    protected string | Closure $currency = 'USD';
+
+    protected string | Closure $locale = 'en_US';
+
+    public function currency(string | Closure $currency): static
+    {
+        $this->currency = $currency;
+
+        return $this;
+    }
+
+    public function locale(string | Closure $locale): static
+    {
+        $this->locale = $locale;
+
+        return $this;
+    }
+
+    public function getCurrency(): string
+    {
+        return $this->evaluate($this->currency);
+    }
+
+    public function getLocale(): string
+    {
+        return $this->evaluate($this->locale);
+    }
+
+    public function getFormattedState(): string
+    {
+        $state = $this->getState();
+
+        if ($state === null) {
+            return '';
+        }
+
+        $formatter = new \NumberFormatter($this->getLocale(), \NumberFormatter::CURRENCY);
+
+        return $formatter->formatCurrency($state, $this->getCurrency());
+    }
+}
+```
+
+In your Blade view:
+
+```blade
+<div class="text-sm font-medium">
+    {{ $getFormattedState() }}
+</div>
+```
+
+## Using concerns for reusable functionality
+
+Filament columns use traits to add common functionality:
+
+```php
+use Filament\Support\Concerns\CanBeCopied;
+use Filament\Support\Concerns\HasColor;
+use Filament\Tables\Columns\Column;
+use Filament\Tables\Columns\Concerns\HasIcon;
+
+class CustomColumn extends Column
+{
+    use CanBeCopied;
+    use HasColor;
+    use HasIcon;
+
+    protected string $view = 'filament.tables.columns.custom-column';
+}
+```
+
+## Advanced example: Chart column
+
+Here's a complex example that renders a mini chart using Chart.js:
+
+<CodeGroup>
+
+```php PHP Class
+use Filament\Tables\Columns\Column;
+use Illuminate\Support\Js;
+
+class SparklineColumn extends Column
+{
+    protected string $view = 'filament.tables.columns.sparkline-column';
+
+    protected array | Closure $data = [];
+
+    protected string | Closure $chartType = 'line';
+
+    protected string | Closure | null $color = 'primary';
+
+    public function data(array | Closure $data): static
+    {
+        $this->data = $data;
+
+        return $this;
+    }
+
+    public function type(string | Closure $type): static
+    {
+        $this->chartType = $type;
+
+        return $this;
+    }
+
+    public function color(string | Closure | null $color): static
+    {
+        $this->color = $color;
+
+        return $this;
+    }
+
+    public function getData(): array
+    {
+        return $this->evaluate($this->data, [
+            'record' => $this->getRecord(),
+            'state' => $this->getState(),
+        ]);
+    }
+
+    public function getChartType(): string
+    {
+        return $this->evaluate($this->chartType);
+    }
+
+    public function getColor(): ?string
+    {
+        return $this->evaluate($this->color);
+    }
+}
+```
+
+```blade Blade View
+<div
+    x-data="{
+        chart: null,
+        init() {
+            const ctx = this.$refs.canvas.getContext('2d')
+            this.chart = new Chart(ctx, {
+                type: '{{ $getChartType() }}',
+                data: {
+                    labels: Array({{ count($getData()) }}).fill(''),
+                    datasets: [{
+                        data: @js($getData()),
+                        borderColor: 'rgb({{ $getColor() }})',
+                        backgroundColor: 'rgba({{ $getColor() }}, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false },
+                    },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false },
+                    },
+                },
+            })
+        },
+    }"
+    class="h-12 w-24"
+>
+    <canvas x-ref="canvas"></canvas>
+</div>
+```
+
+</CodeGroup>
+
+## Working with actions
+
+Columns can trigger actions when clicked:
+
+```php
+use Filament\Tables\Actions\Action;
+
+class QuickEditColumn extends Column
+{
+    protected string $view = 'filament.tables.columns.quick-edit-column';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->action(
+            Action::make('edit')
+                ->form([
+                    TextInput::make('value'),
+                ])
+                ->action(function (array $data, Model $record): void {
+                    $record->update([
+                        $this->getName() => $data['value'],
+                    ]);
+                })
+        );
+    }
+}
+```
+
+## Accessing the table and Livewire component
+
+You can access the parent table and Livewire component:
+
+```php
+class ContextualColumn extends Column
+{
+    protected string $view = 'filament.tables.columns.contextual-column';
+
+    public function getFormattedState(): string
+    {
+        $table = $this->getTable();
+        $livewire = $this->getLivewire();
+        $record = $this->getRecord();
+        $state = $this->getState();
+
+        // Access table configuration
+        $recordsPerPage = $table->getRecordsPerPage();
+
+        // Access Livewire component properties
+        $currentPage = $livewire->getTablePage();
+
+        // Custom formatting logic
+        return sprintf('%s (Page %d)', $state, $currentPage);
+    }
+}
+```
+
+## Column summarization
+
+Add summary calculations to your custom column:
+
+```php
+use Filament\Tables\Columns\Summarizers\Summarizer;
+
+class WeightedAverageColumn extends Column
+{
+    protected string $view = 'filament.tables.columns.weighted-average';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->summarize(
+            Summarizer::make()
+                ->label('Weighted Avg')
+                ->using(function (Builder $query): float {
+                    $results = $query->get();
+                    $totalWeight = $results->sum('weight');
+                    $weightedSum = $results->sum(function ($record) {
+                        return $record->value * $record->weight;
+                    });
+
+                    return $totalWeight > 0 ? $weightedSum / $totalWeight : 0;
+                })
+                ->formatStateUsing(fn (float $state): string => number_format($state, 2))
+        );
+    }
+}
+```
+
+## Best practices
+
+- Always extend the `Column` base class
+- Use the `evaluate()` method for closure support in all configuration methods
+- Implement `HasEmbeddedView` for simple columns to improve performance
+- Use concerns (traits) for reusable functionality like `CanBeCopied`, `HasColor`, etc.
+- Access state via `$getState()` in Blade views or `$this->getState()` in the class
+- Use the `setUp()` method for default configuration
+- Follow naming conventions: `get` prefix for getters, nullable setters
+- Never use abbreviated variable names - use descriptive names
+- Use static closures (`static fn`) when the closure doesn't use `$this`
+- Use `app()` instead of `new` for dependency injection
+
+## Publishing custom columns
+
+Package your custom columns for reuse:
+
+```php
+use Illuminate\Support\ServiceProvider;
+
+class TableColumnsServiceProvider extends ServiceProvider
+{
+    public function boot(): void
+    {
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'table-columns');
+
+        $this->publishes([
+            __DIR__.'/../resources/views' => resource_path('views/vendor/table-columns'),
+        ], 'table-columns-views');
+
+        $this->publishes([
+            __DIR__.'/../resources/js' => resource_path('js/vendor/table-columns'),
+        ], 'table-columns-assets');
+    }
+}
+```

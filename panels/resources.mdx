@@ -1,0 +1,380 @@
+---
+title: Resources
+description: Managing Eloquent models with Filament resources
+---
+
+## Introduction
+
+Resources are the primary way to manage Eloquent models in Filament. They provide a complete CRUD interface with minimal configuration, including list views, forms, and additional functionality like global search and authorization.
+
+## Creating a resource
+
+You can generate a resource using the Artisan command:
+
+```bash
+php artisan make:filament-resource User
+```
+
+This creates a resource class and associated page classes:
+
+```
+app/Filament/Resources/
+├── UserResource.php
+└── UserResource/
+    └── Pages/
+        ├── CreateUser.php
+        ├── EditUser.php
+        └── ListUsers.php
+```
+
+## Defining the model
+
+Every resource must specify which Eloquent model it manages:
+
+```php
+use App\Models\User;
+use Filament\Resources\Resource;
+
+class UserResource extends Resource
+{
+    protected static ?string $model = User::class;
+
+    // ...
+}
+```
+
+If you follow Laravel's naming conventions, Filament will automatically detect the model. For example, `UserResource` will use `App\Models\User`.
+
+## Configuring the form
+
+The `form()` method defines the form schema for creating and editing records:
+
+```php
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Schema;
+
+public static function form(Schema $schema): Schema
+{
+    return $schema
+        ->schema([
+            TextInput::make('name')
+                ->required()
+                ->maxLength(255),
+            TextInput::make('email')
+                ->email()
+                ->required()
+                ->maxLength(255),
+            Select::make('role')
+                ->options([
+                    'admin' => 'Admin',
+                    'editor' => 'Editor',
+                    'viewer' => 'Viewer',
+                ])
+                ->required(),
+        ]);
+}
+```
+
+## Configuring the table
+
+The `table()` method defines the columns and actions for the list view:
+
+```php
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Table;
+
+public static function table(Table $table): Table
+{
+    return $table
+        ->columns([
+            TextColumn::make('name')
+                ->searchable()
+                ->sortable(),
+            TextColumn::make('email')
+                ->searchable()
+                ->sortable(),
+            TextColumn::make('role')
+                ->badge()
+                ->color(fn (string $state): string => match ($state) {
+                    'admin' => 'danger',
+                    'editor' => 'warning',
+                    'viewer' => 'success',
+                }),
+            TextColumn::make('created_at')
+                ->dateTime()
+                ->sortable(),
+        ])
+        ->filters([
+            SelectFilter::make('role')
+                ->options([
+                    'admin' => 'Admin',
+                    'editor' => 'Editor',
+                    'viewer' => 'Viewer',
+                ]),
+        ])
+        ->actions([
+            EditAction::make(),
+        ])
+        ->bulkActions([
+            DeleteBulkAction::make(),
+        ]);
+}
+```
+
+## Resource pages
+
+Resources use separate page classes for different operations. The default setup includes:
+
+### List page
+
+Displays a table of all records:
+
+```php
+use Filament\Resources\Pages\ListRecords;
+
+class ListUsers extends ListRecords
+{
+    protected static string $resource = UserResource::class;
+}
+```
+
+### Create page
+
+Provides a form for creating new records:
+
+```php
+use Filament\Resources\Pages\CreateRecord;
+
+class CreateUser extends CreateRecord
+{
+    protected static string $resource = UserResource::class;
+}
+```
+
+### Edit page
+
+Provides a form for editing existing records:
+
+```php
+use Filament\Resources\Pages\EditRecord;
+
+class EditUser extends EditRecord
+{
+    protected static string $resource = UserResource::class;
+}
+```
+
+## Registering pages
+
+Pages are registered in the resource's `getPages()` method:
+
+```php
+public static function getPages(): array
+{
+    return [
+        'index' => Pages\ListUsers::route('/'),
+        'create' => Pages\CreateUser::route('/create'),
+        'edit' => Pages\EditUser::route('/{record}/edit'),
+    ];
+}
+```
+
+## Customizing the Eloquent query
+
+You can modify the Eloquent query used by the resource:
+
+```php
+use Illuminate\Database\Eloquent\Builder;
+
+public static function getEloquentQuery(): Builder
+{
+    return parent::getEloquentQuery()
+        ->withoutGlobalScopes()
+        ->where('is_active', true);
+}
+```
+
+<Note>
+By default, `getEloquentQuery()` removes the panel's tenancy scope. If your resource is scoped to a tenant, this behavior is automatically preserved.
+</Note>
+
+## Relation managers
+
+Relation managers allow you to manage related records directly from the parent resource:
+
+```php
+use App\Filament\Resources\UserResource\RelationManagers\PostsRelationManager;
+
+public static function getRelations(): array
+{
+    return [
+        PostsRelationManager::class,
+    ];
+}
+```
+
+Generate a relation manager using:
+
+```bash
+php artisan make:filament-relation-manager UserResource posts title
+```
+
+## Global search
+
+Enable global search for a resource by defining which attributes to search:
+
+```php
+protected static ?string $recordTitleAttribute = 'name';
+```
+
+For more advanced search, override the method:
+
+```php
+public static function getGlobalSearchResultTitle(Model $record): string
+{
+    return $record->name;
+}
+
+public static function getGlobalSearchResultDetails(Model $record): array
+{
+    return [
+        'Email' => $record->email,
+        'Role' => $record->role,
+    ];
+}
+
+public static function getGlobalSearchEloquentQuery(): Builder
+{
+    return parent::getGlobalSearchEloquentQuery()->with(['department']);
+}
+```
+
+## Authorization
+
+Filament integrates with Laravel's authorization system. Define policies to control access:
+
+```php
+// app/Policies/UserPolicy.php
+public function viewAny(User $user): bool
+{
+    return $user->can('view_users');
+}
+
+public function create(User $user): bool
+{
+    return $user->can('create_users');
+}
+
+public function update(User $user, User $model): bool
+{
+    return $user->can('edit_users');
+}
+
+public function delete(User $user, User $model): bool
+{
+    return $user->can('delete_users');
+}
+```
+
+Register the policy in `AuthServiceProvider`:
+
+```php
+protected $policies = [
+    User::class => UserPolicy::class,
+];
+```
+
+## Navigation
+
+Customize how the resource appears in navigation:
+
+```php
+protected static ?string $navigationIcon = 'heroicon-o-users';
+
+protected static ?string $navigationLabel = 'Team Members';
+
+protected static ?int $navigationSort = 1;
+
+protected static ?string $navigationGroup = 'User Management';
+```
+
+## Labels
+
+Customize the labels used throughout the resource:
+
+```php
+protected static ?string $modelLabel = 'team member';
+
+protected static ?string $pluralModelLabel = 'team members';
+
+public static function getNavigationLabel(): string
+{
+    return 'Team';
+}
+```
+
+## Widgets
+
+Add widgets to resource pages:
+
+```php
+public static function getWidgets(): array
+{
+    return [
+        Widgets\UserStatsWidget::class,
+    ];
+}
+```
+
+Display them on a page:
+
+```php
+use Filament\Resources\Pages\ListRecords;
+
+class ListUsers extends ListRecords
+{
+    protected static string $resource = UserResource::class;
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            UserResource\Widgets\UserStatsWidget::class,
+        ];
+    }
+}
+```
+
+## Resource clusters
+
+Group related resources together using clusters:
+
+```php
+use App\Filament\Clusters\Settings;
+
+class UserResource extends Resource
+{
+    protected static ?string $cluster = Settings::class;
+
+    // ...
+}
+```
+
+Generate a cluster:
+
+```bash
+php artisan make:filament-cluster Settings
+```
+
+## Simple resources
+
+For simple CRUD operations on a single page, use a simple resource:
+
+```bash
+php artisan make:filament-resource Product --simple
+```
+
+This creates a single "Manage" page instead of separate list, create, and edit pages.

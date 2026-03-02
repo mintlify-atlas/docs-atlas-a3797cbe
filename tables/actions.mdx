@@ -1,0 +1,517 @@
+---
+title: Actions
+description: Add interactive buttons, bulk operations, and row actions to Filament tables with modals, confirmations, and custom forms.
+---
+
+## Introduction
+
+Actions are interactive buttons that can be added to tables in various positions:
+
+- **Record actions** - Buttons at the end of each table row
+- **Bulk actions** - Operations on selected rows
+- **Header actions** - Buttons in the table header
+- **Toolbar actions** - Buttons in the table toolbar
+- **Column actions** - Clickable cells that trigger actions
+
+Actions can open modals, request confirmation, collect form data, and execute custom logic.
+
+## Record actions
+
+Add action buttons to the end of each table row:
+
+```php
+use Filament\Actions\Action;
+use Filament\Tables\Table;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->recordActions([
+            Action::make('edit')
+                ->url(fn (Post $record): string => route('posts.edit', $record))
+                ->openUrlInNewTab(),
+            Action::make('delete')
+                ->requiresConfirmation()
+                ->action(fn (Post $record) => $record->delete()),
+        ]);
+}
+```
+
+### Accessing the record
+
+All action callbacks receive the current `$record`:
+
+```php
+Action::make('feature')
+    ->action(function (Post $record): void {
+        $record->is_featured = true;
+        $record->save();
+    })
+    ->hidden(fn (Post $record): bool => $record->is_featured)
+```
+
+### Positioning record actions
+
+Move actions before columns:
+
+```php
+use Filament\Tables\Enums\RecordActionsPosition;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->recordActions([
+            // ...
+        ], position: RecordActionsPosition::BeforeColumns);
+}
+```
+
+Move actions before the checkbox column:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->recordActions([
+            // ...
+        ], position: RecordActionsPosition::BeforeCells);
+}
+```
+
+## Action modals
+
+Actions can open modals for confirmation or to collect additional data:
+
+```php
+use Filament\Actions\Action;
+use Filament\Forms\Components\Textarea;
+use App\Models\Post;
+
+Action::make('reject')
+    ->requiresConfirmation()
+    ->modalHeading('Reject post')
+    ->modalDescription('Are you sure you want to reject this post?')
+    ->modalSubmitActionLabel('Yes, reject it')
+    ->action(fn (Post $record) => $record->update(['status' => 'rejected']))
+```
+
+### Actions with forms
+
+Collect data before executing the action:
+
+```php
+Action::make('changeStatus')
+    ->form([
+        Select::make('status')
+            ->options([
+                'draft' => 'Draft',
+                'reviewing' => 'Reviewing',
+                'published' => 'Published',
+            ])
+            ->required(),
+        Textarea::make('note')
+            ->label('Note (optional)'),
+    ])
+    ->action(function (Post $record, array $data): void {
+        $record->update([
+            'status' => $data['status'],
+            'status_note' => $data['note'],
+        ]);
+    })
+```
+
+### Pre-filling form data
+
+```php
+Action::make('edit')
+    ->form([
+        TextInput::make('title')->required(),
+        Textarea::make('content')->required(),
+    ])
+    ->fillForm(fn (Post $record): array => [
+        'title' => $record->title,
+        'content' => $record->content,
+    ])
+    ->action(function (Post $record, array $data): void {
+        $record->update($data);
+    })
+```
+
+## Bulk actions
+
+Execute operations on multiple selected records:
+
+```php
+use Filament\Actions\BulkAction;
+use Illuminate\Database\Eloquent\Collection;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->toolbarActions([
+            BulkAction::make('delete')
+                ->requiresConfirmation()
+                ->action(fn (Collection $records) => $records->each->delete()),
+        ]);
+}
+```
+
+### Accessing selected records
+
+The `$records` parameter is an Eloquent collection:
+
+```php
+BulkAction::make('markAsPublished')
+    ->action(function (Collection $records): void {
+        $records->each(function (Post $record): void {
+            $record->update(['status' => 'published']);
+        });
+    })
+```
+
+### Authorizing bulk actions
+
+Check policy methods for each selected record:
+
+```php
+BulkAction::make('delete')
+    ->requiresConfirmation()
+    ->authorizeIndividualRecords('delete')
+    ->action(fn (Collection $records) => $records->each->delete())
+```
+
+Records that fail authorization will be excluded from `$records`.
+
+### Bulk action notifications
+
+Provide feedback about partial successes:
+
+```php
+BulkAction::make('delete')
+    ->requiresConfirmation()
+    ->authorizeIndividualRecords('delete')
+    ->action(fn (Collection $records) => $records->each->delete())
+    ->successNotificationTitle('Deleted users')
+    ->failureNotificationTitle(function (int $successCount, int $totalCount): string {
+        if ($successCount) {
+            return "{$successCount} of {$totalCount} users deleted";
+        }
+
+        return 'Failed to delete any users';
+    })
+```
+
+### Grouping bulk actions
+
+Organize multiple bulk actions in a dropdown:
+
+```php
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->toolbarActions([
+            BulkActionGroup::make([
+                BulkAction::make('delete')
+                    ->requiresConfirmation()
+                    ->action(fn (Collection $records) => $records->each->delete()),
+                BulkAction::make('forceDelete')
+                    ->requiresConfirmation()
+                    ->action(fn (Collection $records) => $records->each->forceDelete()),
+            ]),
+        ]);
+}
+```
+
+Shorthand when all bulk actions are grouped:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->groupedBulkActions([
+            BulkAction::make('delete')
+                ->requiresConfirmation()
+                ->action(fn (Collection $records) => $records->each->delete()),
+            BulkAction::make('forceDelete')
+                ->requiresConfirmation()
+                ->action(fn (Collection $records) => $records->each->forceDelete()),
+        ]);
+}
+```
+
+### Deselecting after bulk action
+
+```php
+BulkAction::make('delete')
+    ->action(fn (Collection $records) => $records->each->delete())
+    ->deselectRecordsAfterCompletion()
+```
+
+### Performance optimization
+
+Process large selections in chunks:
+
+```php
+use Illuminate\Support\LazyCollection;
+
+BulkAction::make('delete')
+    ->chunkSelectedRecords(250)
+    ->action(function (LazyCollection $records) {
+        $records->each->delete();
+    })
+```
+
+Or work with IDs only:
+
+```php
+use Illuminate\Support\Collection;
+
+BulkAction::make('delete')
+    ->fetchSelectedRecords(false)
+    ->action(function (Collection $recordIds) {
+        Post::whereIn('id', $recordIds)->delete();
+    })
+```
+
+### Limiting record selection
+
+Restrict which records can be selected:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->checkIfRecordIsSelectableUsing(
+            fn (Model $record): bool => $record->status === Status::Enabled,
+        );
+}
+```
+
+Limit total number of selections:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->maxSelectableRecords(4);
+}
+```
+
+Prevent selecting all pages at once:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->selectCurrentPageOnly();
+}
+```
+
+## Header actions
+
+Add actions to the table header:
+
+```php
+use Filament\Actions\Action;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->headerActions([
+            Action::make('create')
+                ->url(route('posts.create'))
+                ->icon('heroicon-o-plus'),
+        ]);
+}
+```
+
+Header actions can be regular actions or bulk actions.
+
+## Toolbar actions
+
+Add actions to the table toolbar:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->toolbarActions([
+            Action::make('export')
+                ->action(fn () => $this->export())
+                ->icon('heroicon-o-arrow-down-tray'),
+        ]);
+}
+```
+
+## Column actions
+
+Make column cells clickable to trigger actions:
+
+```php
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\Action;
+
+TextColumn::make('title')
+    ->action(
+        Action::make('viewPost')
+            ->url(fn (Post $record): string => route('posts.show', $record))
+    )
+```
+
+Simple click callback:
+
+```php
+TextColumn::make('title')
+    ->action(function (Post $record): void {
+        $this->dispatch('open-post-edit-modal', post: $record->getKey());
+    })
+```
+
+## Grouping actions
+
+Group multiple actions in a dropdown:
+
+```php
+use Filament\Actions\ActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->recordActions([
+            ActionGroup::make([
+                ViewAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
+            ]),
+        ]);
+}
+```
+
+### Dropdown icons and labels
+
+```php
+ActionGroup::make([
+    ViewAction::make(),
+    EditAction::make(),
+    DeleteAction::make(),
+])
+    ->label('More actions')
+    ->icon('heroicon-m-ellipsis-vertical')
+    ->size('sm')
+    ->color('primary')
+    ->button()
+```
+
+## Action customization
+
+### Labels and icons
+
+```php
+Action::make('edit')
+    ->label('Edit post')
+    ->icon('heroicon-o-pencil')
+    ->iconPosition('after')
+```
+
+### Colors
+
+```php
+Action::make('delete')
+    ->color('danger')
+
+Action::make('publish')
+    ->color('success')
+```
+
+### Sizes
+
+```php
+Action::make('edit')
+    ->size('sm') // xs, sm, md, lg, xl
+```
+
+### Button styles
+
+```php
+Action::make('edit')
+    ->button() // Solid button
+
+Action::make('edit')
+    ->iconButton() // Icon only
+
+Action::make('edit')
+    ->link() // Text link
+```
+
+### Conditional visibility
+
+```php
+Action::make('publish')
+    ->visible(fn (Post $record): bool => $record->status === 'draft')
+
+Action::make('unpublish')
+    ->hidden(fn (Post $record): bool => $record->status === 'draft')
+```
+
+### Disabled state
+
+```php
+Action::make('delete')
+    ->disabled(fn (Post $record): bool => $record->is_locked)
+```
+
+## Notifications
+
+Send notifications after actions:
+
+```php
+use Filament\Notifications\Notification;
+
+Action::make('publish')
+    ->action(function (Post $record): void {
+        $record->update(['status' => 'published']);
+
+        Notification::make()
+            ->title('Post published')
+            ->success()
+            ->send();
+    })
+```
+
+Or use the built-in methods:
+
+```php
+Action::make('publish')
+    ->successNotificationTitle('Post published')
+    ->action(fn (Post $record) => $record->update(['status' => 'published']))
+```
+
+## Redirects
+
+Redirect after action completion:
+
+```php
+Action::make('create')
+    ->form([...])
+    ->action(function (array $data) {
+        $post = Post::create($data);
+        
+        return redirect()->route('posts.edit', $post);
+    })
+```
+
+Or use the redirect method:
+
+```php
+Action::make('publish')
+    ->action(fn (Post $record) => $record->update(['status' => 'published']))
+    ->successRedirectUrl(fn (Post $record): string => route('posts.show', $record))
+```

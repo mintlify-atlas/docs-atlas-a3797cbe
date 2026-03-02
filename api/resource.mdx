@@ -1,0 +1,269 @@
+---
+title: Resource
+description: Resource class API reference for building CRUD interfaces in Filament
+---
+
+The `Resource` class is the foundation for creating CRUD (Create, Read, Update, Delete) interfaces for Eloquent models in Filament. Resources define the schema for forms, tables, and additional functionality like relation managers and widgets.
+
+## Namespace
+
+```php
+Filament\Resources\Resource
+```
+
+## Type Parameters
+
+- `TModel` - The Eloquent model class (extends `Model`)
+- `TConfiguration` - The resource configuration class (extends `ResourceConfiguration`)
+
+## Static Methods
+
+### form()
+
+Define the form schema for the resource.
+
+```php
+public static function form(Schema $schema): Schema
+```
+
+<ParamField path="schema" type="Schema">
+  The schema instance to configure with form components.
+</ParamField>
+
+<ParamField path="return" type="Schema">
+  Returns the configured schema.
+</ParamField>
+
+**Example:**
+
+```php
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\TextInput;
+
+public static function form(Schema $schema): Schema
+{
+    return $schema
+        ->components([
+            TextInput::make('name')->required(),
+            TextInput::make('email')->email(),
+        ]);
+}
+```
+
+### infolist()
+
+Define the infolist schema for displaying record details.
+
+```php
+public static function infolist(Schema $schema): Schema
+```
+
+<ParamField path="schema" type="Schema">
+  The schema instance to configure with infolist entries.
+</ParamField>
+
+<ParamField path="return" type="Schema">
+  Returns the configured schema.
+</ParamField>
+
+### table()
+
+Define the table schema for listing records.
+
+```php
+public static function table(Table $table): Table
+```
+
+<ParamField path="table" type="Table">
+  The table instance to configure with columns, filters, and actions.
+</ParamField>
+
+<ParamField path="return" type="Table">
+  Returns the configured table.
+</ParamField>
+
+**Example:**
+
+```php
+use Filament\Tables\Table;
+use Filament\Tables\Columns\TextColumn;
+
+public static function table(Table $table): Table
+{
+    return $table
+        ->columns([
+            TextColumn::make('name')->searchable(),
+            TextColumn::make('email'),
+        ]);
+}
+```
+
+### configureTable()
+
+Configure the table with model metadata and authorization.
+
+```php
+public static function configureTable(Table $table): void
+```
+
+<ParamField path="table" type="Table">
+  The table instance to configure.
+</ParamField>
+
+This method automatically configures the table with model labels, record titles, and reorder authorization.
+
+### getEloquentQuery()
+
+Get the base Eloquent query for the resource.
+
+```php
+public static function getEloquentQuery(): Builder
+```
+
+<ParamField path="return" type="Builder<TModel>">
+  Returns an Eloquent query builder for the resource's model.
+</ParamField>
+
+**Example:**
+
+```php
+public static function getEloquentQuery(): Builder
+{
+    return parent::getEloquentQuery()
+        ->where('status', 'active');
+}
+```
+
+### getModel()
+
+Get the Eloquent model class name for this resource.
+
+```php
+public static function getModel(): string
+```
+
+<ParamField path="return" type="class-string<TModel>">
+  Returns the fully qualified model class name.
+</ParamField>
+
+**Example:**
+
+```php
+protected static ?string $model = User::class;
+```
+
+### getRelations()
+
+Get the relation managers for this resource.
+
+```php
+public static function getRelations(): array
+```
+
+<ParamField path="return" type="array<class-string<RelationManager> | RelationGroup | RelationManagerConfiguration>">
+  Returns an array of relation manager configurations.
+</ParamField>
+
+**Example:**
+
+```php
+public static function getRelations(): array
+{
+    return [
+        RelationManagers\PostsRelationManager::class,
+    ];
+}
+```
+
+### getWidgets()
+
+Get the widgets for this resource.
+
+```php
+public static function getWidgets(): array
+```
+
+<ParamField path="return" type="array<class-string<Widget>>">
+  Returns an array of widget class names.
+</ParamField>
+
+**Example:**
+
+```php
+public static function getWidgets(): array
+{
+    return [
+        Widgets\UserStatsWidget::class,
+    ];
+}
+```
+
+### isEmailVerificationRequired()
+
+Check if email verification is required for this resource.
+
+```php
+public static function isEmailVerificationRequired(Panel $panel): bool
+```
+
+<ParamField path="panel" type="Panel">
+  The panel instance.
+</ParamField>
+
+<ParamField path="return" type="bool">
+  Returns `true` if email verification is required.
+</ParamField>
+
+### isDiscovered()
+
+Check if this resource should be automatically discovered by Filament.
+
+```php
+public static function isDiscovered(): bool
+```
+
+<ParamField path="return" type="bool">
+  Returns `true` if the resource should be discovered.
+</ParamField>
+
+## Properties
+
+### $isDiscovered
+
+```php
+protected static bool $isDiscovered = true;
+```
+
+Controls whether this resource is automatically discovered by Filament.
+
+### $model
+
+```php
+protected static ?string $model = null;
+```
+
+The Eloquent model class associated with this resource.
+
+## Traits
+
+The Resource class uses multiple traits for additional functionality:
+
+- `BelongsToCluster` - Cluster organization
+- `BelongsToParent` - Parent-child resource relationships
+- `BelongsToTenant` - Multi-tenancy support
+- `CanGenerateUrls` - URL generation for resource pages
+- `HasAuthorization` - Authorization policies
+- `HasBreadcrumbs` - Breadcrumb generation
+- `HasConfiguration` - Configuration management
+- `HasGlobalSearch` - Global search integration
+- `HasLabels` - Model label configuration
+- `HasNavigation` - Navigation item configuration
+- `HasPages` - Page management
+- `HasRoutes` - Route registration
+- `Macroable` - Macro support for extending functionality
+
+## Related Classes
+
+- [Page](/api/page) - Resource pages
+- [Table](/api/table) - Table builder
+- [Form](/api/form) - Form builder

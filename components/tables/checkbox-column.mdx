@@ -1,0 +1,81 @@
+---
+title: Checkbox Column
+---
+
+## Introduction
+
+The checkbox column renders a checkbox for inline boolean editing:
+
+```php
+use Filament\Tables\Columns\CheckboxColumn;
+
+CheckboxColumn::make('is_admin')
+```
+
+## Basic usage
+
+The checkbox column automatically handles boolean values and updates the database when toggled.
+
+```php
+CheckboxColumn::make('is_featured')
+CheckboxColumn::make('is_published')
+CheckboxColumn::make('is_active')
+```
+
+## Validation
+
+By default, the checkbox column validates the input as a boolean:
+
+```php
+CheckboxColumn::make('is_admin')
+    ->rules(['required', 'boolean'])
+```
+
+## Lifecycle hooks
+
+Execute code before and after the checkbox state is updated:
+
+```php
+CheckboxColumn::make('is_active')
+    ->beforeStateUpdated(function ($record, $state) {
+        // Runs before the state is saved to the database
+        // You can perform checks or prepare data here
+    })
+    ->afterStateUpdated(function ($record, $state) {
+        // Runs after the state is saved to the database
+        // You can trigger notifications, update related records, etc.
+    })
+```
+
+### Example: Sending notifications
+
+```php
+CheckboxColumn::make('is_published')
+    ->afterStateUpdated(function ($record, $state) {
+        if ($state) {
+            // Send notification when published
+            Notification::make()
+                ->title('Post published')
+                ->success()
+                ->send();
+        }
+    })
+```
+
+## Disabling the checkbox
+
+You can disable the checkbox conditionally:
+
+```php
+CheckboxColumn::make('is_admin')
+    ->disabled(fn ($record) => $record->is_super_admin)
+```
+
+## Tooltips
+
+Add tooltips to provide context:
+
+```php
+CheckboxColumn::make('is_featured')
+    ->tooltip('Mark this post as featured')
+```

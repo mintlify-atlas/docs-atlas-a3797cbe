@@ -1,0 +1,130 @@
+---
+title: Icon Column
+---
+
+## Introduction
+
+Icon columns render an icon representing the column's state:
+
+```php
+use Filament\Tables\Columns\IconColumn;
+use Filament\Support\Icons\Heroicon;
+
+IconColumn::make('status')
+    ->icon(fn (string $state): Heroicon => match ($state) {
+        'draft' => Heroicon::OutlinedPencil,
+        'reviewing' => Heroicon::OutlinedClock,
+        'published' => Heroicon::OutlinedCheckCircle,
+    })
+```
+
+## Customizing the color
+
+You can set the icon color:
+
+```php
+IconColumn::make('status')
+    ->color('success')
+```
+
+Or use a closure for dynamic colors:
+
+```php
+IconColumn::make('status')
+    ->color(fn (string $state): string => match ($state) {
+        'draft' => 'info',
+        'reviewing' => 'warning',
+        'published' => 'success',
+        default => 'gray',
+    })
+```
+
+<ParamField path="color" type="string | array | Closure">
+  The icon color or a closure that returns a color.
+</ParamField>
+
+## Customizing the size
+
+You can customize the icon size:
+
+```php
+use Filament\Support\Enums\IconSize;
+
+IconColumn::make('status')
+    ->size(IconSize::Medium)
+```
+
+Available sizes: `ExtraSmall`, `Small`, `Medium`, `Large`, `ExtraLarge`, `TwoExtraLarge`.
+
+<ParamField path="size" type="IconSize | string | Closure" default="IconSize::Large">
+  The icon size.
+</ParamField>
+
+## Boolean columns
+
+Icon columns can display boolean values with check/X icons:
+
+```php
+IconColumn::make('is_featured')
+    ->boolean()
+```
+
+Filament automatically detects boolean casts on your model.
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to treat as a boolean column.
+</ParamField>
+
+### Customizing boolean icons
+
+You can customize the icons for true and false states:
+
+```php
+use Filament\Support\Icons\Heroicon;
+
+IconColumn::make('is_featured')
+    ->boolean()
+    ->trueIcon(Heroicon::OutlinedCheckBadge)
+    ->falseIcon(Heroicon::OutlinedXMark)
+```
+
+<ParamField path="icon" type="string | BackedEnum | Htmlable | Closure | false">
+  The icon to display. Pass `false` to hide the icon.
+</ParamField>
+
+### Customizing boolean colors
+
+Customize the colors for true and false states:
+
+```php
+IconColumn::make('is_featured')
+    ->boolean()
+    ->trueColor('info')
+    ->falseColor('warning')
+```
+
+<ParamField path="color" type="string | array | Closure" default="'success' for true, 'danger' for false">
+  The icon color.
+</ParamField>
+
+## Wrapping icons
+
+Allow multiple icons to wrap to multiple lines:
+
+```php
+IconColumn::make('icon')
+    ->wrap()
+```
+
+## Multiple icons
+
+When the column state is an array, you can display multiple icons:
+
+```php
+IconColumn::make('features')
+    ->listWithLineBreaks()
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to display icons on separate lines.
+</ParamField>

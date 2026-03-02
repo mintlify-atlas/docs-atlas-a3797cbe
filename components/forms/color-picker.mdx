@@ -1,0 +1,82 @@
+---
+title: ColorPicker
+---
+
+The color picker component provides an interface for selecting colors.
+
+## Basic Usage
+
+```php
+use Filament\Forms\Components\ColorPicker;
+
+ColorPicker::make('color')
+```
+
+## Available Methods
+
+<ParamField path="format" type="method">
+  Sets the color format (hex, rgb, rgba, hsl, hsla).
+  
+  ```php
+  ColorPicker::make('color')
+      ->format('rgba')
+  ```
+</ParamField>
+
+<ParamField path="swatches" type="method">
+  Adds preset color swatches.
+  
+  ```php
+  ColorPicker::make('color')
+      ->swatches([
+          '#ff0000',
+          '#00ff00',
+          '#0000ff',
+      ])
+  ```
+</ParamField>
+
+## Common Patterns
+
+### Brand Color
+
+```php
+ColorPicker::make('primary_color')
+    ->label('Primary Brand Color')
+    ->default('#3b82f6')
+    ->required()
+```
+
+### Theme Colors
+
+```php
+ColorPicker::make('theme_color')
+    ->swatches([
+        '#ef4444', // Red
+        '#f59e0b', // Orange
+        '#10b981', // Green
+        '#3b82f6', // Blue
+        '#8b5cf6', // Purple
+    ])
+```
+
+### RGBA Color
+
+```php
+ColorPicker::make('overlay_color')
+    ->format('rgba')
+    ->default('rgba(0, 0, 0, 0.5)')
+```
+
+### Background Color
+
+```php
+ColorPicker::make('background_color')
+    ->swatches([
+        '#ffffff',
+        '#f3f4f6',
+        '#e5e7eb',
+        '#d1d5db',
+    ])
+    ->default('#ffffff')
+```

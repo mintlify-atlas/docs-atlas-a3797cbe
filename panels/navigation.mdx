@@ -1,0 +1,344 @@
+---
+title: Navigation
+description: Configuring navigation and sidebar in Filament panels
+---
+
+## Introduction
+
+Filament automatically generates navigation for your panel based on your resources and pages. You can customize the navigation structure, groups, and appearance to match your needs.
+
+## Navigation groups
+
+Organize navigation items into collapsible groups:
+
+```php
+use Filament\Navigation\NavigationGroup;
+
+$panel->navigationGroups([
+    NavigationGroup::make('User Management')
+        ->icon('heroicon-o-users'),
+    NavigationGroup::make('Content')
+        ->icon('heroicon-o-document-text')
+        ->collapsed(),
+    NavigationGroup::make('Settings')
+        ->icon('heroicon-o-cog-6-tooth')
+        ->collapsible(false),
+])
+```
+
+### Using enums for groups
+
+You can use enums to define navigation groups:
+
+```php
+use Filament\Navigation\NavigationGroup;
+
+enum NavigationGroupLabel: string
+{
+    case UserManagement = 'User Management';
+    case Content = 'Content';
+    case Settings = 'Settings';
+
+    public function getGroup(): NavigationGroup
+    {
+        return NavigationGroup::fromEnum($this);
+    }
+}
+```
+
+Register the enum:
+
+```php
+$panel->navigationGroups(NavigationGroupLabel::class)
+```
+
+## Custom navigation items
+
+Add custom navigation items that aren't tied to resources or pages:
+
+```php
+use Filament\Navigation\NavigationItem;
+
+$panel->navigationItems([
+    NavigationItem::make('Analytics')
+        ->url('https://analytics.example.com', shouldOpenInNewTab: true)
+        ->icon('heroicon-o-chart-bar')
+        ->group('Reports')
+        ->sort(3),
+    NavigationItem::make('Documentation')
+        ->url('/docs')
+        ->icon('heroicon-o-book-open')
+        ->activeIcon('heroicon-s-book-open')
+        ->isActiveWhen(fn (): bool => request()->is('docs*')),
+])
+```
+
+## Custom navigation builder
+
+For complete control over navigation, provide a custom builder:
+
+```php
+use Filament\Navigation\NavigationBuilder;
+use Filament\Navigation\NavigationGroup;
+use Filament\Navigation\NavigationItem;
+
+$panel->navigation(function (NavigationBuilder $builder): NavigationBuilder {
+    return $builder
+        ->groups([
+            NavigationGroup::make('Main')
+                ->items([
+                    NavigationItem::make('Dashboard')
+                        ->icon('heroicon-o-home')
+                        ->url(fn (): string => Dashboard::getUrl()),
+                    ...UserResource::getNavigationItems(),
+                    ...PostResource::getNavigationItems(),
+                ]),
+            NavigationGroup::make('Settings')
+                ->items([
+                    ...SettingsPage::getNavigationItems(),
+                ]),
+        ]);
+})
+```
+
+<Note>
+When using a custom navigation builder, automatic navigation generation is disabled. You must explicitly include all resources and pages you want to appear.
+</Note>
+
+## Disabling navigation
+
+Disable navigation entirely to create a single-page panel:
+
+```php
+$panel->navigation(false)
+```
+
+## Top navigation
+
+Switch from sidebar navigation to a top navigation bar:
+
+```php
+$panel->topNavigation()
+```
+
+This moves navigation items to a horizontal bar below the header.
+
+## Sidebar configuration
+
+### Collapsible sidebar
+
+Make the sidebar collapsible:
+
+```php
+$panel->sidebarCollapsibleOnDesktop()
+```
+
+### Sidebar width
+
+Customize the sidebar width:
+
+```php
+$panel->sidebarWidth('18rem')
+```
+
+### Collapsed width
+
+Set the width when collapsed:
+
+```php
+$panel->collapsedSidebarWidth('4rem')
+```
+
+## Resource navigation
+
+Customize how resources appear in navigation:
+
+```php
+use Filament\Resources\Resource;
+
+class UserResource extends Resource
+{
+    protected static ?string $navigationIcon = 'heroicon-o-users';
+    
+    protected static ?string $navigationLabel = 'Team Members';
+    
+    protected static ?string $navigationGroup = 'User Management';
+    
+    protected static ?int $navigationSort = 1;
+    
+    protected static ?string $navigationBadgeTooltip = 'Active users';
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
+
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return static::getModel()::count() > 10 ? 'warning' : 'success';
+    }
+}
+```
+
+### Hiding resources from navigation
+
+```php
+protected static bool $shouldRegisterNavigation = false;
+```
+
+### Active navigation icons
+
+Specify a different icon for when the resource is active:
+
+```php
+protected static ?string $navigationIcon = 'heroicon-o-users';
+protected static ?string $activeNavigationIcon = 'heroicon-s-users';
+```
+
+## Page navigation
+
+Customize how pages appear in navigation:
+
+```php
+use Filament\Pages\Page;
+
+class Settings extends Page
+{
+    protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
+    
+    protected static ?string $navigationLabel = 'App Settings';
+    
+    protected static ?string $navigationGroup = 'Settings';
+    
+    protected static ?int $navigationSort = 10;
+
+    public static function getNavigationBadge(): ?string
+    {
+        return 'New';
+    }
+}
+```
+
+### Nested navigation
+
+Nest pages under other navigation items:
+
+```php
+protected static ?string $navigationParentItem = 'Settings';
+```
+
+## Sub-navigation
+
+Add sub-navigation tabs within a page:
+
+```php
+use Filament\Pages\Page;
+
+class Settings extends Page
+{
+    public function getSubNavigationItems(): array
+    {
+        return [
+            'general' => NavigationItem::make('General')
+                ->url(fn (): string => static::getUrl(['tab' => 'general']))
+                ->isActiveWhen(fn (): bool => request()->query('tab') === 'general'),
+            'security' => NavigationItem::make('Security')
+                ->url(fn (): string => static::getUrl(['tab' => 'security']))
+                ->isActiveWhen(fn (): bool => request()->query('tab') === 'security'),
+        ];
+    }
+}
+```
+
+## Breadcrumbs
+
+Breadcrumbs are automatically generated based on navigation hierarchy.
+
+### Disabling breadcrumbs
+
+```php
+$panel->breadcrumbs(false)
+```
+
+### Customizing breadcrumbs
+
+Override breadcrumbs in resources or pages:
+
+```php
+public function getBreadcrumbs(): array
+{
+    return [
+        '/admin' => 'Home',
+        '/admin/users' => 'Users',
+        '/admin/users/1/edit' => 'John Doe',
+    ];
+}
+```
+
+## Global search
+
+The global search appears in the navigation bar and searches across all resources that have enabled it.
+
+### Disabling global search
+
+```php
+$panel->globalSearch(false)
+```
+
+### Customizing search keybinding
+
+```php
+$panel->globalSearchKeyBindings(['command+k', 'ctrl+k'])
+```
+
+### Configuring search debounce
+
+```php
+$panel->globalSearchDebounce('500ms')
+```
+
+## User menu
+
+Customize the user menu in the navigation bar:
+
+```php
+use Filament\Navigation\MenuItem;
+
+$panel->userMenuItems([
+    MenuItem::make()
+        ->label('Settings')
+        ->url(fn (): string => Settings::getUrl())
+        ->icon('heroicon-o-cog-6-tooth'),
+    'profile' => MenuItem::make()
+        ->label('Edit profile'),
+    // 'logout' is automatically added
+])
+```
+
+## Navigation icons
+
+Filament uses Heroicons by default. You can use any Heroicon name:
+
+<CodeGroup>
+
+```php Outline icons
+protected static ?string $navigationIcon = 'heroicon-o-users';
+protected static ?string $navigationIcon = 'heroicon-o-document-text';
+protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
+```
+
+```php Solid icons
+protected static ?string $navigationIcon = 'heroicon-s-users';
+protected static ?string $navigationIcon = 'heroicon-s-document-text';
+protected static ?string $navigationIcon = 'heroicon-s-cog-6-tooth';
+```
+
+```php Mini icons
+protected static ?string $navigationIcon = 'heroicon-m-users';
+protected static ?string $navigationIcon = 'heroicon-m-document-text';
+protected static ?string $navigationIcon = 'heroicon-m-cog-6-tooth';
+```
+
+</CodeGroup>
+
+You can also register custom icon sets in your panel configuration.

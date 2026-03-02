@@ -1,0 +1,94 @@
+---
+title: Checkbox
+---
+
+The checkbox component allows you to interact with a boolean value.
+
+## Basic Usage
+
+```php
+use Filament\Forms\Components\Checkbox;
+
+Checkbox::make('is_admin')
+```
+
+## Available Methods
+
+<ParamField path="inline" type="method">
+  Controls the label position (inline or stacked).
+  
+  ```php
+  // Inline (default) - label adjacent to checkbox
+  Checkbox::make('is_admin')
+      ->inline()
+  
+  // Stacked - label above checkbox
+  Checkbox::make('is_admin')
+      ->inline(false)
+  ```
+</ParamField>
+
+<ParamField path="accepted" type="method">
+  Requires the checkbox to be checked.
+  
+  ```php
+  Checkbox::make('terms_of_service')
+      ->accepted()
+  ```
+</ParamField>
+
+<ParamField path="declined" type="method">
+  Requires the checkbox to be unchecked.
+  
+  ```php
+  Checkbox::make('is_under_18')
+      ->declined()
+  ```
+</ParamField>
+
+## Common Patterns
+
+### Terms of Service
+
+```php
+Checkbox::make('terms_accepted')
+    ->label('I accept the terms of service')
+    ->accepted()
+    ->validationMessages([
+        'accepted' => 'You must accept the terms of service.',
+    ])
+```
+
+### Boolean Flag
+
+```php
+Checkbox::make('is_admin')
+    ->label('Administrator')
+    ->default(false)
+```
+
+### Inline Checkbox
+
+```php
+Checkbox::make('subscribe_newsletter')
+    ->label('Subscribe to newsletter')
+    ->inline()
+```
+
+## Database Casting
+
+When saving boolean values with Eloquent, add a `boolean` cast:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class User extends Model
+{
+    protected function casts(): array
+    {
+        return [
+            'is_admin' => 'boolean',
+        ];
+    }
+}
+```

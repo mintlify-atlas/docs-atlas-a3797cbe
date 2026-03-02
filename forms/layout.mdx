@@ -1,0 +1,473 @@
+---
+title: Form Layouts
+description: Organize your forms with sections, grids, tabs, wizards, and more
+---
+
+## Introduction
+
+Filament provides powerful layout components to organize your form fields. Layout components are found in the `Filament\Schemas\Components` namespace and can be nested to create complex form structures.
+
+## Grid
+
+The grid component allows you to arrange fields in columns:
+
+```php
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Grid;
+
+Grid::make(2)
+    ->schema([
+        TextInput::make('first_name')
+            ->required(),
+        TextInput::make('last_name')
+            ->required(),
+        TextInput::make('email')
+            ->email()
+            ->required()
+            ->columnSpan(2),
+    ])
+```
+
+### Responsive columns
+
+You can specify different column counts for different breakpoints:
+
+```php
+Grid::make([
+    'default' => 1,
+    'sm' => 2,
+    'md' => 3,
+    'lg' => 4,
+])
+    ->schema([
+        // ...
+    ])
+```
+
+### Column spans
+
+Control how many columns a field occupies:
+
+```php
+TextInput::make('title')
+    ->columnSpan(2) // Spans 2 columns
+
+Textarea::make('description')
+    ->columnSpan('full') // Spans all columns
+
+TextInput::make('featured')
+    ->columnSpan([
+        'default' => 'full',
+        'sm' => 1,
+    ])
+```
+
+## Section
+
+Sections group related fields with an optional heading and description:
+
+```php
+use Filament\Schemas\Components\Section;
+
+Section::make('Profile Information')
+    ->description('Update your account\'s profile information.')
+    ->schema([
+        TextInput::make('name')
+            ->required(),
+        TextInput::make('email')
+            ->email()
+            ->required(),
+    ])
+    ->columns(2)
+```
+
+### Collapsible sections
+
+Make sections collapsible to save space:
+
+```php
+Section::make('Advanced Settings')
+    ->schema([
+        // ...
+    ])
+    ->collapsible()
+    ->collapsed()
+```
+
+### Section icons
+
+Add icons to section headings:
+
+```php
+Section::make('Personal Information')
+    ->icon('heroicon-o-user')
+    ->schema([
+        // ...
+    ])
+```
+
+### Compact sections
+
+Remove section padding for a more compact layout:
+
+```php
+Section::make('Details')
+    ->schema([...])
+    ->compact()
+```
+
+### Aside sections
+
+Display sections as aside content:
+
+```php
+Section::make('Meta')
+    ->schema([...])
+    ->aside()
+```
+
+## Fieldset
+
+Fieldsets are simpler alternatives to sections:
+
+```php
+use Filament\Schemas\Components\Fieldset;
+
+Fieldset::make('Address')
+    ->schema([
+        TextInput::make('street'),
+        TextInput::make('city'),
+        TextInput::make('state'),
+        TextInput::make('zip'),
+    ])
+    ->columns(2)
+```
+
+## Tabs
+
+Organize fields into tabs:
+
+```php
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+
+Tabs::make('Settings')
+    ->tabs([
+        Tab::make('General')
+            ->icon('heroicon-o-cog')
+            ->schema([
+                TextInput::make('site_name'),
+                TextInput::make('site_description'),
+            ]),
+        Tab::make('Email')
+            ->icon('heroicon-o-envelope')
+            ->schema([
+                TextInput::make('smtp_host'),
+                TextInput::make('smtp_port'),
+                TextInput::make('smtp_username'),
+                TextInput::make('smtp_password')->password(),
+            ]),
+        Tab::make('Appearance')
+            ->icon('heroicon-o-paint-brush')
+            ->schema([
+                ColorPicker::make('primary_color'),
+                ColorPicker::make('secondary_color'),
+            ]),
+    ])
+```
+
+### Tab badges
+
+Add badges to tabs:
+
+```php
+Tab::make('Notifications')
+    ->badge(5)
+    ->schema([...])
+```
+
+### Active tab
+
+Set the default active tab:
+
+```php
+Tabs::make('Settings')
+    ->tabs([...])
+    ->activeTab(2) // Make the third tab active (0-indexed)
+```
+
+### Persisting tabs
+
+Persist the active tab in the URL query string:
+
+```php
+Tabs::make('Settings')
+    ->tabs([...])
+    ->persistTabInQueryString()
+```
+
+## Wizard
+
+Create multi-step forms with wizards:
+
+```php
+use Filament\Schemas\Components\Wizard;
+use Filament\Schemas\Components\Wizard\Step;
+
+Wizard::make([
+    Step::make('Account')
+        ->description('Create your account')
+        ->icon('heroicon-o-user')
+        ->schema([
+            TextInput::make('name')
+                ->required(),
+            TextInput::make('email')
+                ->email()
+                ->required(),
+            TextInput::make('password')
+                ->password()
+                ->required(),
+        ]),
+    Step::make('Profile')
+        ->description('Tell us about yourself')
+        ->icon('heroicon-o-identification')
+        ->schema([
+            FileUpload::make('avatar')
+                ->image(),
+            Textarea::make('bio')
+                ->rows(5),
+        ]),
+    Step::make('Preferences')
+        ->description('Customize your experience')
+        ->icon('heroicon-o-adjustments-horizontal')
+        ->schema([
+            Select::make('theme')
+                ->options([
+                    'light' => 'Light',
+                    'dark' => 'Dark',
+                    'auto' => 'Auto',
+                ]),
+            Toggle::make('email_notifications'),
+        ]),
+])
+    ->submitAction(view('forms.wizard.submit-button'))
+```
+
+### Skippable steps
+
+Allow users to skip optional steps:
+
+```php
+Wizard::make([...])
+    ->skippable()
+```
+
+### Step completion validation
+
+By default, users must complete all fields in a step before proceeding. You can customize this behavior per step:
+
+```php
+Step::make('Optional Info')
+    ->schema([...])
+    ->skippable()
+```
+
+## Group
+
+Group fields without visual styling:
+
+```php
+use Filament\Schemas\Components\Group;
+
+Group::make()
+    ->schema([
+        TextInput::make('first_name'),
+        TextInput::make('last_name'),
+    ])
+    ->columns(2)
+```
+
+## Fused Group
+
+Visually fuse fields together:
+
+```php
+use Filament\Schemas\Components\FusedGroup;
+
+FusedGroup::make([
+    TextInput::make('amount')
+        ->numeric()
+        ->prefix('$'),
+    Select::make('currency')
+        ->options([
+            'usd' => 'USD',
+            'eur' => 'EUR',
+            'gbp' => 'GBP',
+        ]),
+])
+    ->label('Price')
+    ->columns([
+        'default' => 1,
+        'sm' => 2,
+    ])
+```
+
+## Flex
+
+Use flexbox layout for fine-grained control:
+
+```php
+use Filament\Schemas\Components\Flex;
+
+Flex::make([
+    TextInput::make('search')
+        ->grow(),
+    Button::make('search')
+        ->grow(false),
+])
+```
+
+## Inline labels
+
+Display field labels inline with the inputs:
+
+```php
+Section::make('Settings')
+    ->inlineLabel()
+    ->schema([
+        TextInput::make('api_key'),
+        TextInput::make('api_secret'),
+        Toggle::make('api_enabled'),
+    ])
+```
+
+You can also apply inline labels to individual fields:
+
+```php
+TextInput::make('username')
+    ->inlineLabel()
+```
+
+## Nested layouts
+
+Layout components can be nested to create complex structures:
+
+```php
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+
+Section::make('Product Details')
+    ->schema([
+        Grid::make(2)
+            ->schema([
+                TextInput::make('name')
+                    ->required()
+                    ->columnSpan(2),
+                TextInput::make('sku')
+                    ->required(),
+                TextInput::make('price')
+                    ->numeric()
+                    ->required(),
+            ]),
+        
+        Tabs::make('Additional Info')
+            ->tabs([
+                Tab::make('Description')
+                    ->schema([
+                        RichEditor::make('description'),
+                    ]),
+                Tab::make('Images')
+                    ->schema([
+                        FileUpload::make('images')
+                            ->multiple()
+                            ->image(),
+                    ]),
+                Tab::make('Attributes')
+                    ->schema([
+                        Repeater::make('attributes')
+                            ->schema([
+                                TextInput::make('name'),
+                                TextInput::make('value'),
+                            ])
+                            ->columns(2),
+                    ]),
+            ]),
+    ])
+```
+
+## Custom spacing
+
+Control spacing between components:
+
+```php
+Section::make('Compact Section')
+    ->schema([...])
+    ->extraAttributes(['class' => 'space-y-2'])
+```
+
+## Conditionally hiding layout components
+
+Layout components support the same visibility methods as fields:
+
+```php
+use Filament\Schemas\Components\Utilities\Get;
+
+Section::make('Advanced Settings')
+    ->schema([...])
+    ->visible(fn (Get $get) => $get('show_advanced'))
+
+Tab::make('Admin')
+    ->schema([...])
+    ->hidden(fn () => ! auth()->user()->isAdmin())
+```
+
+## Actions in layouts
+
+Add actions to section headers:
+
+```php
+use Filament\Actions\Action;
+
+Section::make('Team Members')
+    ->schema([...])
+    ->headerActions([
+        Action::make('invite')
+            ->icon('heroicon-o-user-plus')
+            ->action(function () {
+                // Invite logic
+            }),
+    ])
+```
+
+## Best practices
+
+### Organization
+
+- Use sections to group related fields logically
+- Use tabs when you have distinct categories of information
+- Use wizards for multi-step processes or complex forms
+
+### Responsiveness
+
+- Always consider mobile layouts
+- Use responsive column configurations
+- Test your forms on different screen sizes
+
+### Performance
+
+- Avoid deeply nested layouts when possible
+- Use collapsed sections for less frequently accessed fields
+- Consider using tabs to reduce initial page load
+
+### Accessibility
+
+- Provide clear, descriptive section headings
+- Use descriptions to provide additional context
+- Ensure logical tab order through your form
+
+## Next steps
+
+- [Validation](/forms/validation) - Add validation rules to your fields
+- [Advanced Features](/forms/advanced) - Learn about reactive and dependent fields

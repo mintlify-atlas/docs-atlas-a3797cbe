@@ -1,0 +1,108 @@
+---
+title: Toggle Column
+---
+
+## Introduction
+
+The toggle column renders a toggle button for inline boolean editing:
+
+```php
+use Filament\Tables\Columns\ToggleColumn;
+
+ToggleColumn::make('is_admin')
+```
+
+## Basic usage
+
+The toggle column provides a visual switch that updates the database when toggled:
+
+```php
+ToggleColumn::make('is_featured')
+ToggleColumn::make('is_published')
+ToggleColumn::make('is_active')
+```
+
+## Customizing colors
+
+You can customize the colors for the on and off states:
+
+```php
+ToggleColumn::make('is_active')
+    ->onColor('success')
+    ->offColor('danger')
+```
+
+<ParamField path="color" type="string | array | Closure" default="'primary' for on, 'gray' for off">
+  The color when toggled on or off.
+</ParamField>
+
+## Customizing icons
+
+Customize the icons for the on and off states:
+
+```php
+use Filament\Support\Icons\Heroicon;
+
+ToggleColumn::make('is_active')
+    ->onIcon(Heroicon::OutlinedCheckCircle)
+    ->offIcon(Heroicon::OutlinedXCircle)
+```
+
+<ParamField path="icon" type="string | BackedEnum | Htmlable | Closure">
+  The icon to display when toggled on or off.
+</ParamField>
+
+## Validation
+
+By default, the toggle column validates the input as a boolean:
+
+```php
+ToggleColumn::make('is_admin')
+    ->rules(['required', 'boolean'])
+```
+
+## Lifecycle hooks
+
+Execute code before and after the toggle state is updated:
+
+```php
+ToggleColumn::make('is_active')
+    ->beforeStateUpdated(function ($record, $state) {
+        // Runs before the state is saved to the database
+        // You can perform checks or prepare data here
+    })
+    ->afterStateUpdated(function ($record, $state) {
+        // Runs after the state is saved to the database
+        // You can trigger notifications, update related records, etc.
+    })
+```
+
+### Example: Logging changes
+
+```php
+ToggleColumn::make('is_published')
+    ->afterStateUpdated(function ($record, $state) {
+        activity()
+            ->performedOn($record)
+            ->withProperties(['published' => $state])
+            ->log($state ? 'published' : 'unpublished');
+    })
+```
+
+## Disabling the toggle
+
+You can disable the toggle conditionally:
+
+```php
+ToggleColumn::make('is_admin')
+    ->disabled(fn ($record) => $record->is_super_admin)
+```
+
+## Tooltips
+
+Add tooltips to provide context:
+
+```php
+ToggleColumn::make('is_featured')
+    ->tooltip('Feature this post on the homepage')
+```

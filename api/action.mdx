@@ -1,0 +1,641 @@
+---
+title: Action
+description: Action class API reference for interactive operations in Filament
+---
+
+The `Action` class is the foundation for all interactive operations in Filament. Actions can open modals, execute callbacks, redirect users, and more. They're used throughout tables, forms, pages, and other components.
+
+## Namespace
+
+```php
+Filament\Actions\Action
+```
+
+## Inheritance
+
+Extends: `Filament\Support\Components\ViewComponent`
+
+Implements: `Arrayable`
+
+## Static Methods
+
+### make()
+
+Create a new action instance.
+
+```php
+public static function make(?string $name = null): static
+```
+
+<ParamField path="name" type="string | null">
+  The unique identifier for this action. If `null`, uses the default name from `getDefaultName()`.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+use Filament\Actions\Action;
+
+Action::make('edit')
+    ->label('Edit Post')
+    ->icon('heroicon-o-pencil')
+    ->action(fn (Post $record) => $this->editPost($record));
+```
+
+### getDefaultName()
+
+Get the default name for the action.
+
+```php
+public static function getDefaultName(): ?string
+```
+
+<ParamField path="return" type="string | null">
+  Returns the default name or `null`.
+</ParamField>
+
+### fromArray()
+
+Create an action from an array representation.
+
+```php
+public static function fromArray(array $data): static
+```
+
+<ParamField path="data" type="array<string, mixed>">
+  The array data to create the action from.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the configured action instance.
+</ParamField>
+
+## Display Methods
+
+### label()
+
+Set the action label.
+
+```php
+public function label(string | Htmlable | Closure | null $label): static
+```
+
+<ParamField path="label" type="string | Htmlable | Closure | null">
+  The label text to display.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+### icon()
+
+Set the action icon.
+
+```php
+public function icon(string | Closure | null $icon): static
+```
+
+<ParamField path="icon" type="string | Closure | null">
+  The icon identifier (e.g., 'heroicon-o-pencil').
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+### color()
+
+Set the action color.
+
+```php
+public function color(string | array | Closure | null $color): static
+```
+
+<ParamField path="color" type="string | array | Closure | null">
+  The color name or array of color values.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+Action::make('delete')
+    ->color('danger')
+    ->icon('heroicon-o-trash');
+```
+
+### button()
+
+Render the action as a button.
+
+```php
+public function button(): static
+```
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+### iconButton()
+
+Render the action as an icon button (no label).
+
+```php
+public function iconButton(): static
+```
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+### link()
+
+Render the action as a link.
+
+```php
+public function link(): static
+```
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+### badge()
+
+Render the action as a badge.
+
+```php
+public function badge(string | int | float | Closure | null $badge = null): static
+```
+
+<ParamField path="badge" type="string | int | float | Closure | null">
+  The badge content. If no arguments are provided, renders as a badge view.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+### size()
+
+Set the action size.
+
+```php
+public function size(Size | string | Closure | null $size): static
+```
+
+<ParamField path="size" type="Size | string | Closure | null">
+  The size (e.g., Size::Small, Size::Medium, Size::Large).
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+## Behavior Methods
+
+### action()
+
+Set the callback to execute when the action is triggered.
+
+```php
+public function action(string | Closure | null $action): static
+```
+
+<ParamField path="action" type="string | Closure | null">
+  A closure to execute or a string method name.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+Action::make('approve')
+    ->action(function (Model $record) {
+        $record->update(['status' => 'approved']);
+    });
+```
+
+### requiresConfirmation()
+
+Require confirmation before executing the action.
+
+```php
+public function requiresConfirmation(bool | Closure $condition = true): static
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether confirmation is required.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+Action::make('delete')
+    ->requiresConfirmation()
+    ->action(fn (Model $record) => $record->delete());
+```
+
+### modalHeading()
+
+Set the modal heading.
+
+```php
+public function modalHeading(string | Htmlable | Closure | null $heading): static
+```
+
+<ParamField path="heading" type="string | Htmlable | Closure | null">
+  The modal heading text.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+### modalDescription()
+
+Set the modal description.
+
+```php
+public function modalDescription(string | Htmlable | Closure | null $description): static
+```
+
+<ParamField path="description" type="string | Htmlable | Closure | null">
+  The modal description text.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+### modalSubmitActionLabel()
+
+Set the submit button label.
+
+```php
+public function modalSubmitActionLabel(string | Htmlable | Closure | null $label): static
+```
+
+<ParamField path="label" type="string | Htmlable | Closure | null">
+  The submit button label.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+### form()
+
+Add a form to the action modal.
+
+```php
+public function form(array | Closure $schema): static
+```
+
+<ParamField path="schema" type="array | Closure">
+  An array of form components or a closure returning components.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+use Filament\Forms\Components\TextInput;
+
+Action::make('updateEmail')
+    ->form([
+        TextInput::make('email')
+            ->email()
+            ->required(),
+    ])
+    ->action(function (array $data, Model $record) {
+        $record->update($data);
+    });
+```
+
+## URL and Redirect Methods
+
+### url()
+
+Set a URL for the action.
+
+```php
+public function url(string | Closure | null $url, bool | Closure $shouldOpenInNewTab = false): static
+```
+
+<ParamField path="url" type="string | Closure | null">
+  The URL to navigate to.
+</ParamField>
+
+<ParamField path="shouldOpenInNewTab" type="bool | Closure" default="false">
+  Whether to open the URL in a new tab.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+Action::make('view')
+    ->url(fn (Post $record) => route('posts.show', $record), shouldOpenInNewTab: true);
+```
+
+### redirect()
+
+Redirect after the action executes.
+
+```php
+public function redirect(string | Closure | null $url): static
+```
+
+<ParamField path="url" type="string | Closure | null">
+  The URL to redirect to after execution.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+## Notification Methods
+
+### successNotification()
+
+Show a success notification after the action executes.
+
+```php
+public function successNotification(Notification | Closure | null $notification = null): static
+```
+
+<ParamField path="notification" type="Notification | Closure | null">
+  The notification instance or a closure returning a notification.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+use Filament\Notifications\Notification;
+
+Action::make('publish')
+    ->action(fn (Post $record) => $record->publish())
+    ->successNotification(
+        Notification::make()
+            ->success()
+            ->title('Post published')
+            ->body('The post has been published successfully.')
+    );
+```
+
+## State Control
+
+### disabled()
+
+Disable the action.
+
+```php
+public function disabled(bool | Closure $condition = true): static
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether the action is disabled.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+### hidden()
+
+Hide the action.
+
+```php
+public function hidden(bool | Closure $condition = true): static
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether the action is hidden.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+Action::make('edit')
+    ->hidden(fn (Model $record) => ! auth()->user()->can('update', $record));
+```
+
+### visible()
+
+Show the action based on a condition.
+
+```php
+public function visible(bool | Closure $condition = true): static
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether the action is visible.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+## Authorization
+
+### authorize()
+
+Set the authorization check.
+
+```php
+public function authorize(bool | Closure $condition): static
+```
+
+<ParamField path="condition" type="bool | Closure">
+  Whether the action is authorized.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+Action::make('delete')
+    ->authorize(fn (Model $record) => auth()->user()->can('delete', $record));
+```
+
+## Lifecycle Hooks
+
+### before()
+
+Execute a callback before the action runs.
+
+```php
+public function before(Closure $callback): static
+```
+
+<ParamField path="callback" type="Closure">
+  The callback to execute before the action.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+### after()
+
+Execute a callback after the action runs.
+
+```php
+public function after(Closure $callback): static
+```
+
+<ParamField path="callback" type="Closure">
+  The callback to execute after the action.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the action instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+Action::make('process')
+    ->before(fn () => Log::info('Processing started'))
+    ->action(fn (Model $record) => $record->process())
+    ->after(fn () => Log::info('Processing completed'));
+```
+
+## Special Methods
+
+### call()
+
+Execute the action programmatically.
+
+```php
+public function call(array $parameters = []): mixed
+```
+
+<ParamField path="parameters" type="array<string, mixed>" default="[]">
+  Parameters to pass to the action.
+</ParamField>
+
+<ParamField path="return" type="mixed">
+  Returns the result of the action callback.
+</ParamField>
+
+### success()
+
+Mark the action as successful.
+
+```php
+public function success(): void
+```
+
+### failure()
+
+Mark the action as failed.
+
+```php
+public function failure(): void
+```
+
+### halt()
+
+Halt the action execution.
+
+```php
+public function halt(bool $shouldRollBackDatabaseTransaction = false): void
+```
+
+<ParamField path="shouldRollBackDatabaseTransaction" type="bool" default="false">
+  Whether to roll back the database transaction.
+</ParamField>
+
+### cancel()
+
+Cancel the action execution.
+
+```php
+public function cancel(bool $shouldRollBackDatabaseTransaction = false): void
+```
+
+<ParamField path="shouldRollBackDatabaseTransaction" type="bool" default="false">
+  Whether to roll back the database transaction.
+</ParamField>
+
+## Closure Parameters
+
+Action closures automatically receive contextual parameters:
+
+<ParamField path="arguments" type="array">
+  Action arguments passed from the frontend.
+</ParamField>
+
+<ParamField path="data" type="array">
+  Form data from the action modal.
+</ParamField>
+
+<ParamField path="livewire" type="Component">
+  The parent Livewire component.
+</ParamField>
+
+<ParamField path="model" type="Model | null">
+  The Eloquent model instance.
+</ParamField>
+
+<ParamField path="record" type="Model | null">
+  The current record (alias for model).
+</ParamField>
+
+<ParamField path="records" type="Collection">
+  Selected records (for bulk actions).
+</ParamField>
+
+<ParamField path="table" type="Table | null">
+  The table instance (for table actions).
+</ParamField>
+
+## View Constants
+
+```php
+public const BADGE_VIEW = 'filament::components.badge';
+public const BUTTON_VIEW = 'filament::components.button.index';
+public const GROUPED_VIEW = 'filament::components.dropdown.list.item';
+public const ICON_BUTTON_VIEW = 'filament::components.icon-button';
+public const LINK_VIEW = 'filament::components.link';
+```
+
+## Related Classes
+
+- [BulkAction](/api/bulk-action) - Actions for multiple records
+- [Table](/api/table) - Table actions
+- [Page](/api/page) - Page actions

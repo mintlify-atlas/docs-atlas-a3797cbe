@@ -1,0 +1,411 @@
+---
+title: Creating Custom Form Fields
+description: Learn how to create custom form field components in Filament
+---
+
+## Introduction
+
+Filament provides a powerful foundation for creating custom form fields. By extending the base `Field` class, you can build reusable field components that integrate seamlessly with Filament's form system, including validation, state management, and Livewire integration.
+
+## Understanding the Field base class
+
+All form fields in Filament extend the `Field` class located at `packages/forms/src/Components/Field.php`. This base class provides:
+
+- State management and binding
+- Validation integration
+- Label, helper text, and hint functionality
+- Required field marking
+- Autofocus capabilities
+- Integration with Filament's schema system
+
+## Creating a basic custom field
+
+<Steps>
+
+### Step 1: Create the field class
+
+Create a new class that extends `Filament\Forms\Components\Field`:
+
+```php
+use Filament\Forms\Components\Field;
+
+class ColorPicker extends Field
+{
+    protected string $view = 'filament.forms.components.color-picker';
+}
+```
+
+### Step 2: Create the Blade view
+
+Create the corresponding Blade view at `resources/views/filament/forms/components/color-picker.blade.php`:
+
+```blade
+<x-dynamic-component :component="$getFieldWrapperView()" :field="$field">
+    <input
+        type="color"
+        {{ $getExtraInputAttributeBag()->class(['fi-input']) }}
+        {{ $applyStateBindingModifiers('wire:model') }}="{{ $getStatePath() }}"
+        @if ($isDisabled())
+            disabled
+        @endif
+    />
+</x-dynamic-component>
+```
+
+### Step 3: Use your custom field
+
+You can now use your field in any Filament form:
+
+```php
+use App\Forms\Components\ColorPicker;
+
+ColorPicker::make('primary_color')
+    ->label('Primary Brand Color')
+    ->required()
+```
+
+</Steps>
+
+## Adding custom methods
+
+You can add custom configuration methods to your field using the fluent API pattern:
+
+```php
+class ColorPicker extends Field
+{
+    protected string $view = 'filament.forms.components.color-picker';
+
+    protected string | Closure | null $format = 'hex';
+
+    protected bool | Closure $hasAlphaChannel = false;
+
+    public function format(string | Closure | null $format): static
+    {
+        $this->format = $format;
+
+        return $this;
+    }
+
+    public function withAlpha(bool | Closure $condition = true): static
+    {
+        $this->hasAlphaChannel = $condition;
+
+        return $this;
+    }
+
+    public function getFormat(): ?string
+    {
+        return $this->evaluate($this->format);
+    }
+
+    public function hasAlphaChannel(): bool
+    {
+        return (bool) $this->evaluate($this->hasAlphaChannel);
+    }
+}
+```
+
+<Aside variant="tip">
+Always use the `evaluate()` method when retrieving property values to support closures for dynamic configuration.
+</Aside>
+
+## Using concerns for reusable functionality
+
+Filament uses traits (concerns) to add reusable functionality. You can use existing concerns or create your own:
+
+```php
+use Filament\Forms\Components\Field;
+use Filament\Forms\Components\Concerns\HasPlaceholder;
+use Filament\Forms\Components\Concerns\CanBeReadOnly;
+
+class TagInput extends Field
+{
+    use HasPlaceholder;
+    use CanBeReadOnly;
+
+    protected string $view = 'filament.forms.components.tag-input';
+
+    protected int | Closure | null $maxTags = null;
+
+    public function maxTags(int | Closure | null $count): static
+    {
+        $this->maxTags = $count;
+
+        return $this;
+    }
+
+    public function getMaxTags(): ?int
+    {
+        return $this->evaluate($this->maxTags);
+    }
+}
+```
+
+## Implementing validation
+
+Custom fields can add validation rules using the `rule()` method:
+
+```php
+class PhoneInput extends Field
+{
+    protected string $view = 'filament.forms.components.phone-input';
+
+    protected string | Closure | null $countryCode = null;
+
+    public function countryCode(string | Closure | null $code): static
+    {
+        $this->countryCode = $code;
+
+        return $this;
+    }
+
+    public function getCountryCode(): ?string
+    {
+        return $this->evaluate($this->countryCode);
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->rule('regex:/^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\.\/0-9]*$/');
+
+        $this->rule(
+            static fn (PhoneInput $component): string => "min:{$component->getMinLength()}",
+            static fn (PhoneInput $component): bool => filled($component->getMinLength())
+        );
+    }
+}
+```
+
+## Working with state casts
+
+State casts transform data between the form and database. You can implement custom state casts:
+
+```php
+use Filament\Schemas\Components\StateCasts\Contracts\StateCast;
+
+class MoneyStateCast implements StateCast
+{
+    public function get(mixed $state): mixed
+    {
+        return $state ? $state / 100 : null;
+    }
+
+    public function set(mixed $state): mixed
+    {
+        return $state ? (int) ($state * 100) : null;
+    }
+}
+
+class MoneyInput extends Field
+{
+    protected string $view = 'filament.forms.components.money-input';
+
+    public function getDefaultStateCasts(): array
+    {
+        return [
+            ...parent::getDefaultStateCasts(),
+            app(MoneyStateCast::class),
+        ];
+    }
+}
+```
+
+## Advanced example: Rich text editor integration
+
+Here's a more complex example integrating a third-party JavaScript library:
+
+<CodeGroup>
+
+```php PHP Class
+use Filament\Forms\Components\Field;
+use Filament\Forms\Components\Concerns\HasPlaceholder;
+use Filament\Support\Concerns\HasExtraAlpineAttributes;
+
+class QuillEditor extends Field
+{
+    use HasPlaceholder;
+    use HasExtraAlpineAttributes;
+
+    protected string $view = 'filament.forms.components.quill-editor';
+
+    protected array | Closure $toolbar = [];
+
+    protected string | Closure | null $theme = 'snow';
+
+    public function toolbar(array | Closure $toolbar): static
+    {
+        $this->toolbar = $toolbar;
+
+        return $this;
+    }
+
+    public function theme(string | Closure | null $theme): static
+    {
+        $this->theme = $theme;
+
+        return $this;
+    }
+
+    public function getToolbar(): array
+    {
+        return $this->evaluate($this->toolbar) ?: [
+            ['bold', 'italic', 'underline'],
+            ['link', 'image'],
+            [['list' => 'ordered'], ['list' => 'bullet']],
+        ];
+    }
+
+    public function getTheme(): ?string
+    {
+        return $this->evaluate($this->theme);
+    }
+}
+```
+
+```blade Blade View
+<x-dynamic-component :component="$getFieldWrapperView()" :field="$field">
+    <div
+        x-data="{
+            state: $wire.entangle('{{ $getStatePath() }}'),
+            editor: null,
+            init() {
+                this.editor = new Quill(this.$refs.editor, {
+                    theme: '{{ $getTheme() }}',
+                    modules: {
+                        toolbar: @js($getToolbar())
+                    },
+                    placeholder: '{{ $getPlaceholder() }}',
+                })
+
+                this.editor.root.innerHTML = this.state || ''
+
+                this.editor.on('text-change', () => {
+                    this.state = this.editor.root.innerHTML
+                })
+
+                $watch('state', (value) => {
+                    if (value !== this.editor.root.innerHTML) {
+                        this.editor.root.innerHTML = value || ''
+                    }
+                })
+            },
+        }"
+        {{ $getExtraAlpineAttributeBag() }}
+    >
+        <div x-ref="editor" class="fi-quill-editor"></div>
+    </div>
+</x-dynamic-component>
+```
+
+</CodeGroup>
+
+## Accessing the Livewire component
+
+You can access the parent Livewire component and interact with it:
+
+```php
+class DynamicSelect extends Field
+{
+    protected string $view = 'filament.forms.components.dynamic-select';
+
+    protected Closure | null $optionsCallback = null;
+
+    public function loadOptionsUsing(Closure $callback): static
+    {
+        $this->optionsCallback = $callback;
+
+        return $this;
+    }
+
+    public function getOptions(): array
+    {
+        if ($this->optionsCallback === null) {
+            return [];
+        }
+
+        return $this->evaluate($this->optionsCallback, [
+            'livewire' => $this->getLivewire(),
+            'get' => $this->makeGetUtility(),
+        ]);
+    }
+}
+```
+
+Usage:
+
+```php
+DynamicSelect::make('city')
+    ->loadOptionsUsing(function (Filament\Forms\Get $get) {
+        $countryId = $get('country_id');
+
+        if (! $countryId) {
+            return [];
+        }
+
+        return City::where('country_id', $countryId)
+            ->pluck('name', 'id')
+            ->toArray();
+    })
+```
+
+## Registering custom fields globally
+
+You can register custom fields as macros to make them available on all field instances:
+
+```php
+use Filament\Forms\Components\Field;
+
+Field::macro('tooltip', function (string | Closure | null $tooltip) {
+    $this->extraAttributes([
+        'x-tooltip' => $tooltip,
+    ]);
+
+    return $this;
+});
+```
+
+Now you can use it on any field:
+
+```php
+TextInput::make('email')
+    ->tooltip('Enter your email address')
+```
+
+## Best practices
+
+- Always extend the `Field` base class for full integration
+- Use the `evaluate()` method to support closures in configuration
+- Follow Filament's naming conventions: use `is`/`should`/`can`/`has` prefixes for boolean properties
+- Implement the `setUp()` method for default configuration
+- Use concerns (traits) for reusable functionality
+- Never use `final` classes - allow users to extend your fields
+- Use `app()` instead of `new` for dependency resolution to allow binding custom implementations
+- Add comprehensive PHPDoc annotations for arrays and complex types
+
+## Publishing as a package
+
+When creating a package with custom fields:
+
+```php
+use Illuminate\Support\ServiceProvider;
+
+class CustomFieldsServiceProvider extends ServiceProvider
+{
+    public function boot(): void
+    {
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'custom-fields');
+
+        $this->publishes([
+            __DIR__.'/../resources/views' => resource_path('views/vendor/custom-fields'),
+        ], 'custom-fields-views');
+    }
+}
+```
+
+Update your field's view path:
+
+```php
+protected string $view = 'custom-fields::color-picker';
+```

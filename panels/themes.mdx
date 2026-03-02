@@ -1,0 +1,372 @@
+---
+title: Themes
+description: Customizing the appearance of your Filament panel
+---
+
+## Introduction
+
+Filament uses Tailwind CSS for styling and provides several ways to customize the appearance of your panel, from simple color changes to complete custom themes.
+
+## Color customization
+
+The easiest way to customize your panel is by changing the color palette:
+
+```php
+use Filament\Support\Colors\Color;
+
+$panel->colors([
+    'primary' => Color::Amber,
+    'danger' => Color::Rose,
+    'gray' => Color::Slate,
+    'info' => Color::Blue,
+    'success' => Color::Emerald,
+    'warning' => Color::Orange,
+])
+```
+
+### Available color presets
+
+Filament includes presets for all Tailwind CSS colors:
+
+- `Color::Slate`, `Color::Gray`, `Color::Zinc`, `Color::Neutral`, `Color::Stone`
+- `Color::Red`, `Color::Orange`, `Color::Amber`, `Color::Yellow`
+- `Color::Lime`, `Color::Green`, `Color::Emerald`, `Color::Teal`, `Color::Cyan`
+- `Color::Sky`, `Color::Blue`, `Color::Indigo`, `Color::Violet`, `Color::Purple`
+- `Color::Fuchsia`, `Color::Pink`, `Color::Rose`
+
+### Custom color shades
+
+Define custom color shades:
+
+```php
+$panel->colors([
+    'primary' => [
+        50 => '238, 242, 255',
+        100 => '224, 231, 255',
+        200 => '199, 210, 254',
+        300 => '165, 180, 252',
+        400 => '129, 140, 248',
+        500 => '99, 102, 241',
+        600 => '79, 70, 229',
+        700 => '67, 56, 202',
+        800 => '55, 48, 163',
+        900 => '49, 46, 129',
+        950 => '30, 27, 75',
+    ],
+])
+```
+
+## Dark mode
+
+Filament includes built-in dark mode support.
+
+### Setting the default theme mode
+
+```php
+use Filament\Enums\ThemeMode;
+
+$panel->defaultThemeMode(ThemeMode::Dark)
+```
+
+Options:
+- `ThemeMode::Light` - Always light mode
+- `ThemeMode::Dark` - Always dark mode  
+- `ThemeMode::System` - Follow system preference
+
+### Forcing a theme mode
+
+Disable the theme switcher and force a specific mode:
+
+```php
+// Disable dark mode completely
+$panel->darkMode(false)
+
+// Force dark mode only
+$panel
+    ->darkMode(true)
+    ->defaultThemeMode(ThemeMode::Dark)
+```
+
+## Custom fonts
+
+Change the font used throughout the panel:
+
+```php
+use Filament\Support\Enums\FontProvider;
+
+// System fonts
+$panel->font('Inter')
+
+// Google Fonts
+$panel->font('Poppins', provider: FontProvider::GoogleFonts)
+
+// Bunny Fonts (GDPR-compliant alternative)
+$panel->font('Poppins', provider: FontProvider::BunnyFonts)
+```
+
+### Loading fonts locally
+
+```php
+$panel->font('CustomFont', url: asset('fonts/custom-font.woff2'))
+```
+
+## Custom CSS with Vite
+
+For advanced customization, create a custom theme using Vite.
+
+### Creating a theme
+
+<Steps>
+
+<Step title="Install Tailwind CSS">
+  ```bash
+  npm install -D tailwindcss @tailwindcss/forms @tailwindcss/typography autoprefixer
+  ```
+</Step>
+
+<Step title="Create theme file">
+  Create `resources/css/filament/admin/theme.css`:
+  
+  ```css
+  @import '/vendor/filament/filament/resources/css/theme.css';
+
+  @config 'tailwind.config.js';
+  
+  /* Your custom styles */
+  .fi-main {
+      /* Custom main container styles */
+  }
+  ```
+</Step>
+
+<Step title="Create Tailwind config">
+  Create `tailwind.config.js` in the same directory:
+  
+  ```js
+  import preset from '../../../../vendor/filament/filament/tailwind.config.preset'
+
+  export default {
+      presets: [preset],
+      content: [
+          './app/Filament/**/*.php',
+          './resources/views/filament/**/*.blade.php',
+          './vendor/filament/**/*.blade.php',
+      ],
+  }
+  ```
+</Step>
+
+<Step title="Register in Vite">
+  Update `vite.config.js`:
+  
+  ```js
+  import { defineConfig } from 'vite';
+  import laravel from 'laravel-vite-plugin';
+
+  export default defineConfig({
+      plugins: [
+          laravel({
+              input: ['resources/css/filament/admin/theme.css'],
+              refresh: true,
+          }),
+      ],
+  });
+  ```
+</Step>
+
+<Step title="Configure panel">
+  ```php
+  $panel->viteTheme('resources/css/filament/admin/theme.css')
+  ```
+</Step>
+
+<Step title="Build assets">
+  ```bash
+  npm run build
+  ```
+</Step>
+
+</Steps>
+
+### Multiple panels with different themes
+
+Create separate themes for each panel:
+
+```php
+// Admin panel
+$panel
+    ->id('admin')
+    ->viteTheme('resources/css/filament/admin/theme.css')
+
+// App panel  
+$panel
+    ->id('app')
+    ->viteTheme('resources/css/filament/app/theme.css')
+```
+
+## Pre-compiled custom theme
+
+If you don't use Vite, you can register a pre-compiled CSS file:
+
+```php
+use Filament\Support\Assets\Theme;
+
+$panel->theme(
+    Theme::make('custom', asset('css/custom-theme.css'))
+)
+```
+
+## Customizing components
+
+Filament uses CSS hook classes that you can target for customization:
+
+```css
+/* Customize the sidebar */
+.fi-sidebar {
+    @apply bg-gradient-to-b from-gray-900 to-gray-800;
+}
+
+/* Customize the topbar */
+.fi-topbar {
+    @apply shadow-lg;
+}
+
+/* Customize buttons */
+.fi-btn {
+    @apply rounded-xl;
+}
+
+/* Customize form fields */
+.fi-fo-text-input {
+    @apply border-2;
+}
+```
+
+### Component hook classes
+
+Filament uses a consistent naming convention:
+
+- `fi-` - Filament prefix
+- `fo-` - Forms package
+- `ta-` - Tables package
+- `ac-` - Actions package
+- `in-` - Infolists package
+
+Examples:
+- `.fi-fo-text-input` - Text input component
+- `.fi-ta-table` - Table component
+- `.fi-ac-modal` - Action modal
+- `.fi-sidebar` - Sidebar
+- `.fi-topbar` - Top bar
+
+## Icons
+
+Customize icons used throughout the panel:
+
+```php
+$panel->icons([
+    'panels::topbar.global-search.field' => 'heroicon-m-magnifying-glass',
+    'panels::sidebar.collapse-button' => 'heroicon-m-chevron-left',
+    'panels::sidebar.expand-button' => 'heroicon-m-chevron-right',
+])
+```
+
+### Custom icon sets
+
+Register custom icon sets:
+
+```php
+use Filament\Support\Icons\IconManager;
+
+IconManager::register('custom', function (string $name): ?string {
+    return view("icons.{$name}")->render();
+});
+```
+
+Use them in your components:
+
+```php
+->icon('custom::my-icon')
+```
+
+## Render hooks
+
+Inject custom HTML at specific points in the panel:
+
+```php
+use Filament\View\PanelsRenderHook;
+use Illuminate\Support\Facades\Blade;
+
+$panel->renderHook(
+    PanelsRenderHook::HEAD_START,
+    fn (): string => Blade::render('<link rel="preconnect" href="https://fonts.googleapis.com">')
+)
+
+$panel->renderHook(
+    PanelsRenderHook::BODY_START,
+    fn (): string => view('analytics')->render()
+)
+```
+
+Available hooks:
+- `HEAD_START`, `HEAD_END`
+- `BODY_START`, `BODY_END`
+- `CONTENT_START`, `CONTENT_END`
+- `SIDEBAR_START`, `SIDEBAR_END`
+- `TOPBAR_START`, `TOPBAR_END`
+- `PAGE_START`, `PAGE_END`
+- `PAGE_HEADER_START`, `PAGE_HEADER_END`
+
+## Logo customization
+
+Customize the panel logo:
+
+```php
+$panel
+    ->brandLogo(asset('images/logo.svg'))
+    ->brandLogoHeight('3rem')
+```
+
+### Dark mode logo
+
+Provide different logos for light and dark modes:
+
+```php
+$panel
+    ->brandLogo(asset('images/logo-light.svg'))
+    ->darkModeBrandLogo(asset('images/logo-dark.svg'))
+```
+
+### Logo as HTML
+
+Return raw HTML for the logo:
+
+```php
+$panel->brandLogo(fn (): View => view('components.logo'))
+```
+
+## Maximum content width
+
+Control the maximum width of page content:
+
+```php
+use Filament\Support\Enums\MaxWidth;
+
+$panel->maxContentWidth(MaxWidth::Full)
+$panel->maxContentWidth(MaxWidth::SevenExtraLarge)
+$panel->maxContentWidth(MaxWidth::ScreenTwoExtraLarge)
+```
+
+## Custom views
+
+Publish Filament's views to customize them:
+
+```bash
+php artisan vendor:publish --tag=filament-panels-views
+```
+
+Views will be published to `resources/views/vendor/filament-panels/`.
+
+<Warning>
+Customizing views directly is not recommended as it makes upgrades more difficult. Use CSS customization and render hooks instead whenever possible.
+</Warning>

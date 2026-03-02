@@ -1,0 +1,244 @@
+---
+title: Icon Entry
+description: Display icons representing state in Filament infolists.
+---
+
+## Introduction
+
+Icon entries render icons that represent the state of your data. They are particularly useful for displaying status indicators, boolean values, or any state that can be visualized with icons.
+
+<CodeGroup>
+```php Basic usage
+use Filament\Infolists\Components\IconEntry;
+use Filament\Support\Icons\Heroicon;
+
+IconEntry::make('status')
+    ->icon(fn (string $state): string => match ($state) {
+        'draft' => Heroicon::OutlinedPencil,
+        'published' => Heroicon::OutlinedCheckCircle,
+    })
+```
+</CodeGroup>
+
+## Available Methods
+
+### Icon Configuration
+
+<ParamField path="icon()" type="string|Htmlable|Closure">
+  Set the icon to display based on the entry's state.
+
+  ```php
+  use Filament\Support\Icons\Heroicon;
+
+  IconEntry::make('status')
+      ->icon(fn (string $state): string => match ($state) {
+          'draft' => Heroicon::OutlinedPencil,
+          'reviewing' => Heroicon::OutlinedClock,
+          'published' => Heroicon::OutlinedCheckCircle,
+      })
+  ```
+</ParamField>
+
+<ParamField path="color()" type="string|array|Closure">
+  Set the color of the icon.
+
+  ```php
+  IconEntry::make('status')
+      ->color(fn (string $state): string => match ($state) {
+          'draft' => 'gray',
+          'reviewing' => 'warning',
+          'published' => 'success',
+      })
+  ```
+</ParamField>
+
+<ParamField path="size()" type="IconSize|string|Closure">
+  Set the size of the icon.
+
+  ```php
+  use Filament\Support\Enums\IconSize;
+
+  IconEntry::make('status')
+      ->size(IconSize::Medium)
+  ```
+</ParamField>
+
+### Boolean Mode
+
+<ParamField path="boolean()" type="bool|Closure">
+  Enable boolean mode to display check/cross icons for true/false values.
+
+  ```php
+  IconEntry::make('is_active')
+      ->boolean()
+  ```
+</ParamField>
+
+<ParamField path="trueIcon()" type="string|Htmlable|Closure">
+  Set the icon for true values in boolean mode.
+
+  ```php
+  use Filament\Support\Icons\Heroicon;
+
+  IconEntry::make('is_featured')
+      ->boolean()
+      ->trueIcon(Heroicon::OutlinedStar)
+  ```
+</ParamField>
+
+<ParamField path="falseIcon()" type="string|Htmlable|Closure">
+  Set the icon for false values in boolean mode.
+
+  ```php
+  use Filament\Support\Icons\Heroicon;
+
+  IconEntry::make('is_featured')
+      ->boolean()
+      ->falseIcon(Heroicon::OutlinedXMark)
+  ```
+</ParamField>
+
+<ParamField path="trueColor()" type="string|array|Closure">
+  Set the color for true values in boolean mode.
+
+  ```php
+  IconEntry::make('is_active')
+      ->boolean()
+      ->trueColor('success')
+  ```
+</ParamField>
+
+<ParamField path="falseColor()" type="string|array|Closure">
+  Set the color for false values in boolean mode.
+
+  ```php
+  IconEntry::make('is_active')
+      ->boolean()
+      ->falseColor('danger')
+  ```
+</ParamField>
+
+<ParamField path="true()" type="string|Htmlable|Closure">
+  Set both icon and color for true values.
+
+  ```php
+  use Filament\Support\Icons\Heroicon;
+
+  IconEntry::make('is_active')
+      ->boolean()
+      ->true(Heroicon::OutlinedCheckCircle, 'success')
+  ```
+</ParamField>
+
+<ParamField path="false()" type="string|Htmlable|Closure">
+  Set both icon and color for false values.
+
+  ```php
+  use Filament\Support\Icons\Heroicon;
+
+  IconEntry::make('is_active')
+      ->boolean()
+      ->false(Heroicon::OutlinedXCircle, 'danger')
+  ```
+</ParamField>
+
+### Multiple Icons
+
+<ParamField path="listWithLineBreaks()" type="bool|Closure">
+  Display multiple icons with line breaks when the state is an array.
+
+  ```php
+  IconEntry::make('features')
+      ->icon(Heroicon::OutlinedCheckCircle)
+      ->listWithLineBreaks()
+  ```
+</ParamField>
+
+## Examples
+
+### Status Indicator
+
+<CodeGroup>
+```php Status with colors
+use Filament\Support\Icons\Heroicon;
+
+IconEntry::make('status')
+    ->icon(fn (string $state): string => match ($state) {
+        'draft' => Heroicon::OutlinedPencil,
+        'reviewing' => Heroicon::OutlinedClock,
+        'published' => Heroicon::OutlinedCheckCircle,
+        'rejected' => Heroicon::OutlinedXCircle,
+    })
+    ->color(fn (string $state): string => match ($state) {
+        'draft' => 'gray',
+        'reviewing' => 'warning',
+        'published' => 'success',
+        'rejected' => 'danger',
+    })
+```
+</CodeGroup>
+
+### Boolean Flag
+
+<CodeGroup>
+```php Active/Inactive indicator
+IconEntry::make('is_active')
+    ->boolean()
+    ->trueColor('success')
+    ->falseColor('danger')
+    ->label('Active Status')
+```
+</CodeGroup>
+
+### Feature Badges
+
+<CodeGroup>
+```php Multiple feature icons
+use Filament\Support\Icons\Heroicon;
+
+IconEntry::make('is_featured')
+    ->boolean()
+    ->true(Heroicon::OutlinedStar, 'warning')
+    ->false(false) // Hide icon when false
+```
+</CodeGroup>
+
+### Verification Status
+
+<CodeGroup>
+```php Email verification
+use Filament\Support\Icons\Heroicon;
+
+IconEntry::make('email_verified_at')
+    ->boolean()
+    ->trueIcon(Heroicon::OutlinedCheckBadge)
+    ->trueColor('success')
+    ->falseIcon(Heroicon::OutlinedExclamationCircle)
+    ->falseColor('warning')
+    ->label('Email Verified')
+```
+</CodeGroup>
+
+### Priority Levels
+
+<CodeGroup>
+```php Task priority
+use Filament\Support\Icons\Heroicon;
+use Filament\Support\Enums\IconSize;
+
+IconEntry::make('priority')
+    ->icon(fn (string $state): string => match ($state) {
+        'low' => Heroicon::OutlinedArrowDown,
+        'medium' => Heroicon::OutlinedMinus,
+        'high' => Heroicon::OutlinedArrowUp,
+        'urgent' => Heroicon::OutlinedExclamationTriangle,
+    })
+    ->color(fn (string $state): string => match ($state) {
+        'low' => 'gray',
+        'medium' => 'primary',
+        'high' => 'warning',
+        'urgent' => 'danger',
+    })
+    ->size(IconSize::Large)
+```
+</CodeGroup>

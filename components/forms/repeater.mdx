@@ -1,0 +1,297 @@
+---
+title: Repeater
+---
+
+The repeater component allows you to create a repeatable set of form fields.
+
+## Basic Usage
+
+```php
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+
+Repeater::make('members')
+    ->schema([
+        TextInput::make('name')->required(),
+        Select::make('role')
+            ->options([
+                'member' => 'Member',
+                'admin' => 'Admin',
+            ])
+            ->required(),
+    ])
+```
+
+## Available Methods
+
+<ParamField path="schema" type="method">
+  Defines the repeatable fields.
+  
+  ```php
+  Repeater::make('items')
+      ->schema([
+          TextInput::make('title'),
+          Textarea::make('description'),
+      ])
+  ```
+</ParamField>
+
+<ParamField path="defaultItems" type="method">
+  Sets number of default empty items.
+  
+  ```php
+  Repeater::make('members')
+      ->schema([...])
+      ->defaultItems(3)
+  ```
+</ParamField>
+
+<ParamField path="addActionLabel" type="method">
+  Customizes the add button label.
+  
+  ```php
+  Repeater::make('members')
+      ->schema([...])
+      ->addActionLabel('Add member')
+  ```
+</ParamField>
+
+<ParamField path="addable" type="method">
+  Controls whether items can be added.
+  
+  ```php
+  Repeater::make('items')
+      ->schema([...])
+      ->addable(false)
+  ```
+</ParamField>
+
+<ParamField path="deletable" type="method">
+  Controls whether items can be deleted.
+  
+  ```php
+  Repeater::make('items')
+      ->schema([...])
+      ->deletable(false)
+  ```
+</ParamField>
+
+<ParamField path="reorderable" type="method">
+  Controls whether items can be reordered.
+  
+  ```php
+  Repeater::make('items')
+      ->schema([...])
+      ->reorderable(false)
+  ```
+</ParamField>
+
+<ParamField path="reorderableWithButtons" type="method">
+  Enables reordering with up/down buttons.
+  
+  ```php
+  Repeater::make('items')
+      ->schema([...])
+      ->reorderableWithButtons()
+  ```
+</ParamField>
+
+<ParamField path="reorderableWithDragAndDrop" type="method">
+  Controls drag-and-drop reordering.
+  
+  ```php
+  Repeater::make('items')
+      ->schema([...])
+      ->reorderableWithDragAndDrop(false)
+  ```
+</ParamField>
+
+<ParamField path="collapsible" type="method">
+  Makes items collapsible.
+  
+  ```php
+  Repeater::make('items')
+      ->schema([...])
+      ->collapsible()
+  ```
+</ParamField>
+
+<ParamField path="collapsed" type="method">
+  Makes items collapsed by default.
+  
+  ```php
+  Repeater::make('items')
+      ->schema([...])
+      ->collapsible()
+      ->collapsed()
+  ```
+</ParamField>
+
+<ParamField path="cloneable" type="method">
+  Allows cloning items.
+  
+  ```php
+  Repeater::make('items')
+      ->schema([...])
+      ->cloneable()
+  ```
+</ParamField>
+
+<ParamField path="itemLabel" type="method">
+  Customizes item labels.
+  
+  ```php
+  Repeater::make('items')
+      ->schema([...])
+      ->itemLabel(fn (array $state): ?string => $state['title'] ?? null)
+  ```
+</ParamField>
+
+<ParamField path="simple" type="method">
+  Removes item containers for simple layouts.
+  
+  ```php
+  Repeater::make('links')
+      ->simple(
+          TextInput::make('url')
+      )
+  ```
+</ParamField>
+
+<ParamField path="minItems" type="method">
+  Sets minimum number of items.
+  
+  ```php
+  Repeater::make('items')
+      ->schema([...])
+      ->minItems(2)
+  ```
+</ParamField>
+
+<ParamField path="maxItems" type="method">
+  Sets maximum number of items.
+  
+  ```php
+  Repeater::make('items')
+      ->schema([...])
+      ->maxItems(10)
+  ```
+</ParamField>
+
+<ParamField path="columns" type="method">
+  Sets grid columns for fields.
+  
+  ```php
+  Repeater::make('members')
+      ->schema([...])
+      ->columns(2)
+  ```
+</ParamField>
+
+<ParamField path="grid" type="method">
+  Sets grid columns for repeater items.
+  
+  ```php
+  Repeater::make('items')
+      ->schema([...])
+      ->grid(2)
+  ```
+</ParamField>
+
+<ParamField path="relationship" type="method">
+  Configures HasMany relationship.
+  
+  ```php
+  Repeater::make('phoneNumbers')
+      ->relationship()
+      ->schema([
+          TextInput::make('number')->required(),
+          Select::make('type')->options(['mobile' => 'Mobile', 'home' => 'Home']),
+      ])
+  ```
+</ParamField>
+
+## Common Patterns
+
+### Contact Information
+
+```php
+Repeater::make('contacts')
+    ->schema([
+        TextInput::make('name')
+            ->required(),
+        TextInput::make('email')
+            ->email()
+            ->required(),
+        TextInput::make('phone')
+            ->tel(),
+    ])
+    ->columns(3)
+    ->defaultItems(1)
+    ->collapsible()
+```
+
+### Simple List
+
+```php
+Repeater::make('links')
+    ->simple(
+        TextInput::make('url')->url()
+    )
+    ->minItems(1)
+    ->maxItems(5)
+```
+
+### Product Variants
+
+```php
+Repeater::make('variants')
+    ->schema([
+        TextInput::make('name')->required(),
+        TextInput::make('sku')->required(),
+        TextInput::make('price')
+            ->numeric()
+            ->prefix('$')
+            ->required(),
+        TextInput::make('stock')
+            ->numeric()
+            ->default(0),
+    ])
+    ->columns(2)
+    ->collapsible()
+    ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
+    ->cloneable()
+```
+
+### FAQ Items
+
+```php
+Repeater::make('faqs')
+    ->schema([
+        TextInput::make('question')->required(),
+        Textarea::make('answer')->required(),
+    ])
+    ->itemLabel(fn (array $state): ?string => $state['question'] ?? null)
+    ->collapsible()
+    ->reorderableWithButtons()
+    ->addActionLabel('Add FAQ')
+```
+
+## Database Casting
+
+Add an `array` cast when storing as JSON:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class Product extends Model
+{
+    protected function casts(): array
+    {
+        return [
+            'members' => 'array',
+        ];
+    }
+}
+```

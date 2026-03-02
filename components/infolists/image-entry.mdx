@@ -1,0 +1,271 @@
+---
+title: Image Entry
+description: Display images from URLs or file paths in Filament infolists.
+---
+
+## Introduction
+
+Image entries display images from URLs or file paths stored in your data source. They support both local filesystem storage and absolute URLs.
+
+<CodeGroup>
+```php Basic usage
+use Filament\Infolists\Components\ImageEntry;
+
+ImageEntry::make('avatar')
+```
+</CodeGroup>
+
+The entry state can contain:
+- A relative path to the storage disk (e.g., `avatars/user-123.jpg`)
+- An absolute URL (e.g., `https://example.com/avatar.jpg`)
+- A data URI (e.g., `data:image/png;base64,...`)
+
+## Available Methods
+
+### Storage Configuration
+
+<ParamField path="disk()" type="string|Closure">
+  Set the filesystem disk where images are stored.
+
+  ```php
+  ImageEntry::make('avatar')
+      ->disk('s3')
+  ```
+</ParamField>
+
+<ParamField path="visibility()" type="string|Closure">
+  Set the visibility of images (public or private).
+
+  ```php
+  ImageEntry::make('avatar')
+      ->visibility('public')
+  ```
+</ParamField>
+
+<ParamField path="checkFileExistence()" type="bool|Closure">
+  Control whether to check if files exist before displaying.
+
+  ```php
+  ImageEntry::make('avatar')
+      ->checkFileExistence(false)
+  ```
+</ParamField>
+
+### Size and Shape
+
+<ParamField path="imageWidth()" type="int|string|Closure">
+  Set the width of the image.
+
+  ```php
+  ImageEntry::make('header_image')
+      ->imageWidth(200)
+  ```
+</ParamField>
+
+<ParamField path="imageHeight()" type="int|string|Closure">
+  Set the height of the image.
+
+  ```php
+  ImageEntry::make('header_image')
+      ->imageHeight(100)
+  ```
+</ParamField>
+
+<ParamField path="imageSize()" type="int|string|Closure">
+  Set both width and height to the same value.
+
+  ```php
+  ImageEntry::make('avatar')
+      ->imageSize(40)
+  ```
+</ParamField>
+
+<ParamField path="square()" type="bool|Closure">
+  Display the image with a 1:1 aspect ratio.
+
+  ```php
+  ImageEntry::make('avatar')
+      ->imageHeight(40)
+      ->square()
+  ```
+</ParamField>
+
+<ParamField path="circular()" type="bool|Closure">
+  Display the image as a circle, useful for avatars.
+
+  ```php
+  ImageEntry::make('avatar')
+      ->imageSize(40)
+      ->circular()
+  ```
+</ParamField>
+
+### Default Image
+
+<ParamField path="defaultImageUrl()" type="string|Closure">
+  Set a default image URL to display when no image exists.
+
+  ```php
+  ImageEntry::make('avatar')
+      ->defaultImageUrl(url('storage/avatars/default.jpg'))
+  ```
+</ParamField>
+
+### Multiple Images
+
+<ParamField path="stacked()" type="bool|Closure">
+  Display multiple images as overlapping stack.
+
+  ```php
+  ImageEntry::make('team.avatars')
+      ->imageSize(40)
+      ->circular()
+      ->stacked()
+  ```
+</ParamField>
+
+<ParamField path="overlap()" type="int|Closure">
+  Set the overlap amount for stacked images (0-8).
+
+  ```php
+  ImageEntry::make('team.avatars')
+      ->stacked()
+      ->overlap(2)
+  ```
+</ParamField>
+
+<ParamField path="ring()" type="int|Closure">
+  Set the ring width for stacked images (0-8).
+
+  ```php
+  ImageEntry::make('team.avatars')
+      ->stacked()
+      ->ring(3)
+  ```
+</ParamField>
+
+<ParamField path="limit()" type="int|Closure">
+  Limit the maximum number of images displayed.
+
+  ```php
+  ImageEntry::make('team.avatars')
+      ->stacked()
+      ->limit(5)
+  ```
+</ParamField>
+
+<ParamField path="limitedRemainingText()" type="bool|Closure">
+  Show the count of remaining images when limited.
+
+  ```php
+  ImageEntry::make('team.avatars')
+      ->stacked()
+      ->limit(3)
+      ->limitedRemainingText()
+  ```
+</ParamField>
+
+<ParamField path="limitedRemainingTextSize()" type="TextSize|string|Closure">
+  Set the size of the remaining count text.
+
+  ```php
+  use Filament\Support\Enums\TextSize;
+
+  ImageEntry::make('team.avatars')
+      ->stacked()
+      ->limit(3)
+      ->limitedRemainingText(size: TextSize::Large)
+  ```
+</ParamField>
+
+<ParamField path="limitedRemainingTextSeparate()" type="bool|Closure">
+  Display the remaining count separately from the stack.
+
+  ```php
+  ImageEntry::make('team.avatars')
+      ->stacked()
+      ->limit(3)
+      ->limitedRemainingText()
+      ->limitedRemainingTextSeparate()
+  ```
+</ParamField>
+
+### HTML Attributes
+
+<ParamField path="extraImgAttributes()" type="array|Closure">
+  Add extra HTML attributes to the img element.
+
+  ```php
+  ImageEntry::make('logo')
+      ->extraImgAttributes([
+          'alt' => 'Company Logo',
+          'loading' => 'lazy',
+      ])
+  ```
+</ParamField>
+
+## Examples
+
+### User Avatar
+
+<CodeGroup>
+```php Circular avatar with default
+ImageEntry::make('avatar')
+    ->imageSize(40)
+    ->circular()
+    ->defaultImageUrl(url('storage/avatars/default.png'))
+```
+</CodeGroup>
+
+### Product Images
+
+<CodeGroup>
+```php Product gallery
+ImageEntry::make('images')
+    ->imageWidth(120)
+    ->imageHeight(80)
+    ->limit(4)
+    ->limitedRemainingText()
+```
+</CodeGroup>
+
+### Team Members
+
+<CodeGroup>
+```php Stacked team avatars
+ImageEntry::make('team.members.avatar')
+    ->imageSize(40)
+    ->circular()
+    ->stacked()
+    ->limit(5)
+    ->limitedRemainingText()
+    ->ring(2)
+    ->overlap(4)
+```
+</CodeGroup>
+
+### S3 Storage
+
+<CodeGroup>
+```php Images from S3
+ImageEntry::make('header_image')
+    ->disk('s3')
+    ->visibility('public')
+    ->imageWidth(300)
+    ->imageHeight(200)
+```
+</CodeGroup>
+
+### Optimized Loading
+
+<CodeGroup>
+```php Lazy loading with alt text
+ImageEntry::make('product_image')
+    ->imageWidth(150)
+    ->extraImgAttributes([
+        'alt' => 'Product image',
+        'loading' => 'lazy',
+    ])
+    ->checkFileExistence(false)
+```
+</CodeGroup>

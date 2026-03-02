@@ -1,0 +1,492 @@
+---
+title: Editing Records
+description: Building edit pages with form prefilling, data mutation, and lifecycle hooks
+---
+
+## The Edit Page
+
+The Edit page displays a form for modifying existing records. It's defined in `EditCustomer.php`:
+
+```php packages/panels/src/Resources/Pages/EditRecord.php
+class EditRecord extends Page
+{
+    use CanUseDatabaseTransactions;
+    use HasUnsavedDataChangesAlert;
+    
+    public ?array $data = [];
+    
+    public function mount(int | string $record): void
+    {
+        $this->record = $this->resolveRecord($record);
+        $this->fillForm();
+    }
+    
+    public function save(): void
+    {
+        // Saving logic
+    }
+}
+```
+
+## Form Prefilling
+
+When the page loads, the form is automatically filled with the record's data. The `mount()` method handles this:
+
+```php packages/panels/src/Resources/Pages/EditRecord.php
+protected function fillForm(): void
+{
+    $this->callHook('beforeFill');
+    
+    $data = $this->mutateFormDataBeforeFill(
+        $this->getRecord()->attributesToArray()
+    );
+    
+    $this->form->fill($data);
+    
+    $this->callHook('afterFill');
+}
+```
+
+### Customizing Data Before Fill
+
+Modify data before it's loaded into the form:
+
+```php
+protected function mutateFormDataBeforeFill(array $data): array
+{
+    $data['formatted_price'] = number_format($data['price'], 2);
+    
+    return $data;
+}
+```
+
+<Tabs>
+  <Tab title="Formatting Dates">
+    ```php
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $data['published_at'] = Carbon::parse($data['published_at'])
+            ->format('Y-m-d');
+        
+        return $data;
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Hiding Sensitive Data">
+    ```php
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        unset($data['password']);
+        unset($data['api_token']);
+        
+        return $data;
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Merging Related Data">
+    ```php
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $data['full_address'] = collect([
+            $data['street'],
+            $data['city'],
+            $data['postal_code'],
+        ])->filter()->implode(', ');
+        
+        return $data;
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Lifecycle Hooks
+
+Execute code at specific points during editing:
+
+```php packages/panels/src/Resources/Pages/EditRecord.php
+protected function beforeFill(): void
+{
+    // Runs before the form fields are populated from the database
+}
+
+protected function afterFill(): void
+{
+    // Runs after the form fields are populated from the database
+}
+
+protected function beforeValidate(): void
+{
+    // Runs before the form fields are validated when the form is saved
+}
+
+protected function afterValidate(): void
+{
+    // Runs after the form fields are validated when the form is saved
+}
+
+protected function beforeSave(): void
+{
+    // Runs before the form fields are saved to the database
+}
+
+protected function afterSave(): void
+{
+    // Runs after the form fields are saved to the database
+}
+```
+
+## Mutating Data Before Save
+
+Modify form data before it's saved:
+
+```php packages/panels/src/Resources/Pages/EditRecord.php
+protected function mutateFormDataBeforeSave(array $data): array
+{
+    $data['last_edited_by_id'] = auth()->id();
+    $data['updated_at'] = now();
+    
+    return $data;
+}
+```
+
+<Note>
+This runs after validation but before `beforeSave()`.
+</Note>
+
+## Customizing the Saving Process
+
+Override how records are updated:
+
+```php packages/panels/src/Resources/Pages/EditRecord.php
+protected function handleRecordUpdate(Model $record, array $data): Model
+{
+    $record->update($data);
+    
+    return $record;
+}
+```
+
+For custom update logic:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+protected function handleRecordUpdate(Model $record, array $data): Model
+{
+    // Update main record
+    $record->update([
+        'name' => $data['name'],
+        'email' => $data['email'],
+    ]);
+    
+    // Update related records
+    if (isset($data['preferences'])) {
+        $record->preferences()->update($data['preferences']);
+    }
+    
+    return $record;
+}
+```
+
+## Redirects After Save
+
+By default, users stay on the Edit page after saving.
+
+### Redirect to List Page
+
+```php
+protected function getRedirectUrl(): ?string
+{
+    return $this->getResource()::getUrl('index');
+}
+```
+
+### Redirect to View Page
+
+```php
+protected function getRedirectUrl(): ?string
+{
+    return $this->getResource()::getUrl('view', ['record' => $this->getRecord()]);
+}
+```
+
+### Stay on Page
+
+```php
+protected function getRedirectUrl(): ?string
+{
+    return null;
+}
+```
+
+### Global Configuration
+
+```php
+use Filament\Panel;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->resourceEditPageRedirect('index') // or 'view'
+        // ...
+}
+```
+
+## Success Notifications
+
+Customize the success notification:
+
+```php packages/panels/src/Resources/Pages/EditRecord.php
+protected function getSavedNotificationTitle(): ?string
+{
+    return 'Customer updated successfully';
+}
+```
+
+Full customization:
+
+```php
+use Filament\Notifications\Notification;
+
+protected function getSavedNotification(): ?Notification
+{
+    return Notification::make()
+        ->success()
+        ->title('Customer updated')
+        ->body('The customer has been saved successfully.');
+}
+```
+
+Disable notifications:
+
+```php
+protected function getSavedNotification(): ?Notification
+{
+    return null;
+}
+```
+
+## Saving Form Sections Independently
+
+Allow users to save individual form sections:
+
+```php
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\EditRecord;
+use Filament\Schemas\Components\Section;
+
+Section::make('Rate limiting')
+    ->schema([
+        // ...
+    ])
+    ->footerActions([
+        fn (string $operation): Action => Action::make('save')
+            ->action(function (Section $component, EditRecord $livewire) {
+                $livewire->saveFormComponentOnly($component);
+                
+                Notification::make()
+                    ->title('Rate limiting saved')
+                    ->success()
+                    ->send();
+            })
+            ->visible($operation === 'edit'),
+    ])
+```
+
+## Halting the Save Process
+
+Stop saving at any point:
+
+```php
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+
+protected function beforeSave(): void
+{
+    if (! $this->getRecord()->team->subscribed()) {
+        Notification::make()
+            ->warning()
+            ->title('You don\'t have an active subscription!')
+            ->body('Choose a plan to continue.')
+            ->persistent()
+            ->actions([
+                Action::make('subscribe')
+                    ->button()
+                    ->url(route('subscribe'), shouldOpenInNewTab: true),
+            ])
+            ->send();
+        
+        $this->halt();
+    }
+}
+```
+
+## Refreshing Form Data
+
+Refresh specific fields from the database:
+
+```php packages/panels/src/Resources/Pages/EditRecord.php
+public function refreshFormData(array $statePaths): void
+{
+    $this->form->fillPartially(
+        $this->mutateFormDataBeforeFill($this->getRecord()->attributesToArray()),
+        $statePaths
+    );
+}
+```
+
+Useful after background jobs update records:
+
+```php
+$this->refreshFormData(['status', 'processed_at']);
+```
+
+## Header Actions
+
+Add actions to the page header:
+
+```php
+use Filament\Actions;
+
+protected function getHeaderActions(): array
+{
+    return [
+        Actions\ViewAction::make(),
+        Actions\DeleteAction::make(),
+        Actions\ForceDeleteAction::make(),
+        Actions\RestoreAction::make(),
+    ];
+}
+```
+
+## Custom Form Actions
+
+Add buttons below the form:
+
+```php
+use Filament\Actions\Action;
+
+protected function getFormActions(): array
+{
+    return [
+        ...parent::getFormActions(),
+        Action::make('saveAndEmail')
+            ->action('saveAndEmail'),
+    ];
+}
+
+public function saveAndEmail(): void
+{
+    $this->save();
+    
+    Mail::to($this->getRecord()->email)
+        ->send(new UpdateEmail($this->getRecord()));
+}
+```
+
+### Moving Save to Header
+
+```php
+protected function getHeaderActions(): array
+{
+    return [
+        $this->getSaveFormAction()
+            ->formId('form'),
+    ];
+}
+
+protected function getFormActions(): array
+{
+    return [];
+}
+```
+
+## Multiple Edit Pages
+
+Create additional Edit pages for complex resources:
+
+<Steps>
+  <Step title="Generate the page">
+    ```bash
+    php artisan make:filament-page EditCustomerContact --resource=CustomerResource --type=EditRecord
+    ```
+  </Step>
+  
+  <Step title="Register it">
+    ```php
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListCustomers::route('/'),
+            'create' => Pages\CreateCustomer::route('/create'),
+            'edit' => Pages\EditCustomer::route('/{record}/edit'),
+            'edit-contact' => Pages\EditCustomerContact::route('/{record}/edit/contact'),
+        ];
+    }
+    ```
+  </Step>
+  
+  <Step title="Define its form">
+    ```php
+    use Filament\Schemas\Schema;
+
+    public function form(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                // Different fields than the main Edit page
+            ]);
+    }
+    ```
+  </Step>
+</Steps>
+
+## Authorization
+
+Users can access the Edit page if the `update()` method of the model policy returns `true`:
+
+```php
+public function update(User $user, Customer $customer): bool
+{
+    return $user->can('edit customers');
+}
+```
+
+They can also delete the record if `delete()` returns `true`:
+
+```php
+public function delete(User $user, Customer $customer): bool
+{
+    return $user->can('delete customers');
+}
+```
+
+## Database Transactions
+
+Edit pages automatically wrap saves in database transactions. This is controlled by the `CanUseDatabaseTransactions` trait.
+
+To disable transactions:
+
+```php
+protected function beginDatabaseTransaction(): void
+{
+    // Do nothing
+}
+
+protected function commitDatabaseTransaction(): void
+{
+    // Do nothing
+}
+
+protected function rollBackDatabaseTransaction(): void
+{
+    // Do nothing
+}
+```
+
+## Unsaved Changes Alert
+
+The `HasUnsavedDataChangesAlert` trait warns users when they try to leave with unsaved changes. This is enabled by default.

@@ -1,0 +1,358 @@
+---
+title: Infolist Entries
+---
+
+## Introduction
+
+Filament provides a variety of entry components to display different types of data in your infolists. Each entry type is optimized for presenting specific kinds of information in a user-friendly way.
+
+## Available Entry Types
+
+All entry classes are found in the `Filament\Infolists\Components` namespace.
+
+<CardGroup cols={2}>
+  <Card title="Text Entry" icon="text" href="#text-entry">
+    Display text, numbers, dates, and formatted content
+  </Card>
+  <Card title="Icon Entry" icon="circle-check" href="#icon-entry">
+    Show icons representing states or boolean values
+  </Card>
+  <Card title="Image Entry" icon="image" href="#image-entry">
+    Display single or multiple images from your storage
+  </Card>
+  <Card title="Color Entry" icon="palette" href="#color-entry">
+    Render color previews from CSS color definitions
+  </Card>
+  <Card title="Code Entry" icon="code" href="#code-entry">
+    Display syntax-highlighted code snippets
+  </Card>
+  <Card title="Key-Value Entry" icon="list" href="#key-value-entry">
+    Show key-value pairs from JSON or array data
+  </Card>
+  <Card title="Repeatable Entry" icon="arrows-repeat" href="#repeatable-entry">
+    Repeat entry schemas for array or relationship data
+  </Card>
+  <Card title="View Entry" icon="window" href="#view-entry">
+    Render custom Blade views with complete flexibility
+  </Card>
+</CardGroup>
+
+## Text Entry
+
+The text entry is the most versatile entry type, capable of displaying simple text, formatted dates, numbers, money values, and more.
+
+```php
+use Filament\Infolists\Components\TextEntry;
+
+TextEntry::make('title')
+
+TextEntry::make('created_at')
+    ->dateTime()
+
+TextEntry::make('price')
+    ->money('USD')
+
+TextEntry::make('description')
+    ->markdown()
+```
+
+### Key Features
+
+- **Formatting**: Date, time, number, money, and custom formatting
+- **Badges**: Display text as colored badges
+- **Icons**: Add icons before or after text
+- **Colors**: Apply color schemes to text
+- **Lists**: Handle array values with bullet points or line breaks
+- **Copyable**: Make text copyable to clipboard
+- **Limits**: Truncate text by characters, words, or lines
+
+### Common Examples
+
+```php
+// Display as a badge with color
+TextEntry::make('status')
+    ->badge()
+    ->color(fn (string $state): string => match ($state) {
+        'draft' => 'gray',
+        'reviewing' => 'warning',
+        'published' => 'success',
+        'rejected' => 'danger',
+    })
+
+// Format as currency with division
+TextEntry::make('price')
+    ->money('USD', divideBy: 100)
+
+// Display multiple values with bullets
+TextEntry::make('tags')
+    ->badge()
+    ->separator(',')
+    ->bulleted()
+
+// Make API keys copyable
+TextEntry::make('api_key')
+    ->copyable()
+    ->fontFamily(FontFamily::Mono)
+```
+
+## Icon Entry
+
+Icon entries render icons to represent data states, particularly useful for boolean values or status indicators.
+
+```php
+use Filament\Infolists\Components\IconEntry;
+use Filament\Support\Icons\Heroicon;
+
+IconEntry::make('is_featured')
+    ->boolean()
+
+IconEntry::make('status')
+    ->icon(fn (string $state): Heroicon => match ($state) {
+        'draft' => Heroicon::OutlinedPencil,
+        'reviewing' => Heroicon::OutlinedClock,
+        'published' => Heroicon::OutlinedCheckCircle,
+    })
+    ->color(fn (string $state): string => match ($state) {
+        'draft' => 'gray',
+        'reviewing' => 'warning',
+        'published' => 'success',
+    })
+```
+
+### Key Features
+
+- **Boolean Display**: Automatic check/cross icons for true/false values
+- **Custom Icons**: Define icons based on state
+- **Colors**: Apply colors to match your design system
+- **Sizing**: Control icon size from extra small to extra large
+
+## Image Entry
+
+Image entries display images from your filesystem or external URLs, with support for multiple images, circular avatars, and stacked displays.
+
+```php
+use Filament\Infolists\Components\ImageEntry;
+
+ImageEntry::make('avatar')
+    ->imageHeight(40)
+    ->circular()
+
+ImageEntry::make('gallery')
+    ->imageHeight(100)
+    ->limit(3)
+    ->limitedRemainingText()
+
+ImageEntry::make('team_members.avatar')
+    ->imageHeight(40)
+    ->circular()
+    ->stacked()
+```
+
+### Key Features
+
+- **Disk Management**: Specify storage disk (local, s3, etc.)
+- **Sizing**: Control width and height
+- **Shapes**: Square or circular images
+- **Stacking**: Display multiple images overlapping
+- **Limits**: Show only a certain number of images
+- **Default Images**: Provide placeholder image URLs
+
+## Color Entry
+
+Display color previews from CSS color values (HEX, RGB, HSL, RGBA).
+
+```php
+use Filament\Infolists\Components\ColorEntry;
+
+ColorEntry::make('theme_color')
+
+ColorEntry::make('brand_color')
+    ->copyable()
+    ->copyMessage('Color copied!')
+```
+
+### Key Features
+
+- **Format Support**: HEX, RGB, HSL, RGBA
+- **Copyable**: Copy color values to clipboard
+- **Visual Preview**: Shows actual color swatch
+
+## Code Entry
+
+Display syntax-highlighted code using the Phiki library.
+
+```php
+use Filament\Infolists\Components\CodeEntry;
+use Phiki\Grammar\Grammar;
+use Phiki\Theme\Theme;
+
+CodeEntry::make('source_code')
+    ->grammar(Grammar::Php)
+
+CodeEntry::make('config')
+    ->grammar(Grammar::Json)
+    ->lightTheme(Theme::GithubLight)
+    ->darkTheme(Theme::GithubDark)
+    ->copyable()
+```
+
+### Key Features
+
+- **200+ Languages**: Full support for programming languages
+- **50+ Themes**: Beautiful syntax highlighting themes
+- **Copyable**: Copy code to clipboard
+- **Automatic JSON**: Arrays are automatically converted to JSON
+
+<Note>
+To use code entries, install Phiki: `composer require phiki/phiki`
+</Note>
+
+## Key-Value Entry
+
+Display key-value pairs from JSON objects or PHP arrays.
+
+```php
+use Filament\Infolists\Components\KeyValueEntry;
+
+KeyValueEntry::make('meta')
+    ->keyLabel('Property')
+    ->valueLabel('Value')
+```
+
+Example data structure:
+```php
+[
+    'description' => 'Product description',
+    'og:type' => 'product',
+    'og:site_name' => 'My Store',
+]
+```
+
+### Key Features
+
+- **Custom Labels**: Customize column headers
+- **JSON Support**: Automatically handles JSON columns
+- **Array Cast**: Works with Eloquent array casts
+
+## Repeatable Entry
+
+Repeat a schema of entries for each item in an array or relationship.
+
+```php
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
+
+RepeatableEntry::make('comments')
+    ->schema([
+        TextEntry::make('author.name'),
+        TextEntry::make('title'),
+        TextEntry::make('content')
+            ->columnSpan(2),
+    ])
+    ->columns(2)
+```
+
+### Key Features
+
+- **Schema Nesting**: Include any entry types in the schema
+- **Grid Layout**: Organize items in responsive grids
+- **Table Layout**: Display items in a tabular format
+- **Relationships**: Works with Eloquent relationships
+
+### Table Layout
+
+```php
+use Filament\Infolists\Components\RepeatableEntry\TableColumn;
+
+RepeatableEntry::make('comments')
+    ->table([
+        TableColumn::make('Author'),
+        TableColumn::make('Title'),
+        TableColumn::make('Published'),
+    ])
+    ->schema([
+        TextEntry::make('author.name'),
+        TextEntry::make('title'),
+        IconEntry::make('is_published')
+            ->boolean(),
+    ])
+```
+
+## View Entry
+
+Render completely custom Blade views for maximum flexibility.
+
+```php
+use Filament\Infolists\Components\ViewEntry;
+
+ViewEntry::make('custom_content')
+    ->view('infolists.entries.custom-template')
+```
+
+In your Blade view, you have access to:
+- `$getState()` - Get the entry's state
+- `$getRecord()` - Get the current record
+
+```blade
+<div class="rounded-lg bg-gray-100 p-4">
+    <h3>{{ $getState() }}</h3>
+    <p>Custom rendering for {{ $getRecord()->title }}</p>
+</div>
+```
+
+## Creating Custom Entries
+
+You can create your own custom entry types using the Artisan command:
+
+```bash
+php artisan make:infolist-entry CustomEntry
+```
+
+This creates:
+- An entry class in `app/Filament/Infolists/Entries/CustomEntry.php`
+- A Blade view in `resources/views/filament/infolists/entries/custom-entry.blade.php`
+
+Custom entries extend the base `Entry` class and can implement any custom logic needed for your application.
+
+## Common Entry Methods
+
+All entry types share common methods:
+
+```php
+// Labels and visibility
+->label('Custom Label')
+->hiddenLabel()
+->inlineLabel()
+->hidden(fn () => condition)
+->visible(fn () => condition)
+
+// Styling
+->extraAttributes(['class' => 'custom-class'])
+->extraEntryWrapperAttributes(['class' => 'wrapper-class'])
+
+// Interactivity
+->url(fn ($record) => route('show', $record))
+->openUrlInNewTab()
+->tooltip('Helpful information')
+
+// Content slots
+->aboveLabel($content)
+->afterLabel($content)
+->belowContent($content)
+```
+
+## Best Practices
+
+1. **Choose the Right Entry Type**: Use specialized entries (Icon, Image, Color) instead of TextEntry when possible
+2. **Use Badges for Status**: Display status values as badges with appropriate colors
+3. **Leverage Relationships**: Use dot notation to access related data
+4. **Add Tooltips**: Provide context with tooltips for technical or unclear fields
+5. **Keep Labels Clear**: Use descriptive labels or hide them when context is obvious
+6. **Format Data Appropriately**: Use date(), money(), and number() formatters for proper display
+7. **Consider Mobile**: Use inline labels sparingly as they consume horizontal space
+
+## Next Steps
+
+- Learn about layout components to organize your entries
+- Explore [actions](/actions/overview) to add interactivity to infolists
+- Understand [utility injection](/infolists/overview#entry-utility-injection) for dynamic values

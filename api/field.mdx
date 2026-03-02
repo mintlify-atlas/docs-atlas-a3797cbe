@@ -1,0 +1,365 @@
+---
+title: Field
+description: Field base class API reference for form input components
+---
+
+The `Field` class is the foundation for all form input components in Filament. It extends the base `Component` class and provides form-specific functionality including validation, labels, hints, and helper text.
+
+## Namespace
+
+```php
+Filament\Forms\Components\Field
+```
+
+## Inheritance
+
+Extends: `Filament\Schemas\Components\Component`
+
+Implements: `Contracts\HasValidationRules`
+
+## Static Methods
+
+### make()
+
+Create a new field instance.
+
+```php
+public static function make(?string $name = null): static
+```
+
+<ParamField path="name" type="string | null">
+  The field name. This is used for data binding and as the state path. If `null`, the field class must define `getDefaultName()`.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the field instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+use Filament\Forms\Components\TextInput;
+
+TextInput::make('email')
+    ->email()
+    ->required();
+```
+
+### getDefaultName()
+
+Get the default name for the field when not explicitly provided.
+
+```php
+public static function getDefaultName(): ?string
+```
+
+<ParamField path="return" type="string | null">
+  Returns the default name or `null`.
+</ParamField>
+
+## Instance Methods
+
+### getLabel()
+
+Get the field label.
+
+```php
+public function getLabel(): string | Htmlable | null
+```
+
+<ParamField path="return" type="string | Htmlable | null">
+  Returns the field label. If not set, generates a default label from the field name.
+</ParamField>
+
+### getDefaultLabel()
+
+Get the auto-generated default label.
+
+```php
+public function getDefaultLabel(): string
+```
+
+<ParamField path="return" type="string">
+  Returns the label generated from the field name.
+</ParamField>
+
+**Example:**
+
+```php
+// Field name 'first_name' generates label 'First name'
+// Field name 'customer.email' generates label 'Email'
+```
+
+### aboveLabel()
+
+Add components above the field label.
+
+```php
+public function aboveLabel(
+    array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null $components
+): static
+```
+
+<ParamField path="components" type="array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null">
+  Components to render above the label.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the field instance for method chaining.
+</ParamField>
+
+### belowLabel()
+
+Add components below the field label.
+
+```php
+public function belowLabel(
+    array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null $components
+): static
+```
+
+<ParamField path="components" type="array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null">
+  Components to render below the label.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the field instance for method chaining.
+</ParamField>
+
+### beforeLabel()
+
+Add components before the field label (inline).
+
+```php
+public function beforeLabel(
+    array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null $components
+): static
+```
+
+<ParamField path="components" type="array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null">
+  Components to render before the label.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the field instance for method chaining.
+</ParamField>
+
+### afterLabel()
+
+Add components after the field label (inline).
+
+```php
+public function afterLabel(
+    array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null $components
+): static
+```
+
+<ParamField path="components" type="array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null">
+  Components to render after the label.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the field instance for method chaining.
+</ParamField>
+
+### aboveContent()
+
+Add components above the field content.
+
+```php
+public function aboveContent(
+    array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null $components
+): static
+```
+
+<ParamField path="components" type="array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null">
+  Components to render above the content.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the field instance for method chaining.
+</ParamField>
+
+### belowContent()
+
+Add components below the field content.
+
+```php
+public function belowContent(
+    array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null $components
+): static
+```
+
+<ParamField path="components" type="array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null">
+  Components to render below the content.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the field instance for method chaining.
+</ParamField>
+
+### beforeContent()
+
+Add components before the field content (inline).
+
+```php
+public function beforeContent(
+    array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null $components
+): static
+```
+
+<ParamField path="components" type="array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null">
+  Components to render before the content.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the field instance for method chaining.
+</ParamField>
+
+### afterContent()
+
+Add components after the field content (inline).
+
+```php
+public function afterContent(
+    array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null $components
+): static
+```
+
+<ParamField path="components" type="array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null">
+  Components to render after the content.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the field instance for method chaining.
+</ParamField>
+
+### aboveErrorMessage()
+
+Add components above validation error messages.
+
+```php
+public function aboveErrorMessage(
+    array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null $components
+): static
+```
+
+<ParamField path="components" type="array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null">
+  Components to render above error messages.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the field instance for method chaining.
+</ParamField>
+
+### belowErrorMessage()
+
+Add components below validation error messages.
+
+```php
+public function belowErrorMessage(
+    array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null $components
+): static
+```
+
+<ParamField path="components" type="array | Schema | Component | Action | ActionGroup | string | Htmlable | Closure | null">
+  Components to render below error messages.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the field instance for method chaining.
+</ParamField>
+
+### hasNullableBooleanState()
+
+Check if this field has a nullable boolean state.
+
+```php
+public function hasNullableBooleanState(): bool
+```
+
+<ParamField path="return" type="bool">
+  Returns `true` if the field supports nullable boolean values.
+</ParamField>
+
+### getDefaultStateCasts()
+
+Get the default state casts for this field.
+
+```php
+public function getDefaultStateCasts(): array
+```
+
+<ParamField path="return" type="array<StateCast>">
+  Returns an array of state cast instances.
+</ParamField>
+
+## Schema Keys
+
+The Field class defines several schema keys for positioning child components:
+
+```php
+const ABOVE_LABEL_SCHEMA_KEY = 'above_label';
+const BELOW_LABEL_SCHEMA_KEY = 'below_label';
+const BEFORE_LABEL_SCHEMA_KEY = 'before_label';
+const AFTER_LABEL_SCHEMA_KEY = 'after_label';
+const ABOVE_CONTENT_SCHEMA_KEY = 'above_content';
+const BELOW_CONTENT_SCHEMA_KEY = 'below_content';
+const BEFORE_CONTENT_SCHEMA_KEY = 'before_content';
+const AFTER_CONTENT_SCHEMA_KEY = 'after_content';
+const ABOVE_ERROR_MESSAGE_SCHEMA_KEY = 'above_error_message';
+const BELOW_ERROR_MESSAGE_SCHEMA_KEY = 'below_error_message';
+```
+
+## Traits
+
+The Field class uses multiple traits for additional functionality:
+
+- `CanBeAutofocused` - Autofocus support
+- `CanBeMarkedAsRequired` - Required field marking
+- `CanBeValidated` - Validation rules
+- `HasEnum` - Enum support
+- `HasExtraFieldWrapperAttributes` - Additional wrapper attributes
+- `HasHelperText` - Helper text below the field
+- `HasHint` - Hint text next to the label
+- `HasLabel` - Label configuration
+- `HasName` - Field name configuration
+
+## Common Field Methods
+
+Inherited from traits:
+
+### Validation
+
+```php
+->required()
+->email()
+->numeric()
+->minLength(10)
+->maxLength(255)
+->rules(['required', 'string'])
+```
+
+### Labels and Hints
+
+```php
+->label('Email Address')
+->helperText('We will never share your email')
+->hint('Optional')
+->hintIcon('heroicon-o-question-mark-circle')
+```
+
+### State
+
+```php
+->default('default value')
+->afterStateUpdated(fn ($state) => /* ... */)
+->live() // Update on every change
+->dehydrated(false) // Exclude from form data
+```
+
+## Related Classes
+
+- [Component](/api/component) - Base component class
+- [Form](/api/form) - Form schema
+- [Resource](/api/resource) - Resource forms

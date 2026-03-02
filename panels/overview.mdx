@@ -1,0 +1,200 @@
+---
+title: Overview
+description: Introduction to Filament panels and how to configure them
+---
+
+## Introduction
+
+Filament panels are the foundation of your admin interface. A panel is a complete admin dashboard that can include resources, pages, widgets, and more. You can have multiple panels in a single application, each with its own configuration, authentication, and routing.
+
+## Creating a panel
+
+Panels are typically registered in a service provider. The most common approach is to create a `PanelProvider` that extends `Filament\Panel\PanelProvider`:
+
+```php
+use Filament\Panel;
+use Filament\PanelProvider;
+
+class AdminPanelProvider extends PanelProvider
+{
+    public function panel(Panel $panel): Panel
+    {
+        return $panel
+            ->id('admin')
+            ->path('admin')
+            ->colors([
+                'primary' => Color::Amber,
+            ])
+            ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
+            ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
+            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets');
+    }
+}
+```
+
+<Note>
+The `id()` method is required and must be unique across all panels in your application. It's used to generate route names and identify the panel.
+</Note>
+
+## Panel configuration basics
+
+Every panel requires at minimum an ID to function. Beyond that, you can configure various aspects:
+
+### Setting the path
+
+The `path()` method defines the URL prefix for your panel:
+
+```php
+$panel->path('admin')
+```
+
+This makes the panel accessible at `/admin`. You can also set an empty path to make it the root:
+
+```php
+$panel->path('')
+```
+
+### Default panel
+
+You can mark a panel as the default panel, which is used when no specific panel context is available:
+
+```php
+$panel->default()
+```
+
+### Custom domains
+
+You can configure a panel to run on a specific domain or subdomain:
+
+```php
+// Single domain
+$panel->domain('admin.example.com')
+
+// Multiple domains
+$panel->domains([
+    'admin.example.com',
+    'admin.example.org',
+])
+```
+
+## Registering components
+
+Panels can discover or manually register resources, pages, and widgets.
+
+### Auto-discovery
+
+The easiest way to register components is using auto-discovery:
+
+```php
+$panel
+    ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
+    ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
+    ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
+    ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\\Filament\\Clusters')
+```
+
+### Manual registration
+
+You can also manually register specific components:
+
+```php
+use App\Filament\Resources\UserResource;
+use App\Filament\Pages\Settings;
+use App\Filament\Widgets\StatsOverview;
+
+$panel
+    ->resources([
+        UserResource::class,
+    ])
+    ->pages([
+        Settings::class,
+    ])
+    ->widgets([
+        StatsOverview::class,
+    ])
+```
+
+## Component caching
+
+Filament automatically caches discovered components in production to improve performance. The cache is stored in `bootstrap/cache/filament/panels/{panel-id}.php`.
+
+To clear the component cache, you can use:
+
+```bash
+php artisan filament:cache-components
+```
+
+## Lifecycle hooks
+
+You can hook into the panel's boot process to perform custom setup:
+
+```php
+$panel->bootUsing(function (Panel $panel) {
+    // Custom boot logic
+    Log::info('Panel booted: ' . $panel->getId());
+})
+```
+
+## Multiple panels
+
+You can register multiple panels in your application, each with different configurations:
+
+```php
+// app/Providers/Filament/AdminPanelProvider.php
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->id('admin')
+        ->path('admin')
+        ->authGuard('web');
+}
+
+// app/Providers/Filament/AppPanelProvider.php
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->id('app')
+        ->path('app')
+        ->authGuard('customers');
+}
+```
+
+<Warning>
+Each panel must have a unique ID. Duplicate IDs will cause a `LogicException` to be thrown.
+</Warning>
+
+## Accessing panel configuration
+
+You can access the current panel from anywhere using the `Filament` facade:
+
+```php
+use Filament\Facades\Filament;
+
+$panel = Filament::getCurrentPanel();
+$panelId = $panel->getId();
+$panelPath = $panel->getPath();
+```
+
+You can also get a specific panel by ID:
+
+```php
+$adminPanel = Filament::getPanel('admin');
+```
+
+## Next steps
+
+<Steps>
+
+<Step title="Configure resources">
+  Learn how to [create and configure resources](/panels/resources) within your panel.
+</Step>
+
+<Step title="Add custom pages">
+  Discover how to [create custom pages](/panels/pages) for your panel.
+</Step>
+
+<Step title="Set up authentication">
+  Configure [authentication and authorization](/panels/authentication) for your panel.
+</Step>
+
+</Steps>

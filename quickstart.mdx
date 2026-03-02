@@ -1,80 +1,263 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get up and running with Filament in minutes by building a simple blog admin panel.
 ---
 
-## Get started in three steps
+<Steps>
+  <Step title="Create your Laravel project">
+    If you haven't already, create a new Laravel project:
 
-Get your documentation site running locally and make your first customization.
+    ```bash
+    composer create-project laravel/laravel blog
+    cd blog
+    ```
 
-### Step 1: Set up your local environment
+    Then, [install Filament](/installation) following the panel builder installation instructions.
+  </Step>
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+  <Step title="Create models and migrations">
+    Let's build a simple blog with Authors and Posts. Create the models:
 
-### Step 2: Deploy your changes
+    ```bash
+    php artisan make:model Author -m
+    php artisan make:model Post -m
+    ```
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    Update the migrations in `database/migrations/`:
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    ```php
+    // create_authors_table migration
+    Schema::create('authors', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+        $table->string('email')->unique();
+        $table->text('bio')->nullable();
+        $table->timestamps();
+    });
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    // create_posts_table migration
+    Schema::create('posts', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('author_id')->constrained()->cascadeOnDelete();
+        $table->string('title');
+        $table->string('slug')->unique();
+        $table->text('content');
+        $table->boolean('is_published')->default(false);
+        $table->timestamp('published_at')->nullable();
+        $table->timestamps();
+    });
+    ```
 
-### Step 3: Go live
+    Run the migrations:
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    ```bash
+    php artisan migrate
+    ```
+  </Step>
+
+  <Step title="Define relationships">
+    Add the relationship methods to your models:
+
+    ```php
+    // app/Models/Author.php
+    public function posts(): HasMany
+    {
+        return $this->hasMany(Post::class);
+    }
+
+    // app/Models/Post.php
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(Author::class);
+    }
+    ```
+  </Step>
+
+  <Step title="Generate Filament resources">
+    Use the `--generate` flag to automatically create resources with forms and tables:
+
+    ```bash
+    php artisan make:filament-resource Author --generate
+    php artisan make:filament-resource Post --generate
+    ```
+
+    This creates `AuthorResource.php` and `PostResource.php` in `app/Filament/Resources/` with automatically generated forms, tables, and pages.
+  </Step>
+
+  <Step title="Customize the forms">
+    Open `app/Filament/Resources/PostResource.php` and customize the form:
+
+    ```php
+    use Filament\Forms\Components\DateTimePicker;
+    use Filament\Forms\Components\MarkdownEditor;
+    use Filament\Forms\Components\Select;
+    use Filament\Forms\Components\TextInput;
+    use Filament\Forms\Components\Toggle;
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                TextInput::make('title')
+                    ->required()
+                    ->maxLength(255)
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state))),
+                
+                TextInput::make('slug')
+                    ->required()
+                    ->maxLength(255)
+                    ->unique(ignoreRecord: true),
+                
+                Select::make('author_id')
+                    ->relationship('author', 'name')
+                    ->required()
+                    ->searchable()
+                    ->preload(),
+                
+                MarkdownEditor::make('content')
+                    ->required()
+                    ->columnSpanFull(),
+                
+                Toggle::make('is_published')
+                    ->default(false),
+                
+                DateTimePicker::make('published_at')
+                    ->label('Publish Date'),
+            ]);
+    }
+    ```
+  </Step>
+
+  <Step title="Enhance the table">
+    Update the table configuration to add filters and improve the display:
+
+    ```php
+    use Filament\Tables\Columns\IconColumn;
+    use Filament\Tables\Columns\TextColumn;
+    use Filament\Tables\Filters\Filter;
+    use Filament\Tables\Filters\SelectFilter;
+    use Illuminate\Database\Eloquent\Builder;
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('title')
+                    ->searchable()
+                    ->sortable(),
+                
+                TextColumn::make('author.name')
+                    ->searchable()
+                    ->sortable(),
+                
+                IconColumn::make('is_published')
+                    ->boolean(),
+                
+                TextColumn::make('published_at')
+                    ->dateTime()
+                    ->sortable(),
+                
+                TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                SelectFilter::make('author')
+                    ->relationship('author', 'name'),
+                
+                Filter::make('is_published')
+                    ->query(fn (Builder $query): Builder => $query->where('is_published', true)),
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+    ```
+  </Step>
+
+  <Step title="Configure the resources">
+    Add navigation icons and grouping to your resources:
+
+    ```php
+    // In PostResource.php
+    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static ?string $navigationGroup = 'Blog';
+    protected static ?int $navigationSort = 1;
+
+    // In AuthorResource.php
+    protected static ?string $navigationIcon = 'heroicon-o-user-group';
+    protected static ?string $navigationGroup = 'Blog';
+    protected static ?int $navigationSort = 2;
+    ```
+  </Step>
+
+  <Step title="Test your admin panel">
+    Create a user if you haven't already:
+
+    ```bash
+    php artisan make:filament-user
+    ```
+
+    Then visit `/admin` in your browser, log in, and start managing your blog!
+  </Step>
+</Steps>
+
+## What you've built
+
+<CardGroup cols={2}>
+  <Card title="Author Management" icon="user-group">
+    Full CRUD interface for managing blog authors with searchable tables and validated forms.
+  </Card>
+  <Card title="Post Management" icon="document-text">
+    Create and edit blog posts with markdown content, auto-generated slugs, and publishing controls.
+  </Card>
+  <Card title="Relationships" icon="link">
+    Select authors for posts with searchable dropdowns and see author details in the posts table.
+  </Card>
+  <Card title="Filters & Search" icon="magnifying-glass">
+    Filter posts by author and publication status, plus full-text search on titles and authors.
+  </Card>
+</CardGroup>
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
+Now that you have a working admin panel, explore more features:
 
-<CardGroup cols={2}>
+- **[Resources](/resources/overview)** - Learn about all resource capabilities
+- **[Form Components](/components/forms/text-input)** - Discover 30+ available form fields
+- **[Table Features](/tables/overview)** - Add sorting, searching, and bulk actions
+- **[Actions](/actions/overview)** - Create custom actions and modals
+- **[Widgets](/widgets/overview)** - Add dashboard widgets for analytics
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+## Common commands
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+<CodeGroup>
+```bash Resources
+php artisan make:filament-resource ModelName
+php artisan make:filament-resource ModelName --generate
+php artisan make:filament-resource ModelName --simple
+php artisan make:filament-resource ModelName --view
+```
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+```bash Pages
+php artisan make:filament-page Settings
+php artisan make:filament-page Settings --resource=PostResource --type=custom
+```
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+```bash Widgets
+php artisan make:filament-widget StatsOverview
+php artisan make:filament-widget BlogPostsChart --chart
+```
 
-</CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+```bash Users
+php artisan make:filament-user
+```
+</CodeGroup>

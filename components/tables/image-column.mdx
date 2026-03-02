@@ -1,0 +1,245 @@
+---
+title: Image Column
+---
+
+## Introduction
+
+Image columns display images based on the file path in the column's state:
+
+```php
+use Filament\Tables\Columns\ImageColumn;
+
+ImageColumn::make('avatar')
+```
+
+The state can contain a relative path (relative to the storage disk) or an absolute URL.
+
+## Managing the disk
+
+By default, images are stored on the disk defined in your Filament configuration. You can customize the disk:
+
+```php
+ImageColumn::make('header_image')
+    ->disk('s3')
+```
+
+<ParamField path="disk" type="string | Closure">
+  The storage disk name.
+</ParamField>
+
+## Visibility
+
+By default, Filament generates temporary URLs for images. For public images:
+
+```php
+ImageColumn::make('header_image')
+    ->visibility('public')
+```
+
+<ParamField path="visibility" type="string | Closure">
+  The visibility setting ('public' or 'private').
+</ParamField>
+
+## Customizing the size
+
+You can set image dimensions:
+
+<Tabs>
+<Tab title="Width">
+```php
+ImageColumn::make('header_image')
+    ->imageWidth(200)
+```
+</Tab>
+
+<Tab title="Height">
+```php
+ImageColumn::make('header_image')
+    ->imageHeight(50)
+```
+</Tab>
+
+<Tab title="Both">
+```php
+ImageColumn::make('avatar')
+    ->imageSize(40)
+```
+</Tab>
+</Tabs>
+
+<ParamField path="width" type="int | string | Closure">
+  The image width in pixels or a CSS value.
+</ParamField>
+
+<ParamField path="height" type="int | string | Closure">
+  The image height in pixels or a CSS value.
+</ParamField>
+
+### Square images
+
+Display images with a 1:1 aspect ratio:
+
+```php
+ImageColumn::make('avatar')
+    ->imageHeight(40)
+    ->square()
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to display as square.
+</ParamField>
+
+## Circular images
+
+Make images fully rounded (useful for avatars):
+
+```php
+ImageColumn::make('avatar')
+    ->imageHeight(40)
+    ->circular()
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to display as circular.
+</ParamField>
+
+## Default image
+
+Display a placeholder when no image exists:
+
+```php
+ImageColumn::make('header_image')
+    ->defaultImageUrl(url('storage/posts/header-images/default.jpg'))
+```
+
+<ParamField path="url" type="string | Closure">
+  The URL of the default image.
+</ParamField>
+
+## Stacking images
+
+Display multiple images as overlapping stack:
+
+```php
+ImageColumn::make('colleagues.avatar')
+    ->imageHeight(40)
+    ->circular()
+    ->stacked()
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to stack multiple images.
+</ParamField>
+
+### Customizing the ring
+
+The ring width around stacked images:
+
+```php
+ImageColumn::make('colleagues.avatar')
+    ->imageHeight(40)
+    ->circular()
+    ->stacked()
+    ->ring(5)
+```
+
+<ParamField path="ring" type="int | Closure" default="3">
+  The ring width (0-8).
+</ParamField>
+
+### Customizing the overlap
+
+The overlap between stacked images:
+
+```php
+ImageColumn::make('colleagues.avatar')
+    ->imageHeight(40)
+    ->circular()
+    ->stacked()
+    ->overlap(2)
+```
+
+<ParamField path="overlap" type="int | Closure" default="4">
+  The overlap amount (0-8).
+</ParamField>
+
+## Limiting images
+
+Limit the maximum number of images displayed:
+
+```php
+ImageColumn::make('colleagues.avatar')
+    ->imageHeight(40)
+    ->circular()
+    ->stacked()
+    ->limit(3)
+```
+
+<ParamField path="limit" type="int | Closure" default="3">
+  The maximum number of images to display.
+</ParamField>
+
+### Showing remaining count
+
+Display the count of remaining images:
+
+```php
+ImageColumn::make('colleagues.avatar')
+    ->imageHeight(40)
+    ->circular()
+    ->stacked()
+    ->limit(3)
+    ->limitedRemainingText()
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to display the remaining count.
+</ParamField>
+
+<ParamField path="size" type="TextSize | string | Closure" default="TextSize::Small">
+  The size of the remaining text.
+</ParamField>
+
+## File existence checks
+
+By default, Filament checks if images exist. Disable for remote storage:
+
+```php
+ImageColumn::make('attachment')
+    ->checkFileExistence(false)
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to check if files exist.
+</ParamField>
+
+## Wrapping images
+
+Allow images to wrap to multiple lines:
+
+```php
+ImageColumn::make('colleagues.avatar')
+    ->circular()
+    ->stacked()
+    ->wrap()
+```
+
+## Extra image attributes
+
+Add HTML attributes to the `<img>` element:
+
+```php
+ImageColumn::make('logo')
+    ->extraImgAttributes([
+        'alt' => 'Logo',
+        'loading' => 'lazy',
+    ])
+```
+
+<ParamField path="attributes" type="array | Closure">
+  An array of HTML attributes.
+</ParamField>
+
+<ParamField path="merge" type="bool" default="false">
+  Whether to merge with existing attributes.
+</ParamField>

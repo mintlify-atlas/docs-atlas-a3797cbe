@@ -1,0 +1,666 @@
+---
+title: Chart Widgets
+---
+
+## Introduction
+
+Filament provides powerful chart widgets that allow you to display real-time, interactive charts using Chart.js. These widgets are perfect for visualizing trends, comparing data sets, and presenting analytics in an engaging way.
+
+Chart widgets support multiple chart types including line, bar, pie, doughnut, radar, polar area, bubble, and scatter charts.
+
+## Creating a Chart Widget
+
+Generate a chart widget using the Artisan command:
+
+```bash
+php artisan make:filament-widget BlogPostsChart --chart
+```
+
+This creates a widget class that extends `ChartWidget`:
+
+```php
+namespace App\Filament\Widgets;
+
+use Filament\Widgets\ChartWidget;
+
+class BlogPostsChart extends ChartWidget
+{
+    protected ?string $heading = 'Blog Posts';
+
+    protected function getData(): array
+    {
+        return [
+            'datasets' => [
+                [
+                    'label' => 'Blog posts created',
+                    'data' => [0, 10, 5, 2, 21, 32, 45, 74, 65, 45, 77, 89],
+                ],
+            ],
+            'labels' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        ];
+    }
+
+    protected function getType(): string
+    {
+        return 'line';
+    }
+}
+```
+
+## Available Chart Types
+
+Filament supports all Chart.js chart types. Set the chart type by returning the appropriate string from the `getType()` method:
+
+<CardGroup cols={2}>
+  <Card title="Line Chart" icon="chart-line">
+    `'line'` - Display data as connected points
+  </Card>
+  <Card title="Bar Chart" icon="chart-bar">
+    `'bar'` - Display data as vertical bars
+  </Card>
+  <Card title="Pie Chart" icon="chart-pie">
+    `'pie'` - Display data as circular segments
+  </Card>
+  <Card title="Doughnut Chart" icon="circle-notch">
+    `'doughnut'` - Display data as a ring chart
+  </Card>
+  <Card title="Radar Chart" icon="radar">
+    `'radar'` - Display multivariate data on axes
+  </Card>
+  <Card title="Polar Area Chart" icon="circle-half-stroke">
+    `'polarArea'` - Display data as circular sectors
+  </Card>
+  <Card title="Bubble Chart" icon="circle">
+    `'bubble'` - Display three-dimensional data
+  </Card>
+  <Card title="Scatter Chart" icon="chart-scatter">
+    `'scatter'` - Display data as points on x/y axes
+  </Card>
+</CardGroup>
+
+### Chart Type Examples
+
+```php
+// Line chart
+protected function getType(): string
+{
+    return 'line';
+}
+
+// Bar chart
+protected function getType(): string
+{
+    return 'bar';
+}
+
+// Pie chart
+protected function getType(): string
+{
+    return 'pie';
+}
+```
+
+Refer to the [Chart.js documentation](https://www.chartjs.org/docs) for detailed information about each chart type and data format requirements.
+
+## Chart Data Structure
+
+The `getData()` method returns an array with `datasets` and `labels`:
+
+```php
+protected function getData(): array
+{
+    return [
+        'datasets' => [
+            [
+                'label' => 'Sales',
+                'data' => [1200, 1900, 3000, 5000, 2400, 3200],
+            ],
+        ],
+        'labels' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    ];
+}
+```
+
+### Multiple Datasets
+
+Display multiple datasets on the same chart:
+
+```php
+protected function getData(): array
+{
+    return [
+        'datasets' => [
+            [
+                'label' => 'Sales',
+                'data' => [1200, 1900, 3000, 5000, 2400, 3200],
+                'backgroundColor' => '#36A2EB',
+            ],
+            [
+                'label' => 'Revenue',
+                'data' => [1000, 1700, 2800, 4800, 2200, 3000],
+                'backgroundColor' => '#FF6384',
+            ],
+        ],
+        'labels' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    ];
+}
+```
+
+## Generating Data from Eloquent Models
+
+Filament recommends using the `flowframe/laravel-trend` package to generate chart data from Eloquent models:
+
+```bash
+composer require flowframe/laravel-trend
+```
+
+Then use it in your widget:
+
+```php
+use Flowframe\Trend\Trend;
+use Flowframe\Trend\TrendValue;
+use App\Models\BlogPost;
+
+protected function getData(): array
+{
+    $data = Trend::model(BlogPost::class)
+        ->between(
+            start: now()->startOfYear(),
+            end: now()->endOfYear(),
+        )
+        ->perMonth()
+        ->count();
+
+    return [
+        'datasets' => [
+            [
+                'label' => 'Blog posts',
+                'data' => $data->map(fn (TrendValue $value) => $value->aggregate),
+            ],
+        ],
+        'labels' => $data->map(fn (TrendValue $value) => $value->date),
+    ];
+}
+```
+
+### Advanced Trend Queries
+
+```php
+// Count by week
+$data = Trend::model(Order::class)
+    ->between(start: now()->subWeeks(12), end: now())
+    ->perWeek()
+    ->count();
+
+// Sum by day
+$data = Trend::model(Order::class)
+    ->between(start: now()->subDays(30), end: now())
+    ->perDay()
+    ->sum('total');
+
+// Average by month
+$data = Trend::model(Customer::class)
+    ->between(start: now()->subYear(), end: now())
+    ->perMonth()
+    ->average('satisfaction_score');
+```
+
+## Chart Colors
+
+Customize chart colors using the `$color` property:
+
+```php
+protected string $color = 'success';
+```
+
+Available colors match Filament's color system: `primary`, `success`, `warning`, `danger`, `info`, `gray`.
+
+### Custom Dataset Colors
+
+For more control, set colors directly in the dataset:
+
+```php
+protected function getData(): array
+{
+    return [
+        'datasets' => [
+            [
+                'label' => 'Revenue',
+                'data' => [1200, 1900, 3000, 5000, 2400],
+                'backgroundColor' => '#10B981',
+                'borderColor' => '#059669',
+            ],
+        ],
+        'labels' => ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+    ];
+}
+```
+
+## Chart Filters
+
+### Basic Select Filter
+
+Add a filter dropdown to change the chart data:
+
+```php
+public ?string $filter = 'today';
+
+protected function getFilters(): ?array
+{
+    return [
+        'today' => 'Today',
+        'week' => 'Last week',
+        'month' => 'Last month',
+        'year' => 'This year',
+    ];
+}
+
+protected function getData(): array
+{
+    $activeFilter = $this->filter;
+
+    // Generate data based on $activeFilter
+    $data = match($activeFilter) {
+        'today' => $this->getDataForToday(),
+        'week' => $this->getDataForWeek(),
+        'month' => $this->getDataForMonth(),
+        'year' => $this->getDataForYear(),
+    };
+
+    return [
+        'datasets' => [
+            [
+                'label' => 'Revenue',
+                'data' => $data,
+            ],
+        ],
+        'labels' => $this->getLabelsForFilter($activeFilter),
+    ];
+}
+```
+
+### Custom Filter Schema
+
+Build more complex filters using form components:
+
+```php
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Schema;
+use Filament\Widgets\ChartWidget\Concerns\HasFiltersSchema;
+
+class RevenueChart extends ChartWidget
+{
+    use HasFiltersSchema;
+    
+    public function filtersSchema(Schema $schema): Schema
+    {
+        return $schema->components([
+            DatePicker::make('startDate')
+                ->default(now()->subDays(30)),
+            DatePicker::make('endDate')
+                ->default(now()),
+            Select::make('category')
+                ->options([
+                    'all' => 'All Categories',
+                    'electronics' => 'Electronics',
+                    'clothing' => 'Clothing',
+                ]),
+        ]);
+    }
+    
+    protected function getData(): array
+    {
+        $startDate = $this->filters['startDate'] ?? null;
+        $endDate = $this->filters['endDate'] ?? null;
+        $category = $this->filters['category'] ?? 'all';
+        
+        // Use filters to generate data
+        return [
+            // ...
+        ];
+    }
+}
+```
+
+### Deferred Filters
+
+Prevent chart updates until the user clicks "Apply":
+
+```php
+use Filament\Widgets\ChartWidget\Concerns\HasFiltersSchema;
+
+class RevenueChart extends ChartWidget
+{
+    use HasFiltersSchema;
+
+    protected bool $hasDeferredFilters = true;
+    
+    // ...
+}
+```
+
+With deferred filters:
+- Chart displays using default filter values on page load
+- Changes only apply when the user clicks "Apply"
+- A "Reset" link restores default values
+- Better performance for complex queries
+
+### Customizing Filter Actions
+
+```php
+use Filament\Actions\Action;
+
+public function filtersApplyAction(Action $action): Action
+{
+    return $action
+        ->label('Update Chart')
+        ->color('success');
+}
+
+public function filtersResetAction(Action $action): Action
+{
+    return $action
+        ->label('Clear Filters')
+        ->color('danger');
+}
+```
+
+## Live Updating (Polling)
+
+Charts refresh every 5 seconds by default. Customize the polling interval:
+
+```php
+// Refresh every 10 seconds
+protected ?string $pollingInterval = '10s';
+
+// Refresh every minute
+protected ?string $pollingInterval = '60s';
+
+// Disable polling
+protected ?string $pollingInterval = null;
+```
+
+## Chart Height
+
+Limit the maximum height of charts:
+
+```php
+protected ?string $maxHeight = '300px';
+```
+
+This prevents charts from becoming too large on larger screens.
+
+## Chart Options
+
+Customize Chart.js configuration using the `$options` property:
+
+```php
+protected ?array $options = [
+    'plugins' => [
+        'legend' => [
+            'display' => false,
+        ],
+    ],
+    'scales' => [
+        'y' => [
+            'beginAtZero' => true,
+        ],
+    ],
+];
+```
+
+### Dynamic Options
+
+Use the `getOptions()` method for dynamic configuration:
+
+```php
+protected function getOptions(): array
+{
+    return [
+        'plugins' => [
+            'legend' => [
+                'display' => $this->showLegend,
+            ],
+        ],
+    ];
+}
+```
+
+### JavaScript Callbacks
+
+Use `RawJs` for JavaScript callbacks:
+
+```php
+use Filament\Support\RawJs;
+
+protected function getOptions(): RawJs
+{
+    return RawJs::make(<<<JS
+        {
+            scales: {
+                y: {
+                    ticks: {
+                        callback: (value) => '€' + value,
+                    },
+                },
+            },
+        }
+    JS);
+}
+```
+
+## Chart Heading and Description
+
+Set the heading and description:
+
+```php
+protected ?string $heading = 'Monthly Revenue';
+
+protected ?string $description = 'Revenue trend for the current year';
+```
+
+Or use methods for dynamic values:
+
+```php
+public function getHeading(): ?string
+{
+    return 'Revenue - ' . now()->format('F Y');
+}
+
+public function getDescription(): ?string
+{
+    return 'Last updated ' . now()->diffForHumans();
+}
+```
+
+## Making Charts Collapsible
+
+Allow users to collapse charts to save space:
+
+```php
+protected bool $isCollapsible = true;
+```
+
+## Lazy Loading
+
+By default, charts are lazy-loaded. Disable if needed:
+
+```php
+protected static bool $isLazy = false;
+```
+
+## Using Chart.js Plugins
+
+Extend Chart.js functionality with plugins.
+
+### Step 1: Install the Plugin
+
+```bash
+npm install chartjs-plugin-datalabels --save-dev
+```
+
+### Step 2: Create a JavaScript File
+
+Create `resources/js/filament-chart-js-plugins.js`:
+
+```javascript
+import ChartDataLabels from 'chartjs-plugin-datalabels'
+
+window.filamentChartJsPlugins ??= []
+window.filamentChartJsPlugins.push(ChartDataLabels)
+```
+
+For global plugins:
+```javascript
+window.filamentChartJsGlobalPlugins ??= []
+window.filamentChartJsGlobalPlugins.push(ChartDataLabels)
+```
+
+### Step 3: Build with Vite
+
+Update `vite.config.js`:
+
+```javascript
+export default defineConfig({
+    plugins: [
+        laravel({
+            input: [
+                'resources/css/app.css',
+                'resources/js/app.js',
+                'resources/js/filament-chart-js-plugins.js',
+            ],
+        }),
+    ],
+});
+```
+
+Build:
+```bash
+npm run build
+```
+
+### Step 4: Register in Filament
+
+In a service provider:
+
+```php
+use Filament\Support\Assets\Js;
+use Filament\Support\Facades\FilamentAsset;
+use Illuminate\Support\Facades\Vite;
+
+public function boot(): void
+{
+    FilamentAsset::register([
+        Js::make(
+            'chart-js-plugins',
+            Vite::asset('resources/js/filament-chart-js-plugins.js')
+        )->module(),
+    ]);
+}
+```
+
+## Best Practices
+
+1. **Choose Appropriate Chart Types**: Use line charts for trends, bar charts for comparisons, pie charts for proportions
+2. **Keep Data Manageable**: Limit data points to prevent overcrowded charts (typically 12-20 points max)
+3. **Use Meaningful Labels**: Provide clear axis labels and legends
+4. **Color Consistency**: Use consistent colors across dashboards for related data
+5. **Optimize Queries**: Cache expensive database queries, especially with polling enabled
+6. **Responsive Design**: Test charts on mobile devices
+7. **Filter Validation**: When using filters, ensure data is valid before querying
+8. **Tooltip Enhancement**: Customize tooltips to show relevant information
+9. **Accessibility**: Ensure charts have appropriate labels and descriptions
+10. **Performance**: Use deferred filters for complex queries to prevent excessive reloads
+
+## Common Chart Patterns
+
+### Revenue Over Time
+
+```php
+use Flowframe\Trend\Trend;
+use Flowframe\Trend\TrendValue;
+
+protected function getData(): array
+{
+    $data = Trend::model(Order::class)
+        ->between(start: now()->subMonths(12), end: now())
+        ->perMonth()
+        ->sum('total');
+
+    return [
+        'datasets' => [
+            [
+                'label' => 'Revenue',
+                'data' => $data->map(fn (TrendValue $value) => $value->aggregate),
+                'backgroundColor' => '#10B981',
+                'borderColor' => '#059669',
+            ],
+        ],
+        'labels' => $data->map(fn (TrendValue $value) => $value->date),
+    ];
+}
+```
+
+### Status Distribution
+
+```php
+use App\Models\Order;
+
+protected function getData(): array
+{
+    $statuses = Order::query()
+        ->selectRaw('status, count(*) as count')
+        ->groupBy('status')
+        ->pluck('count', 'status');
+
+    return [
+        'datasets' => [
+            [
+                'data' => $statuses->values(),
+                'backgroundColor' => ['#10B981', '#F59E0B', '#EF4444', '#6B7280'],
+            ],
+        ],
+        'labels' => $statuses->keys(),
+    ];
+}
+
+protected function getType(): string
+{
+    return 'pie';
+}
+```
+
+### Comparison Chart
+
+```php
+protected function getData(): array
+{
+    return [
+        'datasets' => [
+            [
+                'label' => '2024',
+                'data' => [12, 19, 30, 50, 24, 32],
+                'backgroundColor' => '#3B82F6',
+            ],
+            [
+                'label' => '2023',
+                'data' => [10, 17, 28, 48, 22, 30],
+                'backgroundColor' => '#9CA3AF',
+            ],
+        ],
+        'labels' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    ];
+}
+
+protected function getType(): string
+{
+    return 'bar';
+}
+```
+
+## Next Steps
+
+- Explore [Stats Overview Widgets](/widgets/stats) for displaying key metrics
+- Learn about [Widget Filters](/widgets/overview#filtering-widget-data) for dashboard-wide filtering
+- Review [Chart.js Documentation](https://www.chartjs.org/docs) for advanced customization

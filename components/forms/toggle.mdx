@@ -1,0 +1,139 @@
+---
+title: Toggle
+---
+
+The toggle component allows you to interact with a boolean value using a switch UI.
+
+## Basic Usage
+
+```php
+use Filament\Forms\Components\Toggle;
+
+Toggle::make('is_admin')
+```
+
+## Available Methods
+
+<ParamField path="inline" type="method">
+  Controls the label position (inline or stacked).
+  
+  ```php
+  // Inline (default) - label adjacent to toggle
+  Toggle::make('is_admin')
+      ->inline()
+  
+  // Stacked - label above toggle
+  Toggle::make('is_admin')
+      ->inline(false)
+  ```
+</ParamField>
+
+<ParamField path="onIcon" type="method">
+  Sets the icon displayed when toggled on.
+  
+  ```php
+  use Filament\Support\Icons\Heroicon;
+  
+  Toggle::make('is_admin')
+      ->onIcon(Heroicon::Bolt)
+  ```
+</ParamField>
+
+<ParamField path="offIcon" type="method">
+  Sets the icon displayed when toggled off.
+  
+  ```php
+  use Filament\Support\Icons\Heroicon;
+  
+  Toggle::make('is_admin')
+      ->offIcon(Heroicon::User)
+  ```
+</ParamField>
+
+<ParamField path="onColor" type="method">
+  Sets the color when toggled on.
+  
+  ```php
+  Toggle::make('is_admin')
+      ->onColor('success')
+  ```
+</ParamField>
+
+<ParamField path="offColor" type="method">
+  Sets the color when toggled off.
+  
+  ```php
+  Toggle::make('is_admin')
+      ->offColor('danger')
+  ```
+</ParamField>
+
+<ParamField path="accepted" type="method">
+  Requires the toggle to be on.
+  
+  ```php
+  Toggle::make('terms_of_service')
+      ->accepted()
+  ```
+</ParamField>
+
+<ParamField path="declined" type="method">
+  Requires the toggle to be off.
+  
+  ```php
+  Toggle::make('is_under_18')
+      ->declined()
+  ```
+</ParamField>
+
+## Common Patterns
+
+### Feature Flag
+
+```php
+Toggle::make('is_active')
+    ->label('Active')
+    ->onColor('success')
+    ->offColor('gray')
+    ->default(true)
+```
+
+### With Icons
+
+```php
+use Filament\Support\Icons\Heroicon;
+
+Toggle::make('notifications_enabled')
+    ->label('Enable Notifications')
+    ->onIcon(Heroicon::Bell)
+    ->offIcon(Heroicon::BellSlash)
+    ->onColor('success')
+```
+
+### Status Toggle
+
+```php
+Toggle::make('published')
+    ->label('Published')
+    ->onColor('success')
+    ->offColor('danger')
+    ->inline()
+```
+
+## Database Casting
+
+When saving boolean values with Eloquent, add a `boolean` cast:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class Post extends Model
+{
+    protected function casts(): array
+    {
+        return [
+            'is_admin' => 'boolean',
+        ];
+    }
+}
+```

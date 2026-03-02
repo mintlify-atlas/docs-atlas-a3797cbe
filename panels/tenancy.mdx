@@ -1,0 +1,414 @@
+---
+title: Tenancy
+description: Multi-tenancy features for building SaaS applications
+---
+
+## Introduction
+
+Filament's tenancy features allow you to build multi-tenant applications where users can belong to one or more organizations, teams, or accounts. Resources and data are automatically scoped to the current tenant.
+
+## Configuring tenancy
+
+Enable tenancy by specifying the tenant model:
+
+```php
+use App\Models\Team;
+
+$panel->tenant(Team::class)
+```
+
+This enables multi-tenancy with the `Team` model as the tenant.
+
+### Tenant slug attribute
+
+By default, Filament uses the model's route key. Specify a custom slug attribute:
+
+```php
+$panel->tenant(
+    model: Team::class,
+    slugAttribute: 'slug'
+)
+```
+
+### Ownership relationship
+
+Define the relationship between users and tenants:
+
+```php
+$panel->tenant(
+    model: Team::class,
+    slugAttribute: 'slug',
+    ownershipRelationship: 'team'
+)
+```
+
+This assumes your User model has a `team()` relationship.
+
+## Tenant routing
+
+### Route prefix
+
+Add a route prefix for tenant URLs:
+
+```php
+$panel->tenantRoutePrefix('team')
+```
+
+URLs will be formatted as `/team/{tenant}/admin`.
+
+### Tenant domains
+
+Use subdomains for tenants:
+
+```php
+$panel->tenantDomain('{tenant}.example.com')
+```
+
+Each tenant gets their own subdomain: `acme.example.com`, `widgets.example.com`, etc.
+
+<Warning>
+When using tenant domains, ensure your web server and DNS are configured to handle wildcard subdomains.
+</Warning>
+
+## Tenant model setup
+
+Your tenant model should define the relationship to users:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
+class Team extends Model
+{
+    protected $fillable = [
+        'name',
+        'slug',
+    ];
+
+    public function members(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class);
+    }
+}
+```
+
+## User model setup
+
+Your User model needs to define which tenants they can access:
+
+```php
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
+class User extends Authenticatable implements FilamentUser
+{
+    public function teams(): BelongsToMany
+    {
+        return $this->belongsToMany(Team::class);
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return true;
+    }
+
+    public function canAccessTenant(Model $tenant): bool
+    {
+        return $this->teams->contains($tenant);
+    }
+
+    public function getTenants(Panel $panel): Collection
+    {
+        return $this->teams;
+    }
+}
+```
+
+## Scoping resources to tenants
+
+Resources are automatically scoped to the current tenant if they belong to one.
+
+### Enabling tenant scoping
+
+Implement the tenant ownership relationship on your model:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class Post extends Model
+{
+    public function team(): BelongsTo
+    {
+        return $this->belongsTo(Team::class);
+    }
+}
+```
+
+Filament automatically scopes queries:
+
+```php
+use Filament\Resources\Resource;
+
+class PostResource extends Resource
+{
+    protected static ?string $model = Post::class;
+
+    // Queries are automatically scoped to the current tenant's posts
+}
+```
+
+### Custom tenancy scope name
+
+If your relationship isn't named after the tenant model:
+
+```php
+use App\Models\Team;
+
+class Post extends Model
+{
+    // The relationship is called organization(), not team()
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Team::class, 'team_id');
+    }
+}
+```
+
+Specify it in the panel:
+
+```php
+$panel->tenant(
+    model: Team::class,
+    ownershipRelationship: 'organization'
+)
+```
+
+### Disabling automatic scoping
+
+Optionally disable automatic scoping for specific resources:
+
+```php
+use Filament\Resources\Resource;
+
+class PostResource extends Resource
+{
+    protected static bool $isScopedToTenant = false;
+
+    // ...
+}
+```
+
+## Tenant switcher
+
+The tenant switcher allows users to switch between tenants.
+
+### Customizing the switcher
+
+```php
+// Disable the switcher
+$panel->tenantSwitcher(false)
+
+// Enable search in the switcher
+$panel->searchableTenantMenu()
+```
+
+### Hiding the tenant menu
+
+```php
+$panel->tenantMenu(false)
+```
+
+## Tenant registration
+
+Allow users to create new tenants:
+
+```bash
+php artisan make:filament-page Tenancy/RegisterTeam
+```
+
+```php
+use Filament\Pages\Tenancy\RegisterTenant;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Schema;
+
+class RegisterTeam extends RegisterTenant
+{
+    public static function getLabel(): string
+    {
+        return 'Register team';
+    }
+
+    public function form(Schema $schema): Schema
+    {
+        return $schema
+            ->schema([
+                TextInput::make('name')
+                    ->required()
+                    ->maxLength(255),
+                TextInput::make('slug')
+                    ->required()
+                    ->maxLength(255)
+                    ->unique(),
+            ]);
+    }
+
+    protected function handleRegistration(array $data): Team
+    {
+        $team = Team::create($data);
+
+        $team->members()->attach(auth()->user());
+
+        return $team;
+    }
+}
+```
+
+Register the page:
+
+```php
+$panel->tenantRegistration(RegisterTeam::class)
+```
+
+## Tenant profile
+
+Allow users to edit tenant settings:
+
+```bash
+php artisan make:filament-page Tenancy/EditTeamProfile
+```
+
+```php
+use Filament\Pages\Tenancy\EditTenantProfile;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Schema;
+
+class EditTeamProfile extends EditTenantProfile
+{
+    public static function getLabel(): string
+    {
+        return 'Team profile';
+    }
+
+    public function form(Schema $schema): Schema
+    {
+        return $schema
+            ->schema([
+                TextInput::make('name')
+                    ->required()
+                    ->maxLength(255),
+                TextInput::make('slug')
+                    ->required()
+                    ->maxLength(255)
+                    ->unique(ignoreRecord: true),
+            ]);
+    }
+}
+```
+
+Register the page:
+
+```php
+$panel->tenantProfile(EditTeamProfile::class)
+```
+
+## Tenant menu items
+
+Customize the tenant menu dropdown:
+
+```php
+use Filament\Navigation\MenuItem;
+
+$panel->tenantMenuItems([
+    MenuItem::make()
+        ->label('Settings')
+        ->url(fn (): string => EditTeamProfile::getUrl())
+        ->icon('heroicon-o-cog-6-tooth'),
+    // 'profile', 'billing', and 'register' are built-in items
+])
+```
+
+## Tenant billing
+
+Integrate billing for tenants using a billing provider:
+
+```php
+use App\Billing\TeamBillingProvider;
+
+$panel->tenantBillingProvider(new TeamBillingProvider())
+```
+
+Implement the `BillingProvider` contract:
+
+```php
+use Filament\Billing\Providers\Contracts\BillingProvider;
+use Illuminate\Database\Eloquent\Model;
+
+class TeamBillingProvider implements BillingProvider
+{
+    public function getRouteAction(): string
+    {
+        return TeamBillingController::class;
+    }
+
+    public function getReturnUrl(Model $tenant): string
+    {
+        return route('filament.admin.tenant', ['tenant' => $tenant]);
+    }
+}
+```
+
+### Requiring subscriptions
+
+Require active subscriptions to access tenants:
+
+```php
+$panel->requiresTenantSubscription()
+```
+
+## Custom tenant resolution
+
+Customize how tenants are resolved from route parameters:
+
+```php
+$panel->resolveTenantUsing(function (string $key): Team {
+    return Team::where('custom_id', $key)->firstOrFail();
+})
+```
+
+## Accessing the current tenant
+
+Access the current tenant from anywhere:
+
+```php
+use Filament\Facades\Filament;
+
+$tenant = Filament::getTenant();
+```
+
+## Tenant-aware notifications
+
+Notifications are automatically scoped to the current tenant when using database notifications.
+
+## Resource creation hooks
+
+Automatically set the tenant when creating records:
+
+```php
+use Filament\Resources\Pages\CreateRecord;
+
+class CreatePost extends CreateRecord
+{
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['team_id'] = Filament::getTenant()->id;
+
+        return $data;
+    }
+}
+```
+
+<Note>
+Filament automatically handles this for you when your model has the correct tenant relationship defined.
+</Note>

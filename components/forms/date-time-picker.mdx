@@ -1,0 +1,309 @@
+---
+title: DateTimePicker
+---
+
+The date-time picker component provides an interface for selecting dates and times.
+
+## Basic Usage
+
+```php
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\TimePicker;
+
+// Date and time
+DateTimePicker::make('published_at')
+
+// Date only
+DatePicker::make('date_of_birth')
+
+// Time only
+TimePicker::make('alarm_at')
+```
+
+## Available Methods
+
+<ParamField path="native" type="method">
+  Controls whether to use native HTML5 picker or JavaScript picker.
+  
+  ```php
+  DatePicker::make('date_of_birth')
+      ->native(false) // Use JavaScript picker
+  ```
+</ParamField>
+
+<ParamField path="format" type="method">
+  Sets the storage format.
+  
+  ```php
+  DatePicker::make('date_of_birth')
+      ->format('d/m/Y')
+  ```
+</ParamField>
+
+<ParamField path="displayFormat" type="method">
+  Sets the display format (JavaScript picker only).
+  
+  ```php
+  DatePicker::make('date_of_birth')
+      ->native(false)
+      ->displayFormat('d/m/Y')
+  ```
+</ParamField>
+
+<ParamField path="timezone" type="method">
+  Sets the timezone.
+  
+  ```php
+  DateTimePicker::make('published_at')
+      ->timezone('America/New_York')
+  ```
+</ParamField>
+
+<ParamField path="locale" type="method">
+  Sets the locale (JavaScript picker only).
+  
+  ```php
+  DatePicker::make('date_of_birth')
+      ->native(false)
+      ->locale('fr')
+  ```
+</ParamField>
+
+<ParamField path="seconds" type="method">
+  Controls seconds display.
+  
+  ```php
+  DateTimePicker::make('published_at')
+      ->seconds(false)
+  ```
+</ParamField>
+
+<ParamField path="date" type="method">
+  Controls date display.
+  
+  ```php
+  DateTimePicker::make('event_time')
+      ->date(false) // Time only
+  ```
+</ParamField>
+
+<ParamField path="time" type="method">
+  Controls time display.
+  
+  ```php
+  DateTimePicker::make('event_date')
+      ->time(false) // Date only
+  ```
+</ParamField>
+
+<ParamField path="minDate" type="method">
+  Sets the minimum selectable date.
+  
+  ```php
+  DatePicker::make('date_of_birth')
+      ->minDate(now()->subYears(150))
+      ->maxDate(now())
+  ```
+</ParamField>
+
+<ParamField path="maxDate" type="method">
+  Sets the maximum selectable date.
+  
+  ```php
+  DatePicker::make('event_date')
+      ->minDate(now())
+      ->maxDate(now()->addYear())
+  ```
+</ParamField>
+
+<ParamField path="disabledDates" type="method">
+  Disables specific dates (JavaScript picker only).
+  
+  ```php
+  DatePicker::make('appointment')
+      ->native(false)
+      ->disabledDates(['2024-12-25', '2024-01-01'])
+  ```
+</ParamField>
+
+<ParamField path="defaultFocusedDate" type="method">
+  Sets the default focused date (JavaScript picker only).
+  
+  ```php
+  DatePicker::make('event_date')
+      ->native(false)
+      ->defaultFocusedDate(now()->startOfMonth())
+  ```
+</ParamField>
+
+<ParamField path="firstDayOfWeek" type="method">
+  Sets the first day of week (0-7, JavaScript picker only).
+  
+  ```php
+  DatePicker::make('date')
+      ->native(false)
+      ->firstDayOfWeek(7) // Sunday
+  ```
+</ParamField>
+
+<ParamField path="weekStartsOnMonday" type="method">
+  Sets Monday as first day of week.
+  
+  ```php
+  DatePicker::make('date')
+      ->native(false)
+      ->weekStartsOnMonday()
+  ```
+</ParamField>
+
+<ParamField path="weekStartsOnSunday" type="method">
+  Sets Sunday as first day of week.
+  
+  ```php
+  DatePicker::make('date')
+      ->native(false)
+      ->weekStartsOnSunday()
+  ```
+</ParamField>
+
+<ParamField path="hoursStep" type="method">
+  Sets the hours increment step.
+  
+  ```php
+  DateTimePicker::make('appointment')
+      ->native(false)
+      ->hoursStep(2)
+  ```
+</ParamField>
+
+<ParamField path="minutesStep" type="method">
+  Sets the minutes increment step.
+  
+  ```php
+  DateTimePicker::make('appointment')
+      ->native(false)
+      ->minutesStep(15)
+  ```
+</ParamField>
+
+<ParamField path="secondsStep" type="method">
+  Sets the seconds increment step.
+  
+  ```php
+  DateTimePicker::make('precise_time')
+      ->native(false)
+      ->secondsStep(10)
+  ```
+</ParamField>
+
+<ParamField path="closeOnDateSelection" type="method">
+  Closes picker when date is selected.
+  
+  ```php
+  DatePicker::make('date')
+      ->native(false)
+      ->closeOnDateSelection()
+  ```
+</ParamField>
+
+<ParamField path="datalist" type="method">
+  Adds datalist suggestions (native picker only).
+  
+  ```php
+  TimePicker::make('appointment_at')
+      ->datalist(['09:00', '09:30', '10:00', '10:30'])
+  ```
+</ParamField>
+
+<ParamField path="prefix" type="method">
+  Adds text before the input.
+  
+  ```php
+  DatePicker::make('date')
+      ->prefix('Starts')
+  ```
+</ParamField>
+
+<ParamField path="suffix" type="method">
+  Adds text after the input.
+  
+  ```php
+  DatePicker::make('date')
+      ->suffix('at midnight')
+  ```
+</ParamField>
+
+<ParamField path="prefixIcon" type="method">
+  Adds an icon before the input.
+  
+  ```php
+  use Filament\Support\Icons\Heroicon;
+  
+  TimePicker::make('at')
+      ->prefixIcon(Heroicon::Clock)
+  ```
+</ParamField>
+
+<ParamField path="readOnly" type="method">
+  Makes the input read-only (native picker only).
+  
+  ```php
+  DatePicker::make('created_at')
+      ->readOnly()
+  ```
+</ParamField>
+
+## Common Patterns
+
+### Date of Birth
+
+```php
+DatePicker::make('date_of_birth')
+    ->native(false)
+    ->maxDate(now())
+    ->displayFormat('d/m/Y')
+    ->required()
+```
+
+### Published At Timestamp
+
+```php
+DateTimePicker::make('published_at')
+    ->native(false)
+    ->seconds(false)
+    ->default(now())
+```
+
+### Appointment Scheduler
+
+```php
+DateTimePicker::make('appointment_at')
+    ->native(false)
+    ->minDate(now())
+    ->maxDate(now()->addMonths(3))
+    ->minutesStep(15)
+    ->seconds(false)
+    ->required()
+```
+
+### Event Date Range
+
+<Tabs>
+  <Tab title="Start Date">
+    ```php
+    DatePicker::make('starts_at')
+        ->native(false)
+        ->minDate(now())
+        ->required()
+    ```
+  </Tab>
+  <Tab title="End Date">
+    ```php
+    DatePicker::make('ends_at')
+        ->native(false)
+        ->minDate(fn (Get $get) => $get('starts_at'))
+        ->required()
+    ```
+  </Tab>
+</Tabs>

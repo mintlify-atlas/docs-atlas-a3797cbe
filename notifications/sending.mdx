@@ -1,0 +1,365 @@
+---
+title: Sending Notifications
+description: Learn how to send database notifications, broadcast notifications, and customize notification delivery in Filament.
+---
+
+## Introduction
+
+Besides flash notifications that appear on-screen, Filament supports sending notifications to the database for persistent storage and broadcasting notifications via websockets for real-time delivery.
+
+## Database notifications
+
+Database notifications are stored in your database and displayed in a persistent notification modal within Filament panels.
+
+<Steps>
+
+### Set up the database table
+
+Create the notifications table using Laravel's migration:
+
+```bash
+php artisan make:notifications-table
+```
+
+<Note>
+For PostgreSQL, change the `data` column to use `json()` instead of `text()`:
+
+```php
+$table->json('data');
+```
+
+For UUID users, use `uuidMorphs()` for the `notifiable` column:
+
+```php
+$table->uuidMorphs('notifiable');
+```
+</Note>
+
+### Enable database notifications in panels
+
+Activate database notifications in your panel configuration:
+
+```php
+use Filament\Panel;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->databaseNotifications();
+}
+```
+
+### Send database notifications
+
+Use the `sendToDatabase()` method:
+
+```php
+use Filament\Notifications\Notification;
+
+$recipient = auth()->user();
+
+Notification::make()
+    ->title('Saved successfully')
+    ->sendToDatabase($recipient);
+```
+
+Or use Laravel's `notify()` method:
+
+```php
+$recipient = auth()->user();
+
+$recipient->notify(
+    Notification::make()
+        ->title('Saved successfully')
+        ->toDatabase(),
+);
+```
+
+</Steps>
+
+<Note>
+Laravel sends database notifications using the queue. Ensure your queue worker is running to receive notifications.
+</Note>
+
+### Using with Laravel notification classes
+
+Integrate with traditional Laravel notification classes:
+
+```php
+use App\Models\User;
+use Filament\Notifications\Notification;
+
+public function toDatabase(User $notifiable): array
+{
+    return Notification::make()
+        ->title('Saved successfully')
+        ->getDatabaseMessage();
+}
+```
+
+## Receiving database notifications
+
+### Polling for updates
+
+By default, Filament polls for new notifications every 30 seconds:
+
+```php
+use Filament\Panel;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->databaseNotifications()
+        ->databaseNotificationsPolling('30s');
+}
+```
+
+Customize the polling interval:
+
+```php
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->databaseNotifications()
+        ->databaseNotificationsPolling('10s'); // Poll every 10 seconds
+}
+```
+
+Disable polling entirely:
+
+```php
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->databaseNotifications()
+        ->databaseNotificationsPolling(null);
+}
+```
+
+### Using websockets for real-time updates
+
+For instant notification delivery, use websockets instead of polling. First, configure Echo in your panel.
+
+Then enable event dispatching when sending notifications:
+
+```php
+use Filament\Notifications\Notification;
+
+$recipient = auth()->user();
+
+Notification::make()
+    ->title('Saved successfully')
+    ->sendToDatabase($recipient, isEventDispatched: true);
+```
+
+This triggers the `DatabaseNotificationsSent` event, immediately updating the notification panel.
+
+## Marking notifications as read
+
+### From notification actions
+
+Add actions that mark individual notifications as read:
+
+```php
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+
+Notification::make()
+    ->title('New comment on your post')
+    ->body('John Doe commented on "My First Post".')
+    ->actions([
+        Action::make('view')
+            ->button()
+            ->url(route('posts.show', $post))
+            ->markAsRead(),
+    ])
+    ->sendToDatabase($user);
+```
+
+Or mark as unread:
+
+```php
+Action::make('markAsUnread')
+    ->markAsUnread()
+```
+
+### Mark all as read
+
+Users can mark all notifications as read using the button at the top of the notifications modal.
+
+## Notification panel positioning
+
+By default, the notification trigger appears in the topbar. Move it to the sidebar:
+
+```php
+use Filament\Enums\DatabaseNotificationsPosition;
+use Filament\Panel;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->databaseNotifications(position: DatabaseNotificationsPosition::Sidebar);
+}
+```
+
+## Opening the notifications modal
+
+Trigger the notifications modal programmatically by dispatching a browser event:
+
+```blade
+<button
+    x-data="{}"
+    x-on:click="$dispatch('open-modal', { id: 'database-notifications' })"
+    type="button"
+>
+    Notifications
+</button>
+```
+
+## Broadcast notifications
+
+Broadcast notifications are sent via websockets for real-time delivery without database persistence.
+
+### Sending broadcast notifications
+
+Use the `broadcast()` method:
+
+```php
+use Filament\Notifications\Notification;
+
+$recipient = auth()->user();
+
+Notification::make()
+    ->title('Processing complete')
+    ->broadcast($recipient);
+```
+
+Broadcast to multiple users:
+
+```php
+$users = User::where('role', 'admin')->get();
+
+Notification::make()
+    ->title('New support ticket')
+    ->broadcast($users);
+```
+
+## Notification types comparison
+
+<CodeGroup>
+```php Flash notifications
+// Appear on screen, temporary
+Notification::make()
+    ->title('Saved successfully')
+    ->send();
+```
+
+```php Database notifications
+// Stored in database, persistent
+Notification::make()
+    ->title('New message')
+    ->sendToDatabase($user);
+```
+
+```php Broadcast notifications
+// Sent via websockets, real-time
+Notification::make()
+    ->title('User logged in')
+    ->broadcast($admin);
+```
+</CodeGroup>
+
+## Customizing notification behavior
+
+### Notification status
+
+Database notifications automatically inherit status from the notification:
+
+```php
+Notification::make()
+    ->title('Payment received')
+    ->success()
+    ->sendToDatabase($user);
+```
+
+### Notification duration
+
+Database notifications are always persistent and require manual dismissal. Flash notifications default to 6 seconds:
+
+```php
+Notification::make()
+    ->title('Auto-save enabled')
+    ->duration(3000) // 3 seconds
+    ->send();
+```
+
+### Notification with actions
+
+Actions work identically across all notification types:
+
+```php
+use Filament\Actions\Action;
+
+Notification::make()
+    ->title('New order received')
+    ->actions([
+        Action::make('view')
+            ->button()
+            ->url(route('orders.show', $order)),
+        Action::make('dismiss')
+            ->color('gray')
+            ->close(),
+    ])
+    ->sendToDatabase($user);
+```
+
+## Advanced techniques
+
+### Sending multiple notification types
+
+Send the same notification via multiple channels:
+
+```php
+$notification = Notification::make()
+    ->title('Post published')
+    ->body('Your post "My Article" is now live.')
+    ->success();
+
+// Send as flash notification
+$notification->send();
+
+// Also send to database
+$notification->sendToDatabase($user);
+
+// And broadcast to connected users
+$notification->broadcast($user);
+```
+
+### Conditional notification delivery
+
+Send different notifications based on user preferences:
+
+```php
+$notification = Notification::make()
+    ->title('Task completed');
+
+if ($user->prefers_database_notifications) {
+    $notification->sendToDatabase($user);
+} else {
+    $notification->send();
+}
+```
+
+### Notification identifiers
+
+Use consistent identifiers for managing notifications:
+
+```php
+// Send with custom ID
+Notification::make('order-confirmation')
+    ->title('Order confirmed')
+    ->sendToDatabase($user);
+
+// Close later
+$this->dispatch('close-notification', id: 'order-confirmation');
+```

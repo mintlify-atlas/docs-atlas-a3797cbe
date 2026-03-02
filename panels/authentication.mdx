@@ -1,0 +1,450 @@
+---
+title: Authentication
+description: Configuring authentication, login, registration, and authorization
+---
+
+## Introduction
+
+Filament provides a complete authentication system out of the box, including login, registration, password reset, email verification, and multi-factor authentication. You can customize every aspect or integrate with your existing authentication.
+
+## Configuring authentication
+
+### Authentication guard
+
+Specify which authentication guard to use:
+
+```php
+$panel->authGuard('web')
+```
+
+This determines which guard from `config/auth.php` Filament uses.
+
+### Login page
+
+Enable the login page:
+
+```php
+use Filament\Auth\Pages\Login;
+
+$panel->login(Login::class)
+
+// Or disable login
+$panel->login(false)
+```
+
+#### Custom login page
+
+Create a custom login page:
+
+```bash
+php artisan make:filament-page Auth/Login
+```
+
+Extend the base login page:
+
+```php
+use Filament\Auth\Pages\Login as BaseLogin;
+
+class Login extends BaseLogin
+{
+    public function mount(): void
+    {
+        parent::mount();
+
+        if (app()->isLocal()) {
+            $this->form->fill([
+                'email' => 'admin@example.com',
+                'password' => 'password',
+            ]);
+        }
+    }
+}
+```
+
+Register it:
+
+```php
+$panel->login(Login::class)
+```
+
+### Registration page
+
+Enable user registration:
+
+```php
+use Filament\Auth\Pages\Register;
+
+$panel->registration(Register::class)
+```
+
+#### Custom registration page
+
+Create a custom registration page:
+
+```bash
+php artisan make:filament-page Auth/Register
+```
+
+```php
+use Filament\Auth\Pages\Register as BaseRegister;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Schema;
+
+class Register extends BaseRegister
+{
+    public function form(Schema $schema): Schema
+    {
+        return $schema
+            ->schema([
+                TextInput::make('name')
+                    ->required()
+                    ->maxLength(255),
+                TextInput::make('email')
+                    ->email()
+                    ->required()
+                    ->maxLength(255)
+                    ->unique(),
+                TextInput::make('password')
+                    ->password()
+                    ->required()
+                    ->confirmed(),
+                TextInput::make('password_confirmation')
+                    ->password()
+                    ->required(),
+                TextInput::make('company_name')
+                    ->required(),
+            ]);
+    }
+}
+```
+
+### Password reset
+
+Enable password reset functionality:
+
+```php
+use Filament\Auth\Pages\PasswordReset\RequestPasswordReset;
+use Filament\Auth\Pages\PasswordReset\ResetPassword;
+
+$panel->passwordReset(
+    requestAction: RequestPasswordReset::class,
+    resetAction: ResetPassword::class
+)
+```
+
+#### Password broker
+
+Specify which password broker to use:
+
+```php
+$panel->authPasswordBroker('users')
+```
+
+### Email verification
+
+Require users to verify their email:
+
+```php
+use Filament\Auth\Pages\EmailVerification\EmailVerificationPrompt;
+
+$panel->emailVerification(
+    promptAction: EmailVerificationPrompt::class,
+    isRequired: true
+)
+```
+
+Your user model must implement `MustVerifyEmail`:
+
+```php
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+class User extends Authenticatable implements MustVerifyEmail
+{
+    // ...
+}
+```
+
+### Email change verification
+
+Verify email changes:
+
+```php
+$panel->emailChangeVerification()
+```
+
+## Profile pages
+
+Enable user profile management:
+
+```php
+use Filament\Auth\Pages\EditProfile;
+
+$panel->profile(EditProfile::class)
+
+// Simple profile page (without header actions)
+$panel->profile(EditProfile::class, isSimple: true)
+```
+
+### Custom profile page
+
+Create a custom profile page:
+
+```bash
+php artisan make:filament-page Auth/EditProfile
+```
+
+```php
+use Filament\Auth\Pages\EditProfile as BaseEditProfile;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Schema;
+
+class EditProfile extends BaseEditProfile
+{
+    public function form(Schema $schema): Schema
+    {
+        return $schema
+            ->schema([
+                TextInput::make('name')
+                    ->required(),
+                TextInput::make('email')
+                    ->email()
+                    ->required()
+                    ->unique(ignoreRecord: true),
+                TextInput::make('bio')
+                    ->maxLength(500),
+            ]);
+    }
+}
+```
+
+## Multi-factor authentication
+
+Add two-factor authentication:
+
+```php
+use Filament\Auth\MultiFactor\App\AppAuthentication;
+use Filament\Auth\MultiFactor\Pages\SetUpRequiredMultiFactorAuthentication;
+
+$panel->multiFactorAuthentication(
+    providers: AppAuthentication::make(),
+    setUpRequiredAction: SetUpRequiredMultiFactorAuthentication::class,
+    isRequired: false
+)
+```
+
+### Requiring MFA
+
+Make MFA mandatory for all users:
+
+```php
+$panel->requiresMultiFactorAuthentication()
+```
+
+### User model configuration
+
+Implement the required contracts on your user model:
+
+```php
+use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthentication;
+use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthenticationRecovery;
+use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthentication;
+use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthenticationRecovery;
+
+class User extends Authenticatable implements 
+    HasAppAuthentication,
+    HasAppAuthenticationRecovery
+{
+    use InteractsWithAppAuthentication;
+    use InteractsWithAppAuthenticationRecovery;
+}
+```
+
+## Authorization
+
+Filament integrates with Laravel's authorization system using policies.
+
+### Creating policies
+
+Generate a policy for your model:
+
+```bash
+php artisan make:policy UserPolicy --model=User
+```
+
+Define authorization methods:
+
+```php
+class UserPolicy
+{
+    public function viewAny(User $user): bool
+    {
+        return $user->can('view_any_user');
+    }
+
+    public function view(User $user, User $model): bool
+    {
+        return $user->can('view_user');
+    }
+
+    public function create(User $user): bool
+    {
+        return $user->can('create_user');
+    }
+
+    public function update(User $user, User $model): bool
+    {
+        return $user->can('update_user');
+    }
+
+    public function delete(User $user, User $model): bool
+    {
+        return $user->can('delete_user');
+    }
+
+    public function restore(User $user, User $model): bool
+    {
+        return $user->can('restore_user');
+    }
+
+    public function forceDelete(User $user, User $model): bool
+    {
+        return $user->can('force_delete_user');
+    }
+}
+```
+
+### Registering policies
+
+Register policies in `AuthServiceProvider`:
+
+```php
+protected $policies = [
+    User::class => UserPolicy::class,
+    Post::class => PostPolicy::class,
+];
+```
+
+### Strict authorization
+
+Require all resources and pages to implement authorization:
+
+```php
+$panel->strictAuthorization()
+```
+
+This throws an exception if a resource doesn't have a policy.
+
+## Password visibility
+
+Allow users to reveal password fields:
+
+```php
+// Enable (default)
+$panel->revealablePasswords()
+
+// Disable
+$panel->revealablePasswords(false)
+```
+
+## Customizing routes
+
+### Login route slug
+
+```php
+$panel->loginRouteSlug('sign-in')
+```
+
+### Registration route slug
+
+```php
+$panel->registrationRouteSlug('sign-up')
+```
+
+### Password reset route slugs
+
+```php
+$panel
+    ->passwordResetRequestRouteSlug('forgot-password')
+    ->passwordResetRouteSlug('reset-password')
+```
+
+## Accessing the auth guard
+
+Access the panel's authentication guard:
+
+```php
+use Filament\Facades\Filament;
+
+$panel = Filament::getCurrentPanel();
+$guard = $panel->auth();
+$user = $guard->user();
+```
+
+## Logout handling
+
+The logout route is automatically registered. Customize the logout response:
+
+```php
+use Filament\Auth\Http\Responses\Contracts\LogoutResponse;
+
+class CustomLogoutResponse implements LogoutResponse
+{
+    public function toResponse($request)
+    {
+        return redirect('/')->with('message', 'Logged out successfully');
+    }
+}
+```
+
+Bind it in a service provider:
+
+```php
+$this->app->bind(
+    LogoutResponse::class,
+    CustomLogoutResponse::class
+);
+```
+
+## Custom authentication responses
+
+You can customize all authentication responses:
+
+<CodeGroup>
+
+```php Login response
+use Filament\Auth\Http\Responses\Contracts\LoginResponse;
+
+class CustomLoginResponse implements LoginResponse
+{
+    public function toResponse($request)
+    {
+        return redirect()->to('/admin/dashboard');
+    }
+}
+```
+
+```php Registration response
+use Filament\Auth\Http\Responses\Contracts\RegistrationResponse;
+
+class CustomRegistrationResponse implements RegistrationResponse
+{
+    public function toResponse($request)
+    {
+        return redirect()->to('/admin/welcome');
+    }
+}
+```
+
+```php Password reset response
+use Filament\Auth\Http\Responses\Contracts\PasswordResetResponse;
+
+class CustomPasswordResetResponse implements PasswordResetResponse
+{
+    public function toResponse($request)
+    {
+        return redirect()->to('/admin/login');
+    }
+}
+```
+
+</CodeGroup>

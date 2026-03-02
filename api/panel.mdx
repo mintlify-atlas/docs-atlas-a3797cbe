@@ -1,0 +1,176 @@
+---
+title: Panel
+description: Panel class API reference for configuring Filament admin panels
+---
+
+The `Panel` class is the core configuration class for Filament admin panels. It provides a fluent API for configuring all aspects of your admin panel including authentication, navigation, themes, and more.
+
+## Namespace
+
+```php
+Filament\Panel
+```
+
+## Inheritance
+
+Extends: `Filament\Support\Components\Component`
+
+## Static Methods
+
+### make()
+
+Create a new panel instance.
+
+```php
+public static function make(): static
+```
+
+<ParamField path="return" type="static">
+  Returns a new Panel instance resolved from the container.
+</ParamField>
+
+**Example:**
+
+```php
+use Filament\Panel;
+
+$panel = Panel::make()
+    ->id('admin')
+    ->path('admin');
+```
+
+## Instance Methods
+
+### default()
+
+Mark this panel as the default panel.
+
+```php
+public function default(bool | Closure $condition = true): static
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether this panel should be the default. You can pass a closure that returns a boolean.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the panel instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+$panel->default();
+```
+
+### isDefault()
+
+Check if this panel is marked as the default panel.
+
+```php
+public function isDefault(): bool
+```
+
+<ParamField path="return" type="bool">
+  Returns `true` if this is the default panel, `false` otherwise.
+</ParamField>
+
+### register()
+
+Register the panel with the application. This method is called automatically during the service provider registration phase.
+
+```php
+public function register(): void
+```
+
+This method:
+- Registers Livewire components
+- Registers Livewire persistent middleware
+- Sets up tenant domain routing patterns
+- Registers assets when running in console
+
+### boot()
+
+Boot the panel. This method is called automatically during the service provider boot phase.
+
+```php
+public function boot(): void
+```
+
+This method:
+- Sets up tenancy model observers and global scopes
+- Registers assets
+- Registers colors and icons
+- Configures SPA mode
+- Registers render hooks
+- Configures database transactions for actions
+- Boots plugins
+- Executes boot callbacks
+
+### bootUsing()
+
+Register a callback to be executed when the panel boots.
+
+```php
+public function bootUsing(?Closure $callback): static
+```
+
+<ParamField path="callback" type="Closure | null">
+  A closure that receives the panel instance as its parameter.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the panel instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+$panel->bootUsing(function (Panel $panel) {
+    // Custom boot logic
+});
+```
+
+## Traits
+
+The Panel class uses numerous traits for additional functionality:
+
+- `CanGenerateResourceUrls` - URL generation for resources
+- `HasAssets` - Asset registration and management
+- `HasAuth` - Authentication configuration
+- `HasAvatars` - User avatar configuration
+- `HasBrandLogo` - Brand logo customization
+- `HasBrandName` - Brand name configuration
+- `HasBreadcrumbs` - Breadcrumb navigation
+- `HasBroadcasting` - Broadcasting configuration
+- `HasColors` - Color scheme customization
+- `HasComponents` - Component registration
+- `HasDarkMode` - Dark mode configuration
+- `HasDatabaseTransactions` - Database transaction handling
+- `HasErrorNotifications` - Error notification configuration
+- `HasFavicon` - Favicon customization
+- `HasFont` - Font configuration
+- `HasGlobalSearch` - Global search functionality
+- `HasIcons` - Icon customization
+- `HasId` - Panel identifier
+- `HasMaxContentWidth` - Content width constraints
+- `HasMiddleware` - Middleware configuration
+- `HasNavigation` - Navigation configuration
+- `HasNotifications` - Notification configuration
+- `HasPlugins` - Plugin management
+- `HasRenderHooks` - Render hook registration
+- `HasRoutes` - Route configuration
+- `HasSidebar` - Sidebar configuration
+- `HasSpaMode` - SPA mode configuration
+- `HasSubNavigation` - Sub-navigation configuration
+- `HasTenancy` - Multi-tenancy support
+- `HasTheme` - Theme customization
+- `HasTopbar` - Top bar configuration
+- `HasTopNavigation` - Top navigation configuration
+- `HasUnsavedChangesAlerts` - Unsaved changes warnings
+- `HasUserMenu` - User menu configuration
+
+## Related Classes
+
+- [Resource](/api/resource) - For creating CRUD interfaces
+- [Page](/api/page) - For creating custom pages

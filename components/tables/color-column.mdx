@@ -1,0 +1,62 @@
+---
+title: Color Column
+---
+
+## Introduction
+
+The color column displays a color preview from a CSS color value:
+
+```php
+use Filament\Tables\Columns\ColorColumn;
+
+ColorColumn::make('color')
+```
+
+The column supports various color formats: HEX, HSL, RGB, and RGBA.
+
+## Making colors copyable
+
+Allow users to copy the color value to clipboard:
+
+```php
+ColorColumn::make('color')
+    ->copyable()
+    ->copyMessage('Copied!')
+    ->copyMessageDuration(1500)
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether the color should be copyable.
+</ParamField>
+
+<ParamField path="message" type="string | Closure" default="'Copied'">
+  The message to display when copied.
+</ParamField>
+
+<ParamField path="duration" type="int | Closure" default="2000">
+  How long to show the message (milliseconds).
+</ParamField>
+
+<Note>
+  This feature requires SSL to be enabled for your application.
+</Note>
+
+## Wrapping color blocks
+
+Allow multiple color blocks to wrap to multiple lines:
+
+```php
+ColorColumn::make('color')
+    ->wrap()
+```
+
+## Multiple colors
+
+When the column state is an array, multiple color blocks will be displayed:
+
+```php
+// Displays multiple color swatches
+ColorColumn::make('palette_colors')
+```
+
+The column automatically handles arrays and collections of color values.

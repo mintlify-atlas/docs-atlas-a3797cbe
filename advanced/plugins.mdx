@@ -1,0 +1,624 @@
+---
+title: Plugin System
+description: Learn how to create and distribute Filament plugins
+---
+
+## Introduction
+
+Filament's plugin system allows you to package and distribute reusable functionality. Plugins can register resources, pages, widgets, themes, and more. They provide a clean way to extend Filament panels with custom features.
+
+## Understanding the Plugin interface
+
+All Filament plugins implement the `Filament\Contracts\Plugin` interface:
+
+```php
+namespace Filament\Contracts;
+
+use Filament\Panel;
+
+interface Plugin
+{
+    public function getId(): string;
+
+    public function register(Panel $panel): void;
+
+    public function boot(Panel $panel): void;
+}
+```
+
+- `getId()` - Returns a unique identifier for the plugin
+- `register()` - Called when the plugin is registered with a panel
+- `boot()` - Called after all plugins are registered
+
+## Creating a basic plugin
+
+<Steps>
+
+### Step 1: Create the plugin class
+
+Create a new class implementing the `Plugin` interface:
+
+```php
+namespace App\Filament\Plugins;
+
+use Filament\Contracts\Plugin;
+use Filament\Panel;
+
+class CustomDashboardPlugin implements Plugin
+{
+    public function getId(): string
+    {
+        return 'custom-dashboard';
+    }
+
+    public function register(Panel $panel): void
+    {
+        $panel
+            ->pages([
+                \App\Filament\Pages\CustomDashboard::class,
+            ])
+            ->widgets([
+                \App\Filament\Widgets\StatsOverview::class,
+                \App\Filament\Widgets\RecentActivity::class,
+            ]);
+    }
+
+    public function boot(Panel $panel): void
+    {
+        // Boot logic here
+    }
+}
+```
+
+### Step 2: Register the plugin
+
+Register your plugin with a panel in `app/Providers/Filament/AdminPanelProvider.php`:
+
+```php
+use App\Filament\Plugins\CustomDashboardPlugin;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->default()
+        ->id('admin')
+        ->plugin(new CustomDashboardPlugin())
+        // ... other configuration
+}
+```
+
+</Steps>
+
+## Plugin configuration
+
+Make your plugins configurable with a fluent API:
+
+```php
+namespace App\Filament\Plugins;
+
+use Filament\Contracts\Plugin;
+use Filament\Panel;
+
+class AnalyticsPlugin implements Plugin
+{
+    protected string | null $trackingId = null;
+
+    protected bool $enablePageViews = true;
+
+    protected bool $enableEventTracking = false;
+
+    public function trackingId(string | null $id): static
+    {
+        $this->trackingId = $id;
+
+        return $this;
+    }
+
+    public function enablePageViews(bool $condition = true): static
+    {
+        $this->enablePageViews = $condition;
+
+        return $this;
+    }
+
+    public function enableEventTracking(bool $condition = true): static
+    {
+        $this->enableEventTracking = $condition;
+
+        return $this;
+    }
+
+    public function getId(): string
+    {
+        return 'analytics';
+    }
+
+    public function register(Panel $panel): void
+    {
+        if ($this->trackingId) {
+            $panel->renderHook(
+                'panels::body.end',
+                fn (): string => view('analytics::tracking-script', [
+                    'trackingId' => $this->trackingId,
+                    'enablePageViews' => $this->enablePageViews,
+                    'enableEventTracking' => $this->enableEventTracking,
+                ])->render()
+            );
+        }
+    }
+
+    public function boot(Panel $panel): void
+    {
+        //
+    }
+}
+```
+
+Usage:
+
+```php
+use App\Filament\Plugins\AnalyticsPlugin;
+
+$panel->plugin(
+    AnalyticsPlugin::make()
+        ->trackingId('UA-XXXXX-Y')
+        ->enablePageViews()
+        ->enableEventTracking()
+)
+```
+
+## Static make() method
+
+Add a static `make()` method for convenience:
+
+```php
+namespace App\Filament\Plugins;
+
+use Filament\Contracts\Plugin;
+use Filament\Panel;
+
+class MyPlugin implements Plugin
+{
+    public static function make(): static
+    {
+        return app(static::class);
+    }
+
+    public static function get(): static
+    {
+        return filament(static::class);
+    }
+
+    public function getId(): string
+    {
+        return 'my-plugin';
+    }
+
+    public function register(Panel $panel): void
+    {
+        //
+    }
+
+    public function boot(Panel $panel): void
+    {
+        //
+    }
+}
+```
+
+## Registering resources and pages
+
+Plugins can register complete CRUD interfaces:
+
+```php
+public function register(Panel $panel): void
+{
+    $panel
+        ->resources([
+            \App\Filament\Resources\DocumentResource::class,
+            \App\Filament\Resources\TemplateResource::class,
+        ])
+        ->pages([
+            \App\Filament\Pages\DocumentSettings::class,
+        ])
+        ->widgets([
+            \App\Filament\Widgets\DocumentStats::class,
+        ]);
+}
+```
+
+## Adding navigation items
+
+Customize panel navigation from your plugin:
+
+```php
+public function register(Panel $panel): void
+{
+    $panel->navigationItems([
+        NavigationItem::make('External Link')
+            ->url('https://example.com', shouldOpenInNewTab: true)
+            ->icon('heroicon-o-link')
+            ->group('External')
+            ->sort(3),
+
+        NavigationItem::make('Analytics')
+            ->url('/analytics')
+            ->icon('heroicon-o-chart-bar')
+            ->activeIcon('heroicon-s-chart-bar')
+            ->isActiveWhen(fn (): bool => request()->is('admin/analytics*'))
+            ->badge('New', color: 'success'),
+    ]);
+}
+```
+
+## Using render hooks
+
+Inject custom content into the panel:
+
+```php
+public function register(Panel $panel): void
+{
+    // Add content to the head
+    $panel->renderHook(
+        'panels::head.end',
+        fn (): string => '<script>console.log("Plugin loaded")</script>'
+    );
+
+    // Add content to the body
+    $panel->renderHook(
+        'panels::body.start',
+        fn (): string => view('my-plugin::banner')->render()
+    );
+
+    // Add content to specific pages
+    $panel->renderHook(
+        'panels::page.start',
+        fn (): string => view('my-plugin::page-header')->render(),
+        scopes: [\App\Filament\Resources\UserResource\Pages\ListUsers::class]
+    );
+}
+```
+
+Available render hooks:
+
+- `panels::head.start` - Start of `<head>`
+- `panels::head.end` - End of `<head>`
+- `panels::body.start` - Start of `<body>`
+- `panels::body.end` - End of `<body>`
+- `panels::page.start` - Start of page content
+- `panels::page.end` - End of page content
+- `panels::sidebar.nav.start` - Start of sidebar navigation
+- `panels::sidebar.nav.end` - End of sidebar navigation
+
+## Registering theme customizations
+
+Plugins can customize the panel theme:
+
+```php
+public function register(Panel $panel): void
+{
+    $panel
+        ->colors([
+            'primary' => '#3b82f6',
+            'secondary' => '#64748b',
+        ])
+        ->viteTheme('resources/css/my-plugin.css');
+}
+```
+
+## Middleware and authentication
+
+Plugins can register middleware:
+
+```php
+public function register(Panel $panel): void
+{
+    $panel
+        ->middleware([
+            \App\Http\Middleware\TrackAnalytics::class,
+        ])
+        ->authMiddleware([
+            \App\Http\Middleware\EnsureSubscribed::class,
+        ]);
+}
+```
+
+## Using the boot() method
+
+The `boot()` method is called after all plugins are registered:
+
+```php
+public function boot(Panel $panel): void
+{
+    // Access other plugins
+    if ($panel->hasPlugin('analytics')) {
+        $analyticsPlugin = $panel->getPlugin('analytics');
+        // Configure based on another plugin
+    }
+
+    // Register event listeners
+    Event::listen(
+        ResourceCreated::class,
+        [ResourceCreatedListener::class, 'handle']
+    );
+
+    // Register custom Blade components
+    Blade::component('my-plugin::components.alert', 'plugin-alert');
+}
+```
+
+## Service provider integration
+
+Create a Laravel service provider for your plugin package:
+
+```php
+namespace MyVendor\FilamentPlugin;
+
+use Illuminate\Support\ServiceProvider;
+use Filament\Support\Assets\Css;
+use Filament\Support\Assets\Js;
+use Filament\Support\Facades\FilamentAsset;
+
+class PluginServiceProvider extends ServiceProvider
+{
+    public function boot(): void
+    {
+        // Load views
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'my-plugin');
+
+        // Load translations
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'my-plugin');
+
+        // Load migrations
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+
+        // Register assets
+        FilamentAsset::register([
+            Css::make('my-plugin-styles', __DIR__.'/../resources/dist/my-plugin.css'),
+            Js::make('my-plugin-scripts', __DIR__.'/../resources/dist/my-plugin.js'),
+        ], package: 'my-vendor/my-plugin');
+
+        // Publish configuration
+        $this->publishes([
+            __DIR__.'/../config/my-plugin.php' => config_path('my-plugin.php'),
+        ], 'my-plugin-config');
+
+        // Publish views
+        $this->publishes([
+            __DIR__.'/../resources/views' => resource_path('views/vendor/my-plugin'),
+        ], 'my-plugin-views');
+    }
+
+    public function register(): void
+    {
+        $this->mergeConfigFrom(
+            __DIR__.'/../config/my-plugin.php',
+            'my-plugin'
+        );
+    }
+}
+```
+
+## Complete plugin example
+
+Here's a comprehensive example of a feature-rich plugin:
+
+<CodeGroup>
+
+```php Plugin Class
+namespace MyVendor\FilamentBlog;
+
+use Filament\Contracts\Plugin as PluginContract;
+use Filament\Panel;
+use Filament\Navigation\NavigationGroup;
+
+class BlogPlugin implements PluginContract
+{
+    protected bool $hasComments = true;
+
+    protected bool $hasTags = true;
+
+    protected bool $hasCategories = true;
+
+    protected string | null $urlPrefix = 'blog';
+
+    public static function make(): static
+    {
+        return app(static::class);
+    }
+
+    public static function get(): static
+    {
+        return filament(static::class);
+    }
+
+    public function withComments(bool $condition = true): static
+    {
+        $this->hasComments = $condition;
+
+        return $this;
+    }
+
+    public function withTags(bool $condition = true): static
+    {
+        $this->hasTags = $condition;
+
+        return $this;
+    }
+
+    public function withCategories(bool $condition = true): static
+    {
+        $this->hasCategories = $condition;
+
+        return $this;
+    }
+
+    public function urlPrefix(string | null $prefix): static
+    {
+        $this->urlPrefix = $prefix;
+
+        return $this;
+    }
+
+    public function getId(): string
+    {
+        return 'blog';
+    }
+
+    public function register(Panel $panel): void
+    {
+        $resources = [
+            Resources\PostResource::class,
+        ];
+
+        if ($this->hasCategories) {
+            $resources[] = Resources\CategoryResource::class;
+        }
+
+        if ($this->hasTags) {
+            $resources[] = Resources\TagResource::class;
+        }
+
+        $panel
+            ->resources($resources)
+            ->pages([
+                Pages\BlogSettings::class,
+            ])
+            ->widgets([
+                Widgets\BlogStatsWidget::class,
+            ])
+            ->navigationGroups([
+                NavigationGroup::make('Blog')
+                    ->icon('heroicon-o-newspaper')
+                    ->collapsed(false),
+            ]);
+
+        // Register render hooks
+        $panel->renderHook(
+            'panels::head.end',
+            fn (): string => view('filament-blog::head')->render()
+        );
+    }
+
+    public function boot(Panel $panel): void
+    {
+        // Register routes
+        Route::prefix($this->urlPrefix ?? 'blog')
+            ->middleware(['web'])
+            ->group(__DIR__.'/../routes/web.php');
+    }
+
+    public function hasComments(): bool
+    {
+        return $this->hasComments;
+    }
+
+    public function hasTags(): bool
+    {
+        return $this->hasTags;
+    }
+
+    public function hasCategories(): bool
+    {
+        return $this->hasCategories;
+    }
+}
+```
+
+```json composer.json
+{
+    "name": "my-vendor/filament-blog",
+    "description": "A blog plugin for Filament",
+    "type": "library",
+    "require": {
+        "php": "^8.1",
+        "filament/filament": "^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "MyVendor\\FilamentBlog\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "MyVendor\\FilamentBlog\\BlogServiceProvider"
+            ]
+        }
+    }
+}
+```
+
+</CodeGroup>
+
+## Testing plugins
+
+Test your plugins to ensure they work correctly:
+
+```php
+use function Pest\Livewire\livewire;
+
+it('registers the plugin', function () {
+    $panel = Panel::make()->id('admin');
+    $plugin = BlogPlugin::make();
+
+    $plugin->register($panel);
+
+    expect($panel->hasPlugin('blog'))->toBeTrue();
+});
+
+it('can configure plugin features', function () {
+    $plugin = BlogPlugin::make()
+        ->withComments()
+        ->withTags(false)
+        ->withCategories();
+
+    expect($plugin->hasComments())->toBeTrue()
+        ->and($plugin->hasTags())->toBeFalse()
+        ->and($plugin->hasCategories())->toBeTrue();
+});
+
+it('registers resources when enabled', function () {
+    $panel = Panel::make()->id('admin');
+
+    $plugin = BlogPlugin::make()
+        ->withCategories()
+        ->withTags();
+
+    $plugin->register($panel);
+
+    expect($panel->getResources())
+        ->toContain(PostResource::class)
+        ->toContain(CategoryResource::class)
+        ->toContain(TagResource::class);
+});
+```
+
+## Publishing your plugin
+
+When distributing your plugin:
+
+1. Create a comprehensive README.md with installation instructions
+2. Add proper versioning following semantic versioning
+3. Include a LICENSE file
+4. Provide migration files if your plugin needs database tables
+5. Document all configuration options
+6. Include screenshots or demos
+7. Add tests for core functionality
+8. Publish to Packagist for easy installation
+
+## Best practices
+
+- Use descriptive plugin IDs that won't conflict with others
+- Make plugins configurable rather than hard-coding values
+- Provide sensible defaults for all configuration options
+- Use the `register()` method for panel configuration
+- Use the `boot()` method for initialization that needs all plugins loaded
+- Version your plugin assets to prevent caching issues
+- Follow PSR-4 autoloading standards
+- Namespace your views, translations, and config files
+- Document all public methods and configuration options
+- Provide migration files for database changes
+- Test your plugin with multiple Filament versions
+- Use dependency injection via `app()` instead of `new`
+- Never use abbreviated variable names

@@ -1,0 +1,624 @@
+---
+title: Form Validation
+description: Add validation rules and patterns to your Filament forms
+---
+
+## Introduction
+
+Filament provides both frontend and backend validation for forms. Unlike traditional Laravel validation that uses string-based rules like `'required|max:255'`, Filament uses chainable methods that provide IDE autocompletion and immediate feedback to users.
+
+## Adding validation rules
+
+Validation rules are added to fields using dedicated methods:
+
+```php
+use Filament\Forms\Components\TextInput;
+
+TextInput::make('name')
+    ->required()
+    ->maxLength(255)
+    ->minLength(3)
+```
+
+## Available validation rules
+
+### Required
+
+Make a field required:
+
+```php
+TextInput::make('email')
+    ->required()
+```
+
+By default, required fields show an asterisk. You can hide it:
+
+```php
+TextInput::make('name')
+    ->required()
+    ->markAsRequired(false)
+```
+
+### Conditional required
+
+<CodeGroup>
+
+```php Required If
+TextInput::make('tax_id')
+    ->requiredIf('is_company', true)
+```
+
+```php Required Unless
+TextInput::make('delivery_note')
+    ->requiredUnless('same_as_billing', true)
+```
+
+```php Required With
+TextInput::make('end_date')
+    ->requiredWith('start_date')
+```
+
+```php Required Without
+TextInput::make('email')
+    ->requiredWithout('phone')
+```
+
+</CodeGroup>
+
+### String length
+
+```php
+TextInput::make('username')
+    ->minLength(3)
+    ->maxLength(20)
+    ->length(10) // Exactly 10 characters
+```
+
+### Numeric values
+
+<CodeGroup>
+
+```php Min/Max Value
+TextInput::make('age')
+    ->numeric()
+    ->minValue(18)
+    ->maxValue(120)
+```
+
+```php Greater Than
+TextInput::make('end_price')
+    ->numeric()
+    ->gt('start_price')
+```
+
+```php Greater Than or Equal
+TextInput::make('quantity')
+    ->numeric()
+    ->gte('min_order_quantity')
+```
+
+```php Less Than
+TextInput::make('discount')
+    ->numeric()
+    ->lt('original_price')
+```
+
+```php Multiple Of
+TextInput::make('quantity')
+    ->numeric()
+    ->multipleOf(5)
+```
+
+</CodeGroup>
+
+### String formats
+
+<CodeGroup>
+
+```php Email
+TextInput::make('email')
+    ->email()
+    ->required()
+```
+
+```php URL
+TextInput::make('website')
+    ->url()
+    ->required()
+```
+
+```php Active URL
+TextInput::make('website')
+    ->activeUrl() // Checks DNS records
+```
+
+```php Alpha
+TextInput::make('name')
+    ->alpha() // Only letters
+```
+
+```php Alpha Numeric
+TextInput::make('username')
+    ->alphaNum() // Letters and numbers
+```
+
+```php Alpha Dash
+TextInput::make('slug')
+    ->alphaDash() // Letters, numbers, dashes, underscores
+```
+
+```php ASCII
+TextInput::make('ascii_field')
+    ->ascii() // 7-bit ASCII only
+```
+
+```php UUID
+TextInput::make('identifier')
+    ->uuid()
+```
+
+```php ULID
+TextInput::make('identifier')
+    ->ulid()
+```
+
+</CodeGroup>
+
+### IP addresses
+
+```php
+TextInput::make('ip_address')
+    ->ip() // IPv4 or IPv6
+
+TextInput::make('ip_address')
+    ->ipv4()
+
+TextInput::make('ip_address')
+    ->ipv6()
+```
+
+### MAC address
+
+```php
+TextInput::make('mac_address')
+    ->macAddress()
+```
+
+### Hex color
+
+```php
+TextInput::make('color')
+    ->hexColor()
+```
+
+### JSON
+
+```php
+TextInput::make('settings')
+    ->json()
+```
+
+### Date validation
+
+<CodeGroup>
+
+```php After Date
+DatePicker::make('end_date')
+    ->after('start_date')
+
+DatePicker::make('event_date')
+    ->after('tomorrow')
+```
+
+```php After or Equal
+DatePicker::make('end_date')
+    ->afterOrEqual('start_date')
+```
+
+```php Before Date
+DatePicker::make('start_date')
+    ->before('end_date')
+
+DatePicker::make('birth_date')
+    ->before('today')
+```
+
+```php Before or Equal
+DatePicker::make('start_date')
+    ->beforeOrEqual('end_date')
+```
+
+</CodeGroup>
+
+### String patterns
+
+<CodeGroup>
+
+```php Starts With
+TextInput::make('code')
+    ->startsWith(['PRD-', 'DEV-'])
+```
+
+```php Ends With
+TextInput::make('email')
+    ->endsWith(['@company.com', '@company.org'])
+```
+
+```php Doesn't Start With
+TextInput::make('username')
+    ->doesntStartWith(['admin', 'root'])
+```
+
+```php Doesn't End With
+TextInput::make('filename')
+    ->doesntEndWith(['.exe', '.bat'])
+```
+
+</CodeGroup>
+
+### Regex patterns
+
+```php
+TextInput::make('phone')
+    ->regex('/^[0-9]{10}$/')
+
+TextInput::make('username')
+    ->notRegex('/[^a-z0-9_]/')
+```
+
+### Field comparison
+
+<CodeGroup>
+
+```php Same As
+TextInput::make('password_confirmation')
+    ->same('password')
+```
+
+```php Different From
+TextInput::make('new_email')
+    ->different('current_email')
+```
+
+```php Confirmed
+TextInput::make('password')
+    ->password()
+    ->confirmed() // Requires password_confirmation field
+```
+
+</CodeGroup>
+
+### List validation
+
+```php
+Select::make('status')
+    ->in(['draft', 'published', 'archived'])
+
+Select::make('status')
+    ->notIn(['deleted', 'banned'])
+```
+
+### Database validation
+
+<CodeGroup>
+
+```php Unique
+TextInput::make('email')
+    ->unique()
+    ->required()
+
+// Specify table and column
+TextInput::make('slug')
+    ->unique(table: 'posts', column: 'slug')
+
+// Ignore current record when editing
+TextInput::make('email')
+    ->unique(ignoreRecord: true)
+```
+
+```php Exists
+Select::make('category_id')
+    ->exists(table: 'categories', column: 'id')
+```
+
+```php Scoped Unique
+use Filament\Forms\Components\TextInput;
+
+// Uses Eloquent scopes (e.g., soft deletes, multi-tenancy)
+TextInput::make('email')
+    ->scopedUnique()
+```
+
+```php Scoped Exists
+TextInput::make('team_id')
+    ->scopedExists()
+```
+
+</CodeGroup>
+
+### Enum validation
+
+```php
+use App\Enums\Status;
+
+Select::make('status')
+    ->enum(Status::class)
+```
+
+### Prohibited fields
+
+```php
+// Field must be empty
+Hidden::make('honeypot')
+    ->prohibited()
+
+// Prohibited if another field has specific value
+TextInput::make('other_reason')
+    ->prohibitedIf('reason', 'none')
+
+// Prohibited unless
+TextInput::make('custom_domain')
+    ->prohibitedUnless('plan', 'enterprise')
+
+// Prohibits other fields
+Toggle::make('use_default_settings')
+    ->prohibits(['custom_setting_1', 'custom_setting_2'])
+```
+
+## Custom validation rules
+
+You can add custom Laravel validation rules:
+
+### Using rule classes
+
+```php
+use App\Rules\ValidDomain;
+
+TextInput::make('domain')
+    ->rules([new ValidDomain()])
+```
+
+### Using closure rules
+
+```php
+use Closure;
+
+TextInput::make('username')
+    ->rules([
+        fn (): Closure => function (string $attribute, $value, Closure $fail) {
+            if (strtolower($value) === 'admin') {
+                $fail('The username "admin" is reserved.');
+            }
+        },
+    ])
+```
+
+### Accessing other field values
+
+```php
+use Filament\Schemas\Components\Utilities\Get;
+use Closure;
+
+TextInput::make('discount_amount')
+    ->rules([
+        fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+            $price = $get('price');
+            if ($value > $price) {
+                $fail('The discount cannot exceed the price.');
+            }
+        },
+    ])
+```
+
+### Using Laravel validation rules
+
+You can use any Laravel validation rule:
+
+```php
+TextInput::make('password')
+    ->rules(['required', 'min:8', 'regex:/[a-z]/', 'regex:/[A-Z]/', 'regex:/[0-9]/'])
+```
+
+## Customizing validation messages
+
+### Custom error messages
+
+```php
+TextInput::make('email')
+    ->email()
+    ->unique()
+    ->validationMessages([
+        'unique' => 'This email is already registered.',
+        'email' => 'Please enter a valid email address.',
+    ])
+```
+
+### Custom validation attributes
+
+Change the field name used in error messages:
+
+```php
+TextInput::make('dob')
+    ->required()
+    ->validationAttribute('date of birth')
+// Error: "The date of birth field is required."
+```
+
+### Allowing HTML in messages
+
+```php
+TextInput::make('password')
+    ->required()
+    ->rules([new ComplexPasswordRule()])
+    ->allowHtmlValidationMessages()
+```
+
+## Real-time validation patterns
+
+### Validate on blur
+
+```php
+TextInput::make('email')
+    ->email()
+    ->unique()
+    ->live(onBlur: true)
+```
+
+### Validate while typing (debounced)
+
+```php
+TextInput::make('username')
+    ->unique()
+    ->live(debounce: 500)
+```
+
+### Validate immediately
+
+```php
+Select::make('country')
+    ->options([...])
+    ->live()
+    ->afterStateUpdated(function (Select $component) {
+        $component->validate();
+    })
+```
+
+## Common validation patterns
+
+### Password confirmation
+
+```php
+TextInput::make('password')
+    ->password()
+    ->required()
+    ->minLength(8)
+    ->same('password_confirmation')
+
+TextInput::make('password_confirmation')
+    ->password()
+    ->required()
+    ->saved(false)
+```
+
+### Email with confirmation
+
+```php
+TextInput::make('email')
+    ->email()
+    ->required()
+    ->confirmed()
+
+TextInput::make('email_confirmation')
+    ->email()
+    ->required()
+    ->saved(false)
+```
+
+### Conditional validation based on other fields
+
+```php
+use Filament\Schemas\Components\Utilities\Get;
+
+TextInput::make('company_name')
+    ->required(fn (Get $get) => $get('is_company') === true)
+
+TextInput::make('tax_id')
+    ->required(fn (Get $get) => $get('is_company') === true)
+    ->length(9)
+```
+
+### Date range validation
+
+```php
+DatePicker::make('start_date')
+    ->required()
+    ->maxDate(now()->addYear())
+
+DatePicker::make('end_date')
+    ->required()
+    ->after('start_date')
+    ->maxDate(now()->addYears(2))
+```
+
+### File upload validation
+
+```php
+FileUpload::make('avatar')
+    ->image()
+    ->maxSize(1024) // 1MB
+    ->imageResizeMode('cover')
+    ->imageCropAspectRatio('1:1')
+    ->acceptedFileTypes(['image/png', 'image/jpeg'])
+
+FileUpload::make('documents')
+    ->multiple()
+    ->maxFiles(5)
+    ->acceptedFileTypes(['application/pdf', 'application/msword'])
+    ->maxSize(5120) // 5MB per file
+```
+
+### Price validation
+
+```php
+TextInput::make('price')
+    ->numeric()
+    ->required()
+    ->minValue(0.01)
+    ->step(0.01)
+    ->prefix('$')
+
+TextInput::make('discount_price')
+    ->numeric()
+    ->lt('price')
+    ->minValue(0)
+```
+
+### URL validation
+
+```php
+TextInput::make('website')
+    ->url()
+    ->prefix('https://')
+    ->suffixIcon('heroicon-o-globe-alt')
+```
+
+## Disabling validation
+
+Prevent validation on fields that aren't saved:
+
+```php
+TextInput::make('calculated_field')
+    ->saved(false)
+    ->validatedWhenNotDehydrated(false)
+```
+
+## Best practices
+
+### Frontend vs backend validation
+
+- Use Filament's validation methods for immediate user feedback
+- Always validate on the backend as well for security
+- Use `live()` strategically to balance UX and performance
+
+### Error messages
+
+- Provide clear, actionable error messages
+- Customize messages for better UX
+- Be specific about what's wrong and how to fix it
+
+### Performance
+
+- Use `live(onBlur: true)` for text inputs to avoid excessive requests
+- Use `live(debounce: 500)` for real-time validation with typing
+- Avoid validating on every keystroke unless necessary
+
+### Accessibility
+
+- Required fields should be clearly marked
+- Error messages should be descriptive
+- Use `validationAttribute()` for user-friendly field names
+
+## Next steps
+
+- [Advanced Features](/forms/advanced) - Learn about reactive and dependent fields
+- [Fields](/forms/fields) - Explore all available form fields

@@ -1,0 +1,379 @@
+---
+title: Configuration
+description: Complete panel configuration options
+---
+
+## Introduction
+
+Filament panels are highly configurable. This guide covers all available configuration options for customizing your panel's appearance, behavior, and functionality.
+
+## Basic configuration
+
+### Panel ID and path
+
+Every panel requires a unique ID and path:
+
+```php
+$panel
+    ->id('admin')
+    ->path('admin')
+```
+
+The ID is used for route names and internal identification, while the path determines the URL.
+
+### Domain configuration
+
+Host your panel on a specific domain:
+
+```php
+// Single domain
+$panel->domain('admin.example.com')
+
+// Multiple domains
+$panel->domains([
+    'admin.example.com',
+    'admin.example.org',
+])
+```
+
+### Home URL
+
+Set a custom home URL for the panel:
+
+```php
+$panel->homeUrl('/dashboard')
+
+// Dynamic URL
+$panel->homeUrl(fn (): string => route('admin.dashboard'))
+```
+
+## Branding
+
+### Brand name
+
+Customize the application name displayed in the panel:
+
+```php
+$panel->brandName('My Application')
+```
+
+### Brand logo
+
+Add a custom logo:
+
+```php
+$panel->brandLogo(asset('images/logo.png'))
+
+// Different logos for light and dark mode
+$panel
+    ->brandLogo(asset('images/logo-light.png'))
+    ->darkModeBrandLogo(asset('images/logo-dark.png'))
+```
+
+### Brand logo height
+
+```php
+$panel->brandLogoHeight('2rem')
+```
+
+### Favicon
+
+Set a custom favicon:
+
+```php
+$panel->favicon(asset('images/favicon.png'))
+```
+
+## Colors
+
+Customize the color scheme:
+
+```php
+use Filament\Support\Colors\Color;
+
+$panel->colors([
+    'primary' => Color::Amber,
+    'danger' => Color::Rose,
+    'gray' => Color::Zinc,
+    'info' => Color::Blue,
+    'success' => Color::Emerald,
+    'warning' => Color::Orange,
+])
+```
+
+### Custom colors
+
+Define custom color palettes:
+
+```php
+$panel->colors([
+    'primary' => [
+        50 => '254, 252, 232',
+        100 => '254, 249, 195',
+        // ... additional shades
+    ],
+])
+```
+
+## Dark mode
+
+Configure dark mode behavior:
+
+```php
+use Filament\Enums\ThemeMode;
+
+// Default to dark mode
+$panel->defaultThemeMode(ThemeMode::Dark)
+
+// Default to light mode
+$panel->defaultThemeMode(ThemeMode::Light)
+
+// Default to system preference
+$panel->defaultThemeMode(ThemeMode::System)
+```
+
+### Forcing dark mode
+
+Disable the theme switcher:
+
+```php
+$panel
+    ->darkMode(false) // Disable dark mode completely
+    ->darkMode(true)  // Force dark mode only
+```
+
+## Font
+
+Customize the font family:
+
+```php
+$panel->font('Inter')
+
+// Using Google Fonts
+$panel->font('Poppins', provider: FontProvider::GoogleFonts)
+```
+
+## Maximum content width
+
+Set the maximum width for page content:
+
+```php
+use Filament\Support\Enums\MaxWidth;
+
+$panel->maxContentWidth(MaxWidth::Full)
+$panel->maxContentWidth(MaxWidth::SevenExtraLarge)
+$panel->maxContentWidth(MaxWidth::FiveExtraLarge)
+```
+
+## SPA mode
+
+Enable single-page application mode for faster navigation:
+
+```php
+$panel->spa()
+
+// With prefetching
+$panel->spa(prefetch: true)
+```
+
+### SPA URL exceptions
+
+Exclude certain URLs from SPA mode:
+
+```php
+$panel->spaUrlExceptions([
+    '/admin/reports/*',
+])
+```
+
+## Database transactions
+
+Automatically wrap actions in database transactions:
+
+```php
+$panel->databaseTransactions()
+```
+
+## Middleware
+
+Add custom middleware to panel routes:
+
+```php
+$panel->middleware([
+    'throttle:60,1',
+])
+
+// Authenticated routes only
+$panel->authMiddleware([
+    'verified',
+])
+```
+
+## Render hooks
+
+Inject content at specific locations in the panel:
+
+```php
+use Filament\View\PanelsRenderHook;
+use Illuminate\Support\Facades\Blade;
+
+$panel->renderHook(
+    PanelsRenderHook::BODY_START,
+    fn (): string => Blade::render('@livewire(\'banner\')')
+)
+```
+
+Available hooks:
+- `BODY_START`
+- `BODY_END`
+- `HEAD_START`
+- `HEAD_END`
+- `CONTENT_START`
+- `CONTENT_END`
+- `SIDEBAR_START`
+- `SIDEBAR_END`
+- `TOPBAR_START`
+- `TOPBAR_END`
+
+## Plugins
+
+Register Filament plugins:
+
+```php
+use Filament\SpatieLaravelTranslatablePlugin;
+
+$panel->plugins([
+    SpatieLaravelTranslatablePlugin::make()
+        ->defaultLocales(['en', 'es', 'fr']),
+])
+```
+
+## Unsaved changes alerts
+
+Warn users about unsaved changes:
+
+```php
+$panel->unsavedChangesAlerts()
+```
+
+## Database notifications
+
+Enable database notifications:
+
+```php
+$panel->databaseNotifications()
+
+// With polling
+$panel->databaseNotificationsPolling('30s')
+```
+
+## Broadcasting
+
+Enable real-time broadcasting:
+
+```php
+$panel->broadcasting()
+```
+
+## Topbar
+
+Customize the top navigation bar:
+
+```php
+// Hide topbar
+$panel->topbar(false)
+```
+
+## Avatars
+
+Configure user avatars:
+
+```php
+use Filament\AvatarProviders\UiAvatarsProvider;
+
+$panel->avatarProvider(UiAvatarsProvider::class)
+```
+
+### Custom avatar provider
+
+```php
+use Filament\AvatarProviders\Contracts\AvatarProvider;
+use Illuminate\Database\Eloquent\Model;
+
+$panel->avatarProvider(
+    new class implements AvatarProvider
+    {
+        public function get(Model $record): string
+        {
+            return 'https://avatar.example.com/' . $record->id;
+        }
+    }
+)
+```
+
+## Icons
+
+Customize icons used throughout the panel:
+
+```php
+use Filament\Support\Icons\Icon;
+
+$panel->icons([
+    'panels::topbar.global-search.field' => 'heroicon-m-magnifying-glass',
+    'panels::sidebar.collapse-button' => 'heroicon-m-chevron-left',
+])
+```
+
+## Resources
+
+Configure default resource behavior:
+
+```php
+// Default redirect after creating a record
+$panel->resourceCreatePageRedirect('edit')
+
+// Default redirect after editing a record  
+$panel->resourceEditPageRedirect('view')
+
+// Read-only relation managers on view pages
+$panel->readOnlyRelationManagersOnResourceViewPagesByDefault()
+```
+
+## Vite theme
+
+Use Vite to build custom themes:
+
+```php
+$panel->viteTheme('resources/css/filament/admin/theme.css')
+
+// Multiple themes
+$panel->viteTheme([
+    'resources/css/filament/admin/theme.css',
+    'resources/css/filament/admin/custom.css',
+])
+
+// Custom build directory
+$panel->viteTheme('resources/css/theme.css', buildDirectory: 'admin')
+```
+
+## Custom theme
+
+Register a pre-built theme:
+
+```php
+use Filament\Support\Assets\Theme;
+
+$panel->theme(
+    Theme::make('custom', __DIR__ . '/../../resources/css/custom.css')
+)
+```
+
+## Strict authorization
+
+Require authorization for all resources and pages:
+
+```php
+$panel->strictAuthorization()
+```
+
+This throws an exception if a resource or page doesn't implement authorization.

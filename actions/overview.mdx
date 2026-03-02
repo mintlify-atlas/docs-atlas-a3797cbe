@@ -1,0 +1,244 @@
+---
+title: Actions Overview
+description: Learn how to use Filament actions to create interactive workflows with modals, forms, and confirmation dialogs.
+---
+
+## Introduction
+
+Actions are interactive UI components that handle user workflows in your Filament application. Unlike traditional PHP action classes that only handle business logic, Filament actions combine UI elements (buttons, modals, forms) with the logic that executes when users interact with them.
+
+For example, you might have a button to delete a client record that opens a confirmation modal. When the user confirms, the client is deleted. This entire workflow is an action:
+
+```php
+use Filament\Actions\Action;
+
+Action::make('delete')
+    ->requiresConfirmation()
+    ->action(fn () => $this->client->delete())
+```
+
+## How actions work
+
+Actions are built using a fluent API that allows you to configure every aspect of the user experience:
+
+### Simple URL-based actions
+
+The simplest actions redirect users to a URL when clicked:
+
+```php
+use Filament\Actions\Action;
+
+Action::make('edit')
+    ->url(fn (): string => route('posts.edit', ['post' => $this->post]))
+```
+
+### Actions with modals
+
+Actions can open modals to collect additional information before executing:
+
+```php
+use Filament\Actions\Action;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\TextInput;
+use Illuminate\Support\Facades\Mail;
+
+Action::make('sendEmail')
+    ->schema([
+        TextInput::make('subject')->required(),
+        RichEditor::make('body')->required(),
+    ])
+    ->action(function (array $data) {
+        Mail::to($this->client)
+            ->send(new GenericEmail(
+                subject: $data['subject'],
+                body: $data['body'],
+            ));
+    })
+```
+
+### Actions with confirmation
+
+For destructive operations, you can require user confirmation:
+
+```php
+use Filament\Actions\Action;
+
+Action::make('delete')
+    ->requiresConfirmation()
+    ->modalHeading('Delete post')
+    ->modalDescription('Are you sure you\'d like to delete this post? This cannot be undone.')
+    ->action(fn () => $this->post->delete())
+```
+
+## Customizing the trigger button
+
+<Steps>
+
+### Choose a button style
+
+Actions support four trigger styles:
+
+<CodeGroup>
+```php Button (default)
+Action::make('edit')
+    ->button()
+```
+
+```php Link
+Action::make('edit')
+    ->link()
+```
+
+```php Icon button
+Action::make('edit')
+    ->icon('heroicon-m-pencil-square')
+    ->iconButton()
+```
+
+```php Badge
+Action::make('edit')
+    ->badge()
+```
+</CodeGroup>
+
+### Set the label and icon
+
+Customize how your action appears to users:
+
+```php
+Action::make('edit')
+    ->label('Edit post')
+    ->icon('heroicon-m-pencil-square')
+    ->color('primary')
+```
+
+### Adjust the size
+
+Actions come in three sizes:
+
+```php
+use Filament\Support\Enums\Size;
+
+Action::make('create')
+    ->size(Size::Large)
+```
+
+</Steps>
+
+## Authorization
+
+You can conditionally show or hide actions based on user permissions:
+
+```php
+Action::make('edit')
+    ->visible(auth()->user()->can('update', $this->post))
+
+Action::make('edit')
+    ->hidden(! auth()->user()->can('update', $this->post))
+```
+
+### Using policies
+
+Actions can automatically check Laravel policies:
+
+```php
+Action::make('edit')
+    ->authorize('update')
+```
+
+If the policy returns a response message, you can show it as a tooltip:
+
+```php
+Action::make('edit')
+    ->authorize('update')
+    ->authorizationTooltip()
+```
+
+Or display it as a notification when clicked:
+
+```php
+Action::make('edit')
+    ->authorize('update')
+    ->authorizationNotification()
+```
+
+## Utility injection
+
+Most action methods accept closures that can have utilities injected as parameters:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+use Livewire\Component;
+
+Action::make('edit')
+    ->visible(function (Model $record, Component $livewire) {
+        return $livewire->user->can('update', $record);
+    })
+```
+
+<Note>
+Available utilities include `$record`, `$data`, `$arguments`, `$livewire`, `$action`, and more. The specific parameter names must be used for injection to work.
+</Note>
+
+## Additional features
+
+### Keyboard shortcuts
+
+Bind keyboard shortcuts to your actions:
+
+```php
+Action::make('save')
+    ->action(fn () => $this->save())
+    ->keyBindings(['command+s', 'ctrl+s'])
+```
+
+### Badges
+
+Add a badge to the corner of a button:
+
+```php
+Action::make('filter')
+    ->iconButton()
+    ->icon('heroicon-m-funnel')
+    ->badge(5)
+    ->badgeColor('success')
+```
+
+### Rate limiting
+
+Prevent abuse by rate limiting actions:
+
+```php
+Action::make('delete')
+    ->rateLimit(5) // 5 attempts per minute
+```
+
+### Extra attributes
+
+Add custom HTML attributes:
+
+```php
+Action::make('edit')
+    ->extraAttributes([
+        'title' => 'Edit this post',
+        'data-tooltip' => 'Click to edit',
+    ])
+```
+
+## Next steps
+
+<Steps>
+
+### Learn about modals
+
+Discover how to use modals for confirmation, forms, and wizards in your actions.
+
+[View modals documentation](/actions/modals)
+
+### Explore prebuilt actions
+
+Save time with Filament's prebuilt actions for common operations like Create, Edit, and Delete.
+
+[View prebuilt actions](/actions/prebuilt)
+
+</Steps>

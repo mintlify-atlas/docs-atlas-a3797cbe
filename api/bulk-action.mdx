@@ -1,0 +1,317 @@
+---
+title: BulkAction
+description: BulkAction class API reference for operations on multiple records
+---
+
+The `BulkAction` class extends the `Action` class to provide functionality for performing operations on multiple selected records in a table. Bulk actions automatically handle record selection and provide access to the selected records.
+
+## Namespace
+
+```php
+Filament\Actions\BulkAction
+```
+
+## Inheritance
+
+Extends: `Filament\Actions\Action`
+
+## Overview
+
+BulkAction is a specialized version of Action that is automatically configured to:
+- Work with multiple selected records
+- Only display when records are selected
+- Provide access to selected records in closures
+
+## Static Methods
+
+### make()
+
+Create a new bulk action instance.
+
+```php
+public static function make(?string $name = null): static
+```
+
+<ParamField path="name" type="string | null">
+  The unique identifier for this bulk action.
+</ParamField>
+
+<ParamField path="return" type="static">
+  Returns the bulk action instance for method chaining.
+</ParamField>
+
+**Example:**
+
+```php
+use Filament\Actions\BulkAction;
+use Illuminate\Database\Eloquent\Collection;
+
+BulkAction::make('approve')
+    ->label('Approve Selected')
+    ->icon('heroicon-o-check-circle')
+    ->action(fn (Collection $records) => $records->each->approve());
+```
+
+## Automatic Configuration
+
+When a BulkAction is created, it is automatically configured with:
+
+```php
+protected function setUp(): void
+{
+    parent::setUp();
+
+    $this->bulk();
+    $this->accessSelectedRecords();
+}
+```
+
+This means:
+- The action is marked as a bulk action
+- The action has access to selected records
+- The action is only visible when records are selected
+
+## Instance Methods
+
+### getExtraAttributes()
+
+Get extra HTML attributes for the bulk action.
+
+```php
+public function getExtraAttributes(): array
+```
+
+<ParamField path="return" type="array<mixed>">
+  Returns an array of HTML attributes.
+</ParamField>
+
+Bulk actions automatically include:
+- `x-cloak` - Hide until Alpine.js loads
+- `x-show="getSelectedRecordsCount()"` - Only show when records are selected
+
+## Working with Selected Records
+
+Bulk action closures automatically receive the selected records:
+
+### Using Collection Parameter
+
+```php
+use Illuminate\Database\Eloquent\Collection;
+
+BulkAction::make('updateStatus')
+    ->action(function (Collection $records) {
+        $records->each(fn ($record) => $record->update(['status' => 'processed']));
+    });
+```
+
+### Using records Parameter Name
+
+```php
+BulkAction::make('delete')
+    ->requiresConfirmation()
+    ->action(fn (Collection $records) => $records->each->delete());
+```
+
+### Using selectedRecords Parameter Name
+
+```php
+BulkAction::make('export')
+    ->action(function (Collection $selectedRecords) {
+        return Excel::download(new RecordsExport($selectedRecords), 'records.xlsx');
+    });
+```
+
+## Form Integration
+
+Bulk actions can include forms to collect additional data:
+
+```php
+use Filament\Forms\Components\Select;
+use Illuminate\Database\Eloquent\Collection;
+
+BulkAction::make('changeStatus')
+    ->form([
+        Select::make('status')
+            ->options([
+                'pending' => 'Pending',
+                'approved' => 'Approved',
+                'rejected' => 'Rejected',
+            ])
+            ->required(),
+    ])
+    ->action(function (Collection $records, array $data) {
+        $records->each(fn ($record) => $record->update(['status' => $data['status']]));
+    });
+```
+
+## Confirmation
+
+Bulk actions commonly require confirmation:
+
+```php
+BulkAction::make('delete')
+    ->requiresConfirmation()
+    ->modalHeading('Delete selected records')
+    ->modalDescription('Are you sure you want to delete the selected records? This cannot be undone.')
+    ->modalSubmitActionLabel('Delete')
+    ->color('danger')
+    ->action(fn (Collection $records) => $records->each->delete());
+```
+
+## Authorization
+
+Authorize bulk actions based on the selected records:
+
+```php
+BulkAction::make('approve')
+    ->authorize(function (Collection $records) {
+        return $records->every(fn ($record) => auth()->user()->can('approve', $record));
+    })
+    ->action(fn (Collection $records) => $records->each->approve());
+```
+
+## Notifications
+
+Show notifications after bulk actions:
+
+```php
+use Filament\Notifications\Notification;
+use Illuminate\Database\Eloquent\Collection;
+
+BulkAction::make('process')
+    ->action(function (Collection $records) {
+        $records->each->process();
+    })
+    ->successNotification(
+        Notification::make()
+            ->success()
+            ->title('Records processed')
+            ->body(fn (Collection $records) => "{$records->count()} records have been processed.")
+    );
+```
+
+## Deselecting Records
+
+Automatically deselect records after the action completes:
+
+```php
+BulkAction::make('export')
+    ->deselectRecordsAfterCompletion()
+    ->action(function (Collection $records) {
+        return Excel::download(new RecordsExport($records), 'records.xlsx');
+    });
+```
+
+## Complete Example
+
+```php
+use Filament\Actions\BulkAction;
+use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
+use Illuminate\Database\Eloquent\Collection;
+
+BulkAction::make('addNote')
+    ->label('Add Note to Selected')
+    ->icon('heroicon-o-annotation')
+    ->form([
+        Textarea::make('note')
+            ->required()
+            ->maxLength(500),
+    ])
+    ->action(function (Collection $records, array $data) {
+        $records->each(function ($record) use ($data) {
+            $record->notes()->create([
+                'content' => $data['note'],
+                'user_id' => auth()->id(),
+            ]);
+        });
+    })
+    ->successNotification(
+        Notification::make()
+            ->success()
+            ->title('Note added')
+            ->body(fn (Collection $records) => "Note added to {$records->count()} records.")
+    )
+    ->deselectRecordsAfterCompletion();
+```
+
+## Common Patterns
+
+### Batch Delete
+
+```php
+BulkAction::make('delete')
+    ->requiresConfirmation()
+    ->action(fn (Collection $records) => $records->each->delete());
+```
+
+### Batch Update
+
+```php
+BulkAction::make('publish')
+    ->action(fn (Collection $records) => $records->each->publish());
+```
+
+### Export Selected
+
+```php
+BulkAction::make('export')
+    ->action(fn (Collection $records) => Excel::download(new RecordsExport($records), 'export.xlsx'));
+```
+
+### Send Notifications
+
+```php
+BulkAction::make('notify')
+    ->form([/* ... */])
+    ->action(function (Collection $records, array $data) {
+        $records->each(fn ($record) => $record->notify(new CustomNotification($data)));
+    });
+```
+
+## Closure Parameters
+
+Bulk action closures receive:
+
+<ParamField path="records" type="Collection">
+  The selected records as an Eloquent collection.
+</ParamField>
+
+<ParamField path="selectedRecords" type="Collection">
+  Alias for records parameter.
+</ParamField>
+
+<ParamField path="data" type="array">
+  Form data from the action modal (if a form is present).
+</ParamField>
+
+<ParamField path="livewire" type="Component">
+  The parent Livewire component.
+</ParamField>
+
+<ParamField path="table" type="Table">
+  The table instance.
+</ParamField>
+
+## Inherited Methods
+
+BulkAction inherits all methods from the [Action](/api/action) class, including:
+
+- `label()` - Set the action label
+- `icon()` - Set the action icon
+- `color()` - Set the action color
+- `requiresConfirmation()` - Require confirmation
+- `form()` - Add a form to the modal
+- `action()` - Set the callback to execute
+- `before()` - Execute before the action
+- `after()` - Execute after the action
+- `successNotification()` - Show success notification
+- `authorize()` - Authorize the action
+- `hidden()` - Hide the action conditionally
+- `disabled()` - Disable the action conditionally
+
+## Related Classes
+
+- [Action](/api/action) - Base action class
+- [Table](/api/table) - Table builder
+- [Column](/api/column) - Table columns

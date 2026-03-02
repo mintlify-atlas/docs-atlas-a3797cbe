@@ -1,0 +1,383 @@
+---
+title: Viewing Records
+description: Creating read-only View pages with infolists and custom layouts
+---
+
+## Creating a View Page
+
+View pages display records in read-only mode. Generate one when creating a resource:
+
+```bash
+php artisan make:filament-resource Customer --view
+```
+
+Or add it to an existing resource:
+
+```bash
+php artisan make:filament-page ViewCustomer --resource=CustomerResource --type=ViewRecord
+```
+
+Then register it in `getPages()`:
+
+```php
+public static function getPages(): array
+{
+    return [
+        'index' => Pages\ListCustomers::route('/'),
+        'create' => Pages\CreateCustomer::route('/create'),
+        'view' => Pages\ViewCustomer::route('/{record}'),
+        'edit' => Pages\EditCustomer::route('/{record}/edit'),
+    ];
+}
+```
+
+## The View Page Class
+
+```php packages/panels/src/Resources/Pages/ViewRecord.php
+class ViewRecord extends Page
+{
+    use Concerns\InteractsWithRecord;
+    
+    public ?array $data = [];
+    
+    public function mount(int | string $record): void
+    {
+        $this->record = $this->resolveRecord($record);
+        $this->authorizeAccess();
+        
+        if (! $this->hasInfolist()) {
+            $this->fillForm();
+        }
+    }
+}
+```
+
+## Display Options
+
+<Tabs>
+  <Tab title="Disabled Form (Default)">
+    By default, View pages show a disabled version of the Edit form:
+
+    ```php
+    public function form(Schema $schema): Schema
+    {
+        return static::getResource()::form($schema);
+    }
+    ```
+
+    The form is automatically disabled:
+
+    ```php packages/panels/src/Resources/Pages/ViewRecord.php
+    public function defaultForm(Schema $schema): Schema
+    {
+        return $schema
+            ->disabled()
+            ->model($this->getRecord())
+            ->operation('view');
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Infolist">
+    Use an infolist for a read-optimized layout:
+
+    ```php
+    use Filament\Infolists\Components\TextEntry;
+    use Filament\Schemas\Schema;
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                TextEntry::make('name'),
+                TextEntry::make('email'),
+                TextEntry::make('phone'),
+                TextEntry::make('notes')
+                    ->columnSpanFull(),
+            ]);
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Infolist Components
+
+Infolist entries are optimized for displaying data:
+
+```php
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\RepeatableEntry;
+
+public static function infolist(Schema $schema): Schema
+{
+    return $schema
+        ->components([
+            Section::make('Personal Information')
+                ->schema([
+                    TextEntry::make('name')
+                        ->size('lg')
+                        ->weight('bold'),
+                    TextEntry::make('email')
+                        ->icon('heroicon-o-envelope')
+                        ->copyable(),
+                    TextEntry::make('phone')
+                        ->icon('heroicon-o-phone'),
+                ])
+                ->columns(2),
+            
+            Section::make('Address')
+                ->schema([
+                    TextEntry::make('address.street'),
+                    TextEntry::make('address.city'),
+                    TextEntry::make('address.postal_code'),
+                ])
+                ->columns(3),
+            
+            Section::make('Profile Picture')
+                ->schema([
+                    ImageEntry::make('avatar')
+                        ->circular(),
+                ]),
+        ]);
+}
+```
+
+## Customizing Data Before Fill
+
+When using a disabled form (not an infolist), you can modify data before it's displayed:
+
+```php
+protected function mutateFormDataBeforeFill(array $data): array
+{
+    $data['full_name'] = $data['first_name'] . ' ' . $data['last_name'];
+    $data['member_since'] = Carbon::parse($data['created_at'])
+        ->diffForHumans();
+    
+    return $data;
+}
+```
+
+## Lifecycle Hooks
+
+Available hooks when using a disabled form:
+
+```php packages/panels/src/Resources/Pages/ViewRecord.php
+protected function beforeFill(): void
+{
+    // Runs before the disabled form fields are populated from the database
+    // Not run on pages using an infolist
+}
+
+protected function afterFill(): void
+{
+    // Runs after the disabled form fields are populated from the database
+    // Not run on pages using an infolist
+}
+```
+
+## Header Actions
+
+Add actions to the page header:
+
+```php
+use Filament\Actions;
+
+protected function getHeaderActions(): array
+{
+    return [
+        Actions\EditAction::make(),
+        Actions\DeleteAction::make(),
+    ];
+}
+```
+
+## Viewing in Modals
+
+For simple resources, view records in modals instead of dedicated pages:
+
+1. Delete the View page file
+2. Remove it from `getPages()`
+3. Add a `ViewAction` to your table:
+
+```php
+use Filament\Actions\ViewAction;
+use Filament\Tables\Table;
+
+public static function table(Table $table): Table
+{
+    return $table
+        ->columns([
+            // ...
+        ])
+        ->recordActions([
+            ViewAction::make(),
+            // ...
+        ]);
+}
+```
+
+## Multiple View Pages
+
+Create separate View pages for different aspects of a record:
+
+<Steps>
+  <Step title="Generate additional page">
+    ```bash
+    php artisan make:filament-page ViewCustomerContact --resource=CustomerResource --type=ViewRecord
+    ```
+  </Step>
+  
+  <Step title="Register it">
+    ```php
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListCustomers::route('/'),
+            'view' => Pages\ViewCustomer::route('/{record}'),
+            'view-contact' => Pages\ViewCustomerContact::route('/{record}/contact'),
+            'edit' => Pages\EditCustomer::route('/{record}/edit'),
+        ];
+    }
+    ```
+  </Step>
+  
+  <Step title="Define its content">
+    ```php
+    use Filament\Schemas\Schema;
+
+    public function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                // Different content than the main View page
+            ]);
+    }
+    ```
+  </Step>
+</Steps>
+
+## Customizing Relation Managers
+
+Show different relation managers on different View pages:
+
+```php
+// ViewCustomer.php
+protected function getAllRelationManagers(): array
+{
+    return [
+        RelationManagers\OrdersRelationManager::class,
+        RelationManagers\SubscriptionsRelationManager::class,
+    ];
+}
+
+// ViewCustomerContact.php
+protected function getAllRelationManagers(): array
+{
+    return [
+        RelationManagers\ContactsRelationManager::class,
+        RelationManagers\AddressesRelationManager::class,
+    ];
+}
+```
+
+## Adding to Sub-Navigation
+
+When using [resource sub-navigation](/resources/overview#sub-navigation), register View pages:
+
+```php
+use App\Filament\Resources\Customers\Pages;
+use Filament\Resources\Pages\Page;
+
+public static function getRecordSubNavigation(Page $page): array
+{
+    return $page->generateNavigationItems([
+        Pages\ViewCustomer::class,
+        Pages\ViewCustomerContact::class,
+        Pages\EditCustomer::class,
+    ]);
+}
+```
+
+## Page Content
+
+The default View page schema:
+
+```php packages/panels/src/Resources/Pages/ViewRecord.php
+public function content(Schema $schema): Schema
+{
+    return $schema
+        ->components([
+            $this->hasInfolist()
+                ? $this->getInfolistContentComponent()
+                : $this->getFormContentComponent(),
+            $this->getRelationManagersContentComponent(),
+        ]);
+}
+```
+
+Add custom components:
+
+```php
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\View;
+use Filament\Schemas\Schema;
+
+public function content(Schema $schema): Schema
+{
+    return $schema
+        ->components([
+            View::make('filament.resources.customers.view-header')
+                ->viewData(['record' => $this->getRecord()]),
+            
+            $this->hasInfolist()
+                ? $this->getInfolistContentComponent()
+                : $this->getFormContentComponent(),
+            
+            Section::make('Activity Log')
+                ->schema([
+                    View::make('filament.resources.customers.activity-log'),
+                ]),
+            
+            $this->getRelationManagersContentComponent(),
+        ]);
+}
+```
+
+## Authorization
+
+Users can access the View page if the `view()` method of the model policy returns `true`:
+
+```php
+public function view(User $user, Customer $customer): bool
+{
+    return $user->can('view customers');
+}
+```
+
+## Read-Only Mode
+
+View pages are read-only by default. Actions that modify data are automatically hidden.
+
+Relation managers also become read-only on View pages unless you override:
+
+```php
+public function isReadOnly(): bool
+{
+    return false;
+}
+```
+
+Or globally disable this behavior:
+
+```php
+use Filament\Panel;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->readOnlyRelationManagersOnResourceViewPagesByDefault(false)
+        // ...
+}
+```

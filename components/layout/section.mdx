@@ -1,0 +1,218 @@
+---
+title: Section
+---
+
+## Introduction
+
+Sections group components together with a heading and optional description:
+
+```php
+use Filament\Schemas\Components\Section;
+
+Section::make('Rate limiting')
+    ->description('Prevent abuse by limiting the number of requests per period')
+    ->schema([
+        // ...
+    ])
+```
+
+<ParamField path="heading" type="string | Htmlable | Closure">
+  The section heading.
+</ParamField>
+
+<ParamField path="description" type="string | Htmlable | Closure">
+  The description text below the heading.
+</ParamField>
+
+## Sections without headers
+
+Create a simple card wrapper without a heading:
+
+```php
+Section::make()
+    ->schema([
+        // ...
+    ])
+```
+
+## Adding an icon
+
+Add an icon to the section header:
+
+```php
+use Filament\Support\Icons\Heroicon;
+
+Section::make('Cart')
+    ->description('The items you have selected for purchase')
+    ->icon(Heroicon::ShoppingBag)
+    ->schema([
+        // ...
+    ])
+```
+
+<ParamField path="icon" type="string | BackedEnum | Htmlable | Closure">
+  The icon to display in the header.
+</ParamField>
+
+## Aside layout
+
+Position the heading and description to the left with content on the right:
+
+```php
+Section::make('Rate limiting')
+    ->description('Prevent abuse by limiting the number of requests per period')
+    ->aside()
+    ->schema([
+        // ...
+    ])
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to use the aside layout.
+</ParamField>
+
+## Collapsible sections
+
+Make sections collapsible to hide content:
+
+```php
+Section::make('Cart')
+    ->description('The items you have selected for purchase')
+    ->schema([
+        // ...
+    ])
+    ->collapsible()
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether the section is collapsible.
+</ParamField>
+
+### Collapsed by default
+
+Start with the section collapsed:
+
+```php
+Section::make('Cart')
+    ->schema([
+        // ...
+    ])
+    ->collapsed()
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether the section starts collapsed.
+</ParamField>
+
+### Persisting collapsed state
+
+Save the collapsed state in local storage:
+
+```php
+Section::make('Cart')
+    ->schema([
+        // ...
+    ])
+    ->collapsible()
+    ->persistCollapsed()
+    ->id('order-cart')
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to persist the collapsed state.
+</ParamField>
+
+<ParamField path="id" type="string | Closure">
+  A unique ID for the section (required for persistence).
+</ParamField>
+
+## Compact styling
+
+Use compact styling for nested sections:
+
+```php
+Section::make('Rate limiting')
+    ->description('Prevent abuse by limiting the number of requests per period')
+    ->schema([
+        // ...
+    ])
+    ->compact()
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to use compact styling.
+</ParamField>
+
+## Secondary styling
+
+Use a less contrasting background for nested sections:
+
+```php
+Section::make('Notes')
+    ->schema([
+        // ...
+    ])
+    ->secondary()
+    ->compact()
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to use secondary styling.
+</ParamField>
+
+## Header actions
+
+Add actions to the section header:
+
+```php
+use Filament\Actions\Action;
+
+Section::make('Rate limiting')
+    ->description('Prevent abuse by limiting the number of requests per period')
+    ->afterHeader([
+        Action::make('test'),
+    ])
+    ->schema([
+        // ...
+    ])
+```
+
+<ParamField path="components" type="array | Schema | Component | Action | Closure">
+  Components to display after the header.
+</ParamField>
+
+## Footer actions
+
+Add actions to the section footer:
+
+```php
+use Filament\Actions\Action;
+
+Section::make('Rate limiting')
+    ->schema([
+        // ...
+    ])
+    ->footer([
+        Action::make('test'),
+    ])
+```
+
+<ParamField path="components" type="array | Schema | Component | Action | Closure">
+  Components to display in the footer.
+</ParamField>
+
+## Grid columns
+
+Create a grid within the section:
+
+```php
+Section::make('Heading')
+    ->schema([
+        // ...
+    ])
+    ->columns(2)
+```
+
+<ParamField path="columns" type="int | array | Closure">
+  The number of columns or responsive column configuration.
+</ParamField>

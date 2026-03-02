@@ -1,0 +1,369 @@
+---
+title: FileUpload
+---
+
+The file upload component is based on Filepond and provides a modern file upload experience.
+
+## Basic Usage
+
+```php
+use Filament\Forms\Components\FileUpload;
+
+FileUpload::make('attachment')
+```
+
+## Available Methods
+
+<ParamField path="disk" type="method">
+  Sets the storage disk.
+  
+  ```php
+  FileUpload::make('attachment')
+      ->disk('s3')
+  ```
+</ParamField>
+
+<ParamField path="directory" type="method">
+  Sets the upload directory.
+  
+  ```php
+  FileUpload::make('attachment')
+      ->directory('attachments')
+  ```
+</ParamField>
+
+<ParamField path="visibility" type="method">
+  Sets file visibility (public/private).
+  
+  ```php
+  FileUpload::make('document')
+      ->visibility('private')
+  ```
+</ParamField>
+
+<ParamField path="multiple" type="method">
+  Allows multiple file uploads.
+  
+  ```php
+  FileUpload::make('attachments')
+      ->multiple()
+  ```
+</ParamField>
+
+<ParamField path="acceptedFileTypes" type="method">
+  Restricts file types.
+  
+  ```php
+  FileUpload::make('document')
+      ->acceptedFileTypes(['application/pdf'])
+  
+  FileUpload::make('image')
+      ->acceptedFileTypes(['image/*'])
+  ```
+</ParamField>
+
+<ParamField path="maxSize" type="method">
+  Sets maximum file size in kilobytes.
+  
+  ```php
+  FileUpload::make('attachment')
+      ->maxSize(10240) // 10MB
+  ```
+</ParamField>
+
+<ParamField path="minSize" type="method">
+  Sets minimum file size in kilobytes.
+  
+  ```php
+  FileUpload::make('attachment')
+      ->minSize(100)
+  ```
+</ParamField>
+
+<ParamField path="image" type="method">
+  Restricts uploads to images only.
+  
+  ```php
+  FileUpload::make('avatar')
+      ->image()
+  ```
+</ParamField>
+
+<ParamField path="imageEditor" type="method">
+  Enables the image editor.
+  
+  ```php
+  FileUpload::make('avatar')
+      ->image()
+      ->imageEditor()
+  ```
+</ParamField>
+
+<ParamField path="imageEditorAspectRatios" type="method">
+  Sets available aspect ratios in image editor.
+  
+  ```php
+  FileUpload::make('thumbnail')
+      ->image()
+      ->imageEditor()
+      ->imageEditorAspectRatios(['16:9', '4:3', '1:1'])
+  ```
+</ParamField>
+
+<ParamField path="imageCropAspectRatio" type="method">
+  Forces image cropping to specific aspect ratio.
+  
+  ```php
+  FileUpload::make('avatar')
+      ->image()
+      ->imageCropAspectRatio('1:1')
+  ```
+</ParamField>
+
+<ParamField path="imageResizeTargetWidth" type="method">
+  Resizes images to target width.
+  
+  ```php
+  FileUpload::make('photo')
+      ->image()
+      ->imageResizeTargetWidth('1920')
+  ```
+</ParamField>
+
+<ParamField path="imageResizeTargetHeight" type="method">
+  Resizes images to target height.
+  
+  ```php
+  FileUpload::make('photo')
+      ->image()
+      ->imageResizeTargetHeight('1080')
+  ```
+</ParamField>
+
+<ParamField path="avatar" type="method">
+  Enables avatar mode (circular display).
+  
+  ```php
+  FileUpload::make('avatar')
+      ->avatar()
+  ```
+</ParamField>
+
+<ParamField path="preserveFilenames" type="method">
+  Preserves original filenames.
+  
+  ```php
+  FileUpload::make('attachment')
+      ->preserveFilenames()
+  ```
+</ParamField>
+
+<ParamField path="getUploadedFileNameForStorageUsing" type="method">
+  Customizes filename generation.
+  
+  ```php
+  use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+  
+  FileUpload::make('attachment')
+      ->getUploadedFileNameForStorageUsing(
+          fn (TemporaryUploadedFile $file): string => 
+              (string) str($file->getClientOriginalName())
+                  ->prepend('custom-prefix-')
+      )
+  ```
+</ParamField>
+
+<ParamField path="storeFileNamesIn" type="method">
+  Stores original filenames in separate field.
+  
+  ```php
+  FileUpload::make('attachments')
+      ->multiple()
+      ->storeFileNamesIn('attachment_file_names')
+  ```
+</ParamField>
+
+<ParamField path="openable" type="method">
+  Allows opening files in new tab.
+  
+  ```php
+  FileUpload::make('document')
+      ->openable()
+  ```
+</ParamField>
+
+<ParamField path="downloadable" type="method">
+  Allows downloading files.
+  
+  ```php
+  FileUpload::make('document')
+      ->downloadable()
+  ```
+</ParamField>
+
+<ParamField path="previewable" type="method">
+  Allows previewing files.
+  
+  ```php
+  FileUpload::make('image')
+      ->previewable()
+  ```
+</ParamField>
+
+<ParamField path="reorderable" type="method">
+  Allows reordering multiple files.
+  
+  ```php
+  FileUpload::make('gallery')
+      ->multiple()
+      ->reorderable()
+  ```
+</ParamField>
+
+<ParamField path="appendFiles" type="method">
+  Appends new files instead of replacing.
+  
+  ```php
+  FileUpload::make('documents')
+      ->multiple()
+      ->appendFiles()
+  ```
+</ParamField>
+
+<ParamField path="maxFiles" type="method">
+  Limits number of files.
+  
+  ```php
+  FileUpload::make('gallery')
+      ->multiple()
+      ->maxFiles(5)
+  ```
+</ParamField>
+
+<ParamField path="minFiles" type="method">
+  Sets minimum number of files.
+  
+  ```php
+  FileUpload::make('gallery')
+      ->multiple()
+      ->minFiles(2)
+  ```
+</ParamField>
+
+<ParamField path="maxParallelUploads" type="method">
+  Controls parallel upload limit.
+  
+  ```php
+  FileUpload::make('attachments')
+      ->multiple()
+      ->maxParallelUploads(1)
+  ```
+</ParamField>
+
+<ParamField path="removeUploadedFileButtonPosition" type="method">
+  Sets remove button position.
+  
+  ```php
+  FileUpload::make('image')
+      ->removeUploadedFileButtonPosition('left')
+  ```
+</ParamField>
+
+<ParamField path="uploadButtonPosition" type="method">
+  Sets upload button position.
+  
+  ```php
+  FileUpload::make('image')
+      ->uploadButtonPosition('left')
+  ```
+</ParamField>
+
+<ParamField path="uploadProgressIndicatorPosition" type="method">
+  Sets progress indicator position.
+  
+  ```php
+  FileUpload::make('file')
+      ->uploadProgressIndicatorPosition('left')
+  ```
+</ParamField>
+
+## Common Patterns
+
+### Simple File Upload
+
+```php
+FileUpload::make('attachment')
+    ->disk('public')
+    ->directory('attachments')
+    ->maxSize(5120)
+```
+
+### Image Upload with Validation
+
+```php
+FileUpload::make('featured_image')
+    ->image()
+    ->imageEditor()
+    ->imageCropAspectRatio('16:9')
+    ->imageResizeTargetWidth('1920')
+    ->imageResizeTargetHeight('1080')
+    ->maxSize(2048)
+    ->required()
+```
+
+### Avatar Upload
+
+```php
+FileUpload::make('avatar')
+    ->avatar()
+    ->imageEditor()
+    ->imageCropAspectRatio('1:1')
+    ->imageResizeTargetWidth('300')
+    ->imageResizeTargetHeight('300')
+    ->disk('public')
+    ->directory('avatars')
+```
+
+### Multiple Documents
+
+```php
+FileUpload::make('documents')
+    ->multiple()
+    ->acceptedFileTypes(['application/pdf', 'application/msword'])
+    ->maxSize(10240)
+    ->maxFiles(5)
+    ->reorderable()
+    ->downloadable()
+    ->openable()
+```
+
+### Image Gallery
+
+```php
+FileUpload::make('gallery')
+    ->image()
+    ->multiple()
+    ->maxFiles(10)
+    ->reorderable()
+    ->imageEditor()
+    ->directory('galleries')
+```
+
+## Database Casting
+
+For multiple file uploads, add an `array` cast:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class Post extends Model
+{
+    protected function casts(): array
+    {
+        return [
+            'attachments' => 'array',
+            'attachment_file_names' => 'array',
+        ];
+    }
+}
+```

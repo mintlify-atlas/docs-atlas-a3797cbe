@@ -1,0 +1,414 @@
+---
+title: Select
+---
+
+The select component allows you to select from a list of predefined options.
+
+## Basic Usage
+
+```php
+use Filament\Forms\Components\Select;
+
+Select::make('status')
+    ->options([
+        'draft' => 'Draft',
+        'reviewing' => 'Reviewing',
+        'published' => 'Published',
+    ])
+```
+
+## Available Methods
+
+<ParamField path="options" type="method">
+  Sets the available options.
+  
+  ```php
+  Select::make('status')
+      ->options([
+          'draft' => 'Draft',
+          'published' => 'Published',
+      ])
+  ```
+</ParamField>
+
+<ParamField path="native" type="method">
+  Use native HTML5 select (default is true).
+  
+  ```php
+  Select::make('status')
+      ->native(false) // Enable JavaScript select
+  ```
+</ParamField>
+
+<ParamField path="searchable" type="method">
+  Makes the select searchable.
+  
+  ```php
+  Select::make('author_id')
+      ->options(User::pluck('name', 'id'))
+      ->searchable()
+  
+  // Search across multiple columns
+  Select::make('author_id')
+      ->relationship('author', 'name')
+      ->searchable(['name', 'email'])
+  ```
+</ParamField>
+
+<ParamField path="multiple" type="method">
+  Allows multiple selections.
+  
+  ```php
+  Select::make('technologies')
+      ->multiple()
+      ->options([
+          'tailwind' => 'Tailwind CSS',
+          'alpine' => 'Alpine.js',
+          'laravel' => 'Laravel',
+      ])
+  ```
+</ParamField>
+
+<ParamField path="relationship" type="method">
+  Configures the select to work with Eloquent relationships.
+  
+  ```php
+  // BelongsTo relationship
+  Select::make('author_id')
+      ->relationship(name: 'author', titleAttribute: 'name')
+  
+  // BelongsToMany relationship (requires multiple())
+  Select::make('technologies')
+      ->multiple()
+      ->relationship(titleAttribute: 'name')
+  
+  // With custom query
+  Select::make('author_id')
+      ->relationship(
+          name: 'author',
+          titleAttribute: 'name',
+          modifyQueryUsing: fn (Builder $query) => $query->withTrashed(),
+      )
+  ```
+</ParamField>
+
+<ParamField path="getSearchResultsUsing" type="method">
+  Customizes how search results are retrieved.
+  
+  ```php
+  Select::make('author_id')
+      ->searchable()
+      ->getSearchResultsUsing(fn (string $search): array => 
+          User::where('name', 'like', "%{$search}%")
+              ->limit(50)
+              ->pluck('name', 'id')
+              ->all()
+      )
+      ->getOptionLabelUsing(fn ($value): ?string => User::find($value)?->name)
+  ```
+</ParamField>
+
+<ParamField path="getOptionLabelUsing" type="method">
+  Customizes how option labels are displayed for single select.
+  
+  ```php
+  Select::make('author_id')
+      ->getOptionLabelUsing(fn ($value): ?string => User::find($value)?->name)
+  ```
+</ParamField>
+
+<ParamField path="getOptionLabelsUsing" type="method">
+  Customizes how option labels are displayed for multi-select.
+  
+  ```php
+  Select::make('technologies')
+      ->multiple()
+      ->getOptionLabelsUsing(fn (array $values): array => 
+          Technology::whereIn('id', $values)
+              ->pluck('name', 'id')
+              ->all()
+      )
+  ```
+</ParamField>
+
+<ParamField path="getOptionLabelFromRecordUsing" type="method">
+  Customizes option labels from Eloquent records.
+  
+  ```php
+  Select::make('author_id')
+      ->relationship('author')
+      ->getOptionLabelFromRecordUsing(
+          fn (Model $record) => "{$record->first_name} {$record->last_name}"
+      )
+      ->searchable(['first_name', 'last_name'])
+  ```
+</ParamField>
+
+<ParamField path="preload" type="method">
+  Preloads options when the page loads.
+  
+  ```php
+  Select::make('author_id')
+      ->relationship('author', 'name')
+      ->searchable()
+      ->preload()
+  ```
+</ParamField>
+
+<ParamField path="reorderable" type="method">
+  Allows reordering multi-select options.
+  
+  ```php
+  Select::make('technologies')
+      ->multiple()
+      ->reorderable()
+  ```
+</ParamField>
+
+<ParamField path="createOptionForm" type="method">
+  Adds a form to create new options.
+  
+  ```php
+  Select::make('author_id')
+      ->relationship('author', 'name')
+      ->createOptionForm([
+          TextInput::make('name')->required(),
+          TextInput::make('email')->email()->required(),
+      ])
+  ```
+</ParamField>
+
+<ParamField path="createOptionUsing" type="method">
+  Customizes how new options are created.
+  
+  ```php
+  Select::make('author_id')
+      ->createOptionUsing(function (array $data): int {
+          return auth()->user()->team->members()->create($data)->getKey();
+      })
+  ```
+</ParamField>
+
+<ParamField path="editOptionForm" type="method">
+  Adds a form to edit the selected option.
+  
+  ```php
+  Select::make('author_id')
+      ->relationship('author', 'name')
+      ->editOptionForm([
+          TextInput::make('name')->required(),
+          TextInput::make('email')->email()->required(),
+      ])
+  ```
+</ParamField>
+
+<ParamField path="boolean" type="method">
+  Creates a boolean select with Yes/No options.
+  
+  ```php
+  Select::make('is_active')
+      ->boolean()
+  
+  // Customize labels
+  Select::make('feedback')
+      ->boolean(
+          trueLabel: 'Absolutely!',
+          falseLabel: 'Not at all!',
+          placeholder: 'Make your choice...'
+      )
+  ```
+</ParamField>
+
+<ParamField path="allowHtml" type="method">
+  Allows HTML in option labels.
+  
+  ```php
+  Select::make('status')
+      ->options([
+          'active' => '<span class="text-green-500">Active</span>',
+          'inactive' => '<span class="text-red-500">Inactive</span>',
+      ])
+      ->allowHtml()
+  ```
+</ParamField>
+
+<ParamField path="wrapOptionLabels" type="method">
+  Controls whether option labels wrap or truncate.
+  
+  ```php
+  Select::make('status')
+      ->wrapOptionLabels(false) // Truncate long labels
+  ```
+</ParamField>
+
+<ParamField path="selectablePlaceholder" type="method">
+  Controls whether the placeholder can be selected.
+  
+  ```php
+  Select::make('status')
+      ->selectablePlaceholder(false)
+      ->default('draft')
+  ```
+</ParamField>
+
+<ParamField path="disableOptionWhen" type="method">
+  Disables specific options.
+  
+  ```php
+  Select::make('status')
+      ->options([
+          'draft' => 'Draft',
+          'published' => 'Published',
+      ])
+      ->disableOptionWhen(fn (string $value): bool => $value === 'published')
+  ```
+</ParamField>
+
+<ParamField path="optionsLimit" type="method">
+  Limits the number of options displayed.
+  
+  ```php
+  Select::make('author_id')
+      ->relationship('author', 'name')
+      ->searchable()
+      ->optionsLimit(20)
+  ```
+</ParamField>
+
+<ParamField path="loadingMessage" type="method">
+  Sets a custom loading message.
+  
+  ```php
+  Select::make('author_id')
+      ->relationship('author', 'name')
+      ->searchable()
+      ->loadingMessage('Loading authors...')
+  ```
+</ParamField>
+
+<ParamField path="noSearchResultsMessage" type="method">
+  Sets a custom no results message.
+  
+  ```php
+  Select::make('author_id')
+      ->searchable()
+      ->noSearchResultsMessage('No authors found.')
+  ```
+</ParamField>
+
+<ParamField path="searchPrompt" type="method">
+  Sets a custom search prompt.
+  
+  ```php
+  Select::make('author_id')
+      ->searchable()
+      ->searchPrompt('Search authors...')
+  ```
+</ParamField>
+
+<ParamField path="searchDebounce" type="method">
+  Sets the search debounce in milliseconds.
+  
+  ```php
+  Select::make('author_id')
+      ->searchable()
+      ->searchDebounce(500)
+  ```
+</ParamField>
+
+<ParamField path="prefix" type="method">
+  Adds text before the select.
+  
+  ```php
+  Select::make('status')
+      ->prefix('Status:')
+  ```
+</ParamField>
+
+<ParamField path="suffix" type="method">
+  Adds text after the select.
+  
+  ```php
+  Select::make('domain')
+      ->suffix('.com')
+  ```
+</ParamField>
+
+<ParamField path="minItems" type="method">
+  Sets minimum number of items for multi-select.
+  
+  ```php
+  Select::make('technologies')
+      ->multiple()
+      ->minItems(1)
+  ```
+</ParamField>
+
+<ParamField path="maxItems" type="method">
+  Sets maximum number of items for multi-select.
+  
+  ```php
+  Select::make('technologies')
+      ->multiple()
+      ->maxItems(3)
+  ```
+</ParamField>
+
+<ParamField path="pivotData" type="method">
+  Sets pivot data for BelongsToMany relationships.
+  
+  ```php
+  Select::make('primaryTechnologies')
+      ->relationship('technologies', 'name')
+      ->multiple()
+      ->pivotData(['is_primary' => true])
+  ```
+</ParamField>
+
+## Common Patterns
+
+### Simple Select
+
+```php
+Select::make('status')
+    ->options([
+        'draft' => 'Draft',
+        'published' => 'Published',
+    ])
+    ->required()
+```
+
+### Searchable Relationship
+
+```php
+Select::make('author_id')
+    ->relationship('author', 'name')
+    ->searchable()
+    ->preload()
+    ->required()
+```
+
+### Multi-Select with Relationship
+
+```php
+Select::make('technologies')
+    ->multiple()
+    ->relationship('technologies', 'name')
+    ->preload()
+```
+
+### Grouped Options
+
+```php
+Select::make('status')
+    ->options([
+        'In Process' => [
+            'draft' => 'Draft',
+            'reviewing' => 'Reviewing',
+        ],
+        'Reviewed' => [
+            'published' => 'Published',
+            'rejected' => 'Rejected',
+        ],
+    ])
+```

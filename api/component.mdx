@@ -1,0 +1,440 @@
+---
+title: Component
+description: Component base class API reference for schema components
+---
+
+The `Component` class is the foundation for all schema components in Filament, including form fields, infolist entries, and layout components. It provides core functionality for state management, visibility control, and component composition.
+
+## Namespace
+
+```php
+Filament\Schemas\Components\Component
+```
+
+## Inheritance
+
+Extends: `Filament\Support\Components\ViewComponent`
+
+## Constructor
+
+The Component class does not define a public constructor. Use the static `make()` method provided by extending classes.
+
+## State Management
+
+### State Access
+
+Components can access and modify state through injected parameters:
+
+```php
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+
+TextInput::make('price')
+    ->live()
+    ->afterStateUpdated(function (Set $set, ?float $state) {
+        $set('total', $state * 1.2);
+    });
+```
+
+### Closure Parameters
+
+Closures in component methods automatically receive contextual parameters:
+
+<ParamField path="context" type="string">
+  The operation context (e.g., 'create', 'edit', 'view')
+</ParamField>
+
+<ParamField path="operation" type="string">
+  Alias for context
+</ParamField>
+
+<ParamField path="get" type="Get">
+  Utility for getting component state
+</ParamField>
+
+<ParamField path="livewire" type="Component">
+  The Livewire component instance
+</ParamField>
+
+<ParamField path="model" type="Model | null">
+  The Eloquent model instance
+</ParamField>
+
+<ParamField path="record" type="Model | array | null">
+  The current record
+</ParamField>
+
+<ParamField path="set" type="Set">
+  Utility for setting component state
+</ParamField>
+
+<ParamField path="state" type="mixed">
+  The current component state
+</ParamField>
+
+## Visibility Control
+
+Components provide powerful visibility control methods:
+
+### hidden()
+
+Hide the component based on a condition.
+
+```php
+public function hidden(bool | Closure $condition = true): static
+```
+
+**Example:**
+
+```php
+TextInput::make('vat_number')
+    ->hidden(fn (Get $get) => $get('country') !== 'GB');
+```
+
+### visible()
+
+Show the component based on a condition.
+
+```php
+public function visible(bool | Closure $condition = true): static
+```
+
+**Example:**
+
+```php
+TextInput::make('state')
+    ->visible(fn (Get $get) => $get('country') === 'US');
+```
+
+### isHidden()
+
+Check if the component is hidden.
+
+```php
+public function isHidden(): bool
+```
+
+### isVisible()
+
+Check if the component is visible.
+
+```php
+public function isVisible(): bool
+```
+
+## Disability Control
+
+### disabled()
+
+Disable the component.
+
+```php
+public function disabled(bool | Closure $condition = true): static
+```
+
+**Example:**
+
+```php
+TextInput::make('email')
+    ->disabled(fn (string $operation) => $operation === 'view');
+```
+
+### isDisabled()
+
+Check if the component is disabled.
+
+```php
+public function isDisabled(): bool
+```
+
+## Layout Control
+
+### columnSpan()
+
+Set how many columns the component should span.
+
+```php
+public function columnSpan(int | string | array | Closure $span): static
+```
+
+**Example:**
+
+```php
+Textarea::make('description')
+    ->columnSpan('full'); // or 2, or ['md' => 2, 'xl' => 3]
+```
+
+### columns()
+
+Set the number of columns for child components.
+
+```php
+public function columns(int | array | Closure $columns): static
+```
+
+**Example:**
+
+```php
+Section::make()
+    ->columns([
+        'sm' => 1,
+        'md' => 2,
+        'lg' => 3,
+    ]);
+```
+
+### grow()
+
+Allow the component to grow to fill available space.
+
+```php
+public function grow(bool | Closure $condition = true): static
+```
+
+### maxWidth()
+
+Set the maximum width for the component.
+
+```php
+public function maxWidth(Width | string | Closure | null $width): static
+```
+
+**Example:**
+
+```php
+use Filament\Support\Enums\Width;
+
+Section::make()
+    ->maxWidth(Width::TwoExtraLarge);
+```
+
+## Child Components
+
+### schema()
+
+Set the child components.
+
+```php
+public function schema(array | Closure $components): static
+```
+
+**Example:**
+
+```php
+Section::make('Contact Information')
+    ->schema([
+        TextInput::make('email'),
+        TextInput::make('phone'),
+    ]);
+```
+
+## Actions
+
+Components can have associated actions:
+
+### actions()
+
+Set the actions for the component.
+
+```php
+public function actions(array | Closure $actions): static
+```
+
+**Example:**
+
+```php
+Section::make()
+    ->actions([
+        Action::make('edit')
+            ->icon('heroicon-o-pencil'),
+    ]);
+```
+
+## State Binding
+
+### statePath()
+
+Set the state path for the component.
+
+```php
+public function statePath(?string $path): static
+```
+
+**Example:**
+
+```php
+TextInput::make('name')
+    ->statePath('data.user.name');
+```
+
+### getStatePath()
+
+Get the state path.
+
+```php
+public function getStatePath(bool $isAbsolute = true): string
+```
+
+### getState()
+
+Get the current state.
+
+```php
+public function getState(): mixed
+```
+
+### getRawState()
+
+Get the raw state before type casting.
+
+```php
+public function getRawState(): mixed
+```
+
+## Model Binding
+
+### model()
+
+Set the Eloquent model for the component.
+
+```php
+public function model(Model | string | Closure | null $model): static
+```
+
+### getModel()
+
+Get the Eloquent model.
+
+```php
+public function getModel(): ?Model
+```
+
+### getRecord()
+
+Get the current record (alias for getModel).
+
+```php
+public function getRecord(): Model | array | null
+```
+
+## Livewire Integration
+
+### getLivewire()
+
+Get the parent Livewire component.
+
+```php
+public function getLivewire(): Component
+```
+
+## Key and ID
+
+### key()
+
+Set a unique key for the component.
+
+```php
+public function key(string | Closure | null $key): static
+```
+
+### getKey()
+
+Get the component key.
+
+```php
+public function getKey(): ?string
+```
+
+### id()
+
+Set the HTML ID.
+
+```php
+public function id(string | Closure | null $id): static
+```
+
+### getId()
+
+Get the HTML ID.
+
+```php
+public function getId(): ?string
+```
+
+## Extra Attributes
+
+### extraAttributes()
+
+Set additional HTML attributes.
+
+```php
+public function extraAttributes(array | Closure $attributes, bool $merge = false): static
+```
+
+**Example:**
+
+```php
+TextInput::make('name')
+    ->extraAttributes([
+        'class' => 'custom-class',
+        'data-foo' => 'bar',
+    ]);
+```
+
+## Utilities
+
+### makeGetUtility()
+
+Create a Get utility for accessing component state.
+
+```php
+public function makeGetUtility(): Get
+```
+
+### makeSetUtility()
+
+Create a Set utility for modifying component state.
+
+```php
+public function makeSetUtility(): Set
+```
+
+## Traits
+
+The Component class uses numerous traits:
+
+- `BelongsToContainer` - Container relationship
+- `BelongsToModel` - Model binding
+- `CanBeConcealed` - Concealment logic
+- `CanBeDisabled` - Disability control
+- `CanBeGridContainer` - Grid layout support
+- `CanBeHidden` - Visibility control
+- `CanBeLiberatedFromContainerGrid` - Grid liberation
+- `CanBeRepeated` - Repeater support
+- `CanGrow` - Growth control
+- `CanOrderColumns` - Column ordering
+- `CanPartiallyRender` - Partial rendering
+- `CanPoll` - Polling support
+- `CanSpanColumns` - Column spanning
+- `Cloneable` - Component cloning
+- `HasActions` - Action support
+- `HasChildComponents` - Child component management
+- `HasColumns` - Column configuration
+- `HasEntryWrapper` - Entry wrapper (infolists)
+- `HasExtraAttributes` - Extra HTML attributes
+- `HasFieldWrapper` - Field wrapper (forms)
+- `HasGap` - Gap configuration
+- `HasHeadings` - Heading support
+- `HasId` - ID management
+- `HasInlineLabel` - Inline label support
+- `HasKey` - Key management
+- `HasMaxWidth` - Width constraints
+- `HasMeta` - Metadata storage
+- `HasState` - State management
+- `HasStateBindingModifiers` - State binding modifiers
+
+## Related Classes
+
+- [Field](/api/field) - Form field components
+- [Column](/api/column) - Table column components
+- [Action](/api/action) - Action components

@@ -1,0 +1,357 @@
+---
+title: Text Column
+---
+
+## Introduction
+
+Text columns display simple text based on the column's state:
+
+```php
+use Filament\Tables\Columns\TextColumn;
+
+TextColumn::make('title')
+```
+
+## Formatting the text
+
+### Date formatting
+
+You can format date values using the `date()`, `dateTime()`, and `time()` methods:
+
+<CodeGroup>
+```php date()
+TextColumn::make('created_at')
+    ->date()
+```
+
+```php dateTime()
+TextColumn::make('created_at')
+    ->dateTime()
+```
+
+```php time()
+TextColumn::make('created_at')
+    ->time()
+```
+</CodeGroup>
+
+You may customize the format by passing a custom format string:
+
+```php
+TextColumn::make('created_at')
+    ->date('M j, Y')
+```
+
+<ParamField path="format" type="string">
+  The PHP date format string.
+</ParamField>
+
+### Number formatting
+
+You can format a column as a number using `numeric()`:
+
+```php
+TextColumn::make('stock')
+    ->numeric()
+```
+
+<ParamField path="decimalPlaces" type="int" default="0">
+  The number of decimal places.
+</ParamField>
+
+<ParamField path="locale" type="string" default="app locale">
+  The locale for number formatting.
+</ParamField>
+
+### Money formatting
+
+You can easily format money values:
+
+```php
+TextColumn::make('price')
+    ->money('EUR')
+```
+
+<ParamField path="currency" type="string" required>
+  The currency code (e.g., 'EUR', 'USD').
+</ParamField>
+
+<ParamField path="divideBy" type="int" default="1">
+  Divide the value before formatting (useful for cents).
+</ParamField>
+
+## Customizing the appearance
+
+### Color
+
+You may set a color for the text:
+
+```php
+TextColumn::make('status')
+    ->color('primary')
+```
+
+You can also use a closure to dynamically determine the color:
+
+```php
+TextColumn::make('status')
+    ->color(fn (string $state): string => match ($state) {
+        'draft' => 'gray',
+        'reviewing' => 'warning',
+        'published' => 'success',
+        'rejected' => 'danger',
+    })
+```
+
+<ParamField path="color" type="string | Closure">
+  The color name or a closure that returns a color.
+</ParamField>
+
+### Displaying as a badge
+
+You can display text as a badge:
+
+```php
+TextColumn::make('status')
+    ->badge()
+    ->color(fn (string $state): string => match ($state) {
+        'draft' => 'gray',
+        'reviewing' => 'warning',
+        'published' => 'success',
+    })
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to display as a badge.
+</ParamField>
+
+### Adding an icon
+
+Text columns may have an icon:
+
+```php
+use Filament\Support\Icons\Heroicon;
+
+TextColumn::make('email')
+    ->icon(Heroicon::Envelope)
+```
+
+<ParamField path="icon" type="string | BackedEnum | Htmlable | Closure">
+  The icon to display.
+</ParamField>
+
+<ParamField path="iconPosition" type="IconPosition | Closure" default="IconPosition::Before">
+  The position of the icon (Before or After).
+</ParamField>
+
+<ParamField path="iconColor" type="string | array | Closure">
+  The color of the icon.
+</ParamField>
+
+### Text size
+
+You can customize the text size:
+
+```php
+use Filament\Support\Enums\TextSize;
+
+TextColumn::make('title')
+    ->size(TextSize::Large)
+```
+
+Available sizes: `ExtraSmall`, `Small`, `Medium`, `Large`.
+
+<ParamField path="size" type="TextSize | string | Closure">
+  The text size.
+</ParamField>
+
+### Font weight
+
+Customize the font weight:
+
+```php
+use Filament\Support\Enums\FontWeight;
+
+TextColumn::make('title')
+    ->weight(FontWeight::Bold)
+```
+
+Available weights: `Thin`, `ExtraLight`, `Light`, `Medium`, `SemiBold`, `Bold`, `ExtraBold`, `Black`.
+
+<ParamField path="weight" type="FontWeight | string | Closure">
+  The font weight.
+</ParamField>
+
+### Font family
+
+You can change the font family:
+
+```php
+use Filament\Support\Enums\FontFamily;
+
+TextColumn::make('email')
+    ->fontFamily(FontFamily::Mono)
+```
+
+Available families: `Sans`, `Serif`, `Mono`.
+
+<ParamField path="fontFamily" type="FontFamily | string | Closure">
+  The font family.
+</ParamField>
+
+## Working with lists
+
+### Listing multiple values
+
+If your column state is an array, values will be comma-separated by default. You can display them on separate lines:
+
+```php
+TextColumn::make('authors.name')
+    ->listWithLineBreaks()
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to display list items on separate lines.
+</ParamField>
+
+### Adding bullet points
+
+You can add bullet points to list items:
+
+```php
+TextColumn::make('authors.name')
+    ->bulleted()
+```
+
+### Limiting the list
+
+Limit the number of values displayed:
+
+```php
+TextColumn::make('authors.name')
+    ->listWithLineBreaks()
+    ->limitList(3)
+```
+
+<ParamField path="limit" type="int | Closure" default="3">
+  The maximum number of items to display.
+</ParamField>
+
+You can make the limited list expandable:
+
+```php
+TextColumn::make('authors.name')
+    ->listWithLineBreaks()
+    ->limitList(3)
+    ->expandableLimitedList()
+```
+
+## Handling long text
+
+### Limiting text length
+
+Limit the number of characters:
+
+```php
+TextColumn::make('description')
+    ->limit(50)
+```
+
+<ParamField path="limit" type="int | Closure">
+  The maximum number of characters.
+</ParamField>
+
+<ParamField path="end" type="string | Closure" default="'...'">
+  The string to append when text is truncated.
+</ParamField>
+
+### Limiting word count
+
+Limit the number of words:
+
+```php
+TextColumn::make('description')
+    ->words(10)
+```
+
+<ParamField path="words" type="int | Closure">
+  The maximum number of words.
+</ParamField>
+
+### Wrapping text
+
+By default, text will not wrap. Enable wrapping:
+
+```php
+TextColumn::make('description')
+    ->wrap()
+```
+
+### Line clamping
+
+Limit text to a specific number of lines:
+
+```php
+TextColumn::make('description')
+    ->wrap()
+    ->lineClamp(2)
+```
+
+<ParamField path="lineClamp" type="int | Closure">
+  The maximum number of lines to display.
+</ParamField>
+
+## Making text copyable
+
+Allow users to copy text to clipboard:
+
+```php
+TextColumn::make('email')
+    ->copyable()
+    ->copyMessage('Email address copied')
+    ->copyMessageDuration(1500)
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether the text should be copyable.
+</ParamField>
+
+<ParamField path="message" type="string | Closure" default="'Copied'">
+  The message to display when copied.
+</ParamField>
+
+<ParamField path="duration" type="int | Closure" default="2000">
+  How long to show the message (milliseconds).
+</ParamField>
+
+## Additional methods
+
+### Row index
+
+Display the row index:
+
+```php
+TextColumn::make('index')
+    ->rowIndex()
+```
+
+<ParamField path="isFromZero" type="bool" default="false">
+  Whether to start counting from zero.
+</ParamField>
+
+### Description
+
+Add a description below the column content:
+
+```php
+TextColumn::make('title')
+    ->description(fn (Post $record): string => $record->description)
+```
+
+<ParamField path="description" type="string | Htmlable | Closure">
+  The description text.
+</ParamField>
+
+<ParamField path="position" type="string" default="'below'">
+  Position of the description ('above' or 'below').
+</ParamField>

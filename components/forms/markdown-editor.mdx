@@ -1,0 +1,121 @@
+---
+title: MarkdownEditor
+---
+
+The markdown editor component provides a markdown editing interface with preview.
+
+## Basic Usage
+
+```php
+use Filament\Forms\Components\MarkdownEditor;
+
+MarkdownEditor::make('content')
+```
+
+## Available Methods
+
+<ParamField path="toolbarButtons" type="method">
+  Sets which toolbar buttons are available.
+  
+  ```php
+  MarkdownEditor::make('content')
+      ->toolbarButtons([
+          'bold',
+          'italic',
+          'strike',
+          'link',
+          'heading',
+          'blockquote',
+          'codeBlock',
+          'bulletList',
+          'orderedList',
+          'table',
+      ])
+  ```
+</ParamField>
+
+<ParamField path="disableToolbarButtons" type="method">
+  Disables specific toolbar buttons.
+  
+  ```php
+  MarkdownEditor::make('content')
+      ->disableToolbarButtons(['table', 'codeBlock'])
+  ```
+</ParamField>
+
+<ParamField path="fileAttachmentsDisk" type="method">
+  Sets the disk for file attachments.
+  
+  ```php
+  MarkdownEditor::make('content')
+      ->fileAttachmentsDisk('s3')
+  ```
+</ParamField>
+
+<ParamField path="fileAttachmentsDirectory" type="method">
+  Sets the directory for file attachments.
+  
+  ```php
+  MarkdownEditor::make('content')
+      ->fileAttachmentsDirectory('attachments')
+  ```
+</ParamField>
+
+<ParamField path="fileAttachmentsVisibility" type="method">
+  Sets visibility for file attachments.
+  
+  ```php
+  MarkdownEditor::make('content')
+      ->fileAttachmentsVisibility('private')
+  ```
+</ParamField>
+
+<ParamField path="disableGrammarly" type="method">
+  Disables Grammarly.
+  
+  ```php
+  MarkdownEditor::make('content')
+      ->disableGrammarly()
+  ```
+</ParamField>
+
+## Common Patterns
+
+### README Editor
+
+```php
+MarkdownEditor::make('readme')
+    ->toolbarButtons([
+        'bold',
+        'italic',
+        'link',
+        'heading',
+        'blockquote',
+        'codeBlock',
+        'bulletList',
+        'orderedList',
+    ])
+    ->required()
+```
+
+### Documentation Editor
+
+```php
+MarkdownEditor::make('content')
+    ->fileAttachmentsDisk('public')
+    ->fileAttachmentsDirectory('docs-images')
+    ->required()
+```
+
+### Simple Markdown
+
+```php
+MarkdownEditor::make('notes')
+    ->toolbarButtons([
+        'bold',
+        'italic',
+        'link',
+        'bulletList',
+        'orderedList',
+    ])
+```

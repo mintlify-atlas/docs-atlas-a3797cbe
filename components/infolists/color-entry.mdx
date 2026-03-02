@@ -1,0 +1,222 @@
+---
+title: Color Entry
+description: Display color previews from CSS color values in Filament infolists.
+---
+
+## Introduction
+
+Color entries display a visual preview of CSS color values. They work with colors in HEX, HSL, RGB, and RGBA formats, typically used alongside the color picker field.
+
+<CodeGroup>
+```php Basic usage
+use Filament\Infolists\Components\ColorEntry;
+
+ColorEntry::make('brand_color')
+```
+</CodeGroup>
+
+The entry displays a colored square or circle representing the color value stored in your data.
+
+## Available Methods
+
+### Copy to Clipboard
+
+<ParamField path="copyable()" type="bool|Closure">
+  Enable copying the color value to clipboard when clicked.
+
+  ```php
+  ColorEntry::make('brand_color')
+      ->copyable()
+  ```
+</ParamField>
+
+<ParamField path="copyMessage()" type="string|Closure">
+  Set a custom message shown when the color is copied.
+
+  ```php
+  ColorEntry::make('brand_color')
+      ->copyable()
+      ->copyMessage('Color copied!')
+  ```
+</ParamField>
+
+<ParamField path="copyMessageDuration()" type="int|Closure">
+  Set the duration in milliseconds for the copy confirmation message.
+
+  ```php
+  ColorEntry::make('brand_color')
+      ->copyable()
+      ->copyMessage('Color copied!')
+      ->copyMessageDuration(1500)
+  ```
+</ParamField>
+
+### State Management
+
+Color entries inherit all base entry methods for working with state:
+
+<ParamField path="state()" type="Closure">
+  Manually set the color value state.
+
+  ```php
+  ColorEntry::make('computed_color')
+      ->state(fn ($record) => $record->primary_color ?? '#000000')
+  ```
+</ParamField>
+
+## Supported Color Formats
+
+The color entry supports all standard CSS color formats:
+
+- **HEX**: `#FF5733`, `#F57`
+- **RGB**: `rgb(255, 87, 51)`
+- **RGBA**: `rgba(255, 87, 51, 0.5)`
+- **HSL**: `hsl(9, 100%, 60%)`
+- **HSLA**: `hsla(9, 100%, 60%, 0.5)`
+
+## Examples
+
+### Basic Color Preview
+
+<CodeGroup>
+```php Brand color
+ColorEntry::make('brand_color')
+    ->label('Brand Color')
+```
+</CodeGroup>
+
+### Copyable Color
+
+<CodeGroup>
+```php Theme color with copy
+ColorEntry::make('primary_color')
+    ->label('Primary Color')
+    ->copyable()
+    ->copyMessage('Color code copied!')
+    ->copyMessageDuration(2000)
+```
+</CodeGroup>
+
+### Multiple Colors
+
+<CodeGroup>
+```php Color palette
+ColorEntry::make('colors')
+    ->label('Color Palette')
+```
+</CodeGroup>
+
+### Computed Color
+
+<CodeGroup>
+```php Dynamic color
+ColorEntry::make('accent_color')
+    ->state(fn ($record) => $record->theme?->accent_color ?? '#3B82F6')
+    ->copyable()
+```
+</CodeGroup>
+
+### Color with Tooltip
+
+<CodeGroup>
+```php Color with description
+ColorEntry::make('background_color')
+    ->label('Background')
+    ->tooltip(fn ($state) => "Color: {$state}")
+    ->copyable()
+```
+</CodeGroup>
+
+### Color Scheme Preview
+
+<CodeGroup>
+```php Theme colors
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\ColorEntry;
+
+Section::make('Theme Colors')
+    ->schema([
+        ColorEntry::make('primary_color')
+            ->label('Primary')
+            ->copyable(),
+        ColorEntry::make('secondary_color')
+            ->label('Secondary')
+            ->copyable(),
+        ColorEntry::make('accent_color')
+            ->label('Accent')
+            ->copyable(),
+    ])
+    ->columns(3)
+```
+</CodeGroup>
+
+### Conditional Display
+
+<CodeGroup>
+```php Show when color is set
+ColorEntry::make('custom_color')
+    ->label('Custom Brand Color')
+    ->visible(fn ($record) => $record->has_custom_branding)
+    ->copyable()
+    ->copyMessage('Custom color copied!')
+```
+</CodeGroup>
+
+## Working with Arrays
+
+When the state contains an array of colors, the color entry will display multiple color previews:
+
+<CodeGroup>
+```php Multiple color swatches
+ColorEntry::make('palette')
+    ->label('Color Palette')
+    ->state(fn ($record) => [
+        $record->primary_color,
+        $record->secondary_color,
+        $record->accent_color,
+    ])
+```
+</CodeGroup>
+
+## Best Practices
+
+### Color Validation
+
+Ensure color values are in valid CSS format before storing:
+
+<CodeGroup>
+```php Validated color storage
+// In your form field
+ColorPicker::make('brand_color')
+    ->required()
+    ->regex('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'),
+
+// Display in infolist
+ColorEntry::make('brand_color')
+    ->copyable()
+```
+</CodeGroup>
+
+### Accessibility
+
+Provide descriptive labels and tooltips:
+
+<CodeGroup>
+```php Accessible color display
+ColorEntry::make('primary_color')
+    ->label('Primary Brand Color')
+    ->tooltip(fn ($state) => "HEX: {$state}")
+    ->copyable()
+    ->copyMessage('Color code copied to clipboard')
+```
+</CodeGroup>
+
+### Default Values
+
+<CodeGroup>
+```php Fallback color
+ColorEntry::make('theme_color')
+    ->state(fn ($record) => $record->theme_color ?? '#6366F1')
+    ->copyable()
+```
+</CodeGroup>

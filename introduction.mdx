@@ -1,0 +1,109 @@
+---
+title: Introduction
+description: Build apps and admin panels fast with Filament - a powerful Laravel UI framework
+---
+
+<Note>
+  **Build apps & admin panels fast, for your bright ideas.**
+  
+  With a solid Laravel foundation and a polished UI, you can focus on what makes your product unique. Filament gives you UI components that you won't outgrow — a cohesive set of well-considered building blocks that adapt as your application grows in complexity.
+</Note>
+
+## What is Filament?
+
+**Filament is a Server-Driven UI (SDUI) framework for Laravel.** It allows you to define user interfaces entirely in PHP using structured configuration objects, rather than traditional templating. Built on top of Livewire, Alpine.js, and Tailwind CSS, Filament empowers you to build full-featured interfaces like admin panels, dashboards, and form-based apps, all without writing custom JavaScript or frontend code.
+
+<Tip>
+  **What is Server-Driven UI?**
+  
+  SDUI is a proven architecture used by companies like Meta, Airbnb, and Shopify. It moves control of the UI to the server, allowing for faster iteration, greater consistency, and centralized logic. Filament embraces this pattern for web development, letting you define interfaces declaratively using PHP classes that are rendered into HTML by the server.
+</Tip>
+
+Thousands of developers use Filament to add admin panels to their Laravel applications, but it goes far beyond that. You can use Filament to build custom dashboards, user portals, CRMs, or even full applications with multiple panels.
+
+## Core Capabilities
+
+<CardGroup cols={2}>
+  <Card title="Tables" icon="table">
+    Browse and filter large datasets with powerful columns, actions, and bulk operations.
+  </Card>
+  
+  <Card title="Forms" icon="file-input">
+    Build complex, reactive forms using a set of reusable, state-aware components.
+  </Card>
+  
+  <Card title="Infolists" icon="list">
+    Render read-only record views with structured layouts and custom formatting.
+  </Card>
+  
+  <Card title="Notifications" icon="bell">
+    Trigger in-app feedback for actions, errors, and system events with minimal setup.
+  </Card>
+  
+  <Card title="Dashboard Widgets" icon="chart-line">
+    Surface key metrics and trends using live, data-driven widgets tailored to each user.
+  </Card>
+  
+  <Card title="Action Modals" icon="window-maximize">
+    Handle confirmations and data entry with focused modal workflows tied to actions.
+  </Card>
+</CardGroup>
+
+## Filament Packages
+
+The core of Filament comprises several packages that work together:
+
+- **`filament/filament`** - The core package for building panels (e.g., admin panels). This requires all other packages since panels often use many of their features.
+- **`filament/tables`** - A data table builder that allows you to render an interactive table with filtering, sorting, pagination, and more.
+- **`filament/schemas`** - A package that allows you to build UIs using an array of "component" PHP objects as configuration.
+- **`filament/forms`** - A set of schema components for a large variety of form inputs (fields), complete with integrated validation.
+- **`filament/infolists`** - A set of schema components for rendering "description lists" with read-only information like text, icons, and images.
+- **`filament/actions`** - Action objects encapsulate the UI for a button, an interactive modal window, and the logic that should be executed.
+- **`filament/notifications`** - An easy way to send notifications to users in your app's UI.
+- **`filament/widgets`** - A set of dashboard "widgets" that can render anything, often statistical data.
+- **`filament/support`** - This package contains shared UI components and utilities used by all other packages.
+
+## Quick Links
+
+<CardGroup cols={3}>
+  <Card title="Get Started" icon="rocket" href="/installation">
+    Install Filament and set up your first admin panel
+  </Card>
+  
+  <Card title="Quick Tutorial" icon="bolt" href="/quickstart">
+    Build your first resource in minutes
+  </Card>
+  
+  <Card title="Upgrade Guide" icon="arrow-up" href="/upgrading">
+    Migrate from v3 to v4
+  </Card>
+</CardGroup>
+
+## Requirements
+
+Filament requires the following to run:
+
+- **PHP 8.2+**
+- **Laravel v11.28+**
+- **Tailwind CSS v4.1+** (when using custom themes)
+
+## Plugins
+
+Filament is designed to be highly extensible, allowing you to add your own UI components and features to the framework. These extensions can live inside your codebase if they're specific to your application, or be distributed as Composer packages if they're general-purpose. In the Filament ecosystem, these Composer packages are called "plugins", and hundreds are available from the community.
+
+<Warning>
+  Plugins not maintained by the Filament team are created and managed by independent authors. While these plugins can enhance your experience, Filament cannot guarantee their quality, security, compatibility, or maintenance. We recommend reviewing the plugin's code, documentation, and user feedback before installation.
+</Warning>
+
+You can browse an extensive list of official and community plugins on the [Filament website](https://filamentphp.com/plugins).
+
+## Testing
+
+The core packages in Filament undergo unit testing to ensure stability across releases. As a Filament user, you can write tests for applications built with the framework. Filament provides utilities for testing both functionality and UI components, compatible with either Pest or PHPUnit test suites.
+
+## Need Help?
+
+- **Bug reports**: [Submit a detailed issue](https://github.com/filamentphp/filament/issues/new?template=bug_report.yml)
+- **Questions**: [Start a new discussion](https://github.com/filamentphp/filament/discussions/new/choose)
+- **Discord**: [Join the community](https://filamentphp.com/discord)
+- **Security**: Review the [security policy](https://github.com/filamentphp/filament/blob/4.x/SECURITY.md)

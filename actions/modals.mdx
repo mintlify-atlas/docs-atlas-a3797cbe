@@ -1,0 +1,400 @@
+---
+title: Action Modals
+description: Use modals with Filament actions to collect user input, show confirmation dialogs, and create multi-step wizards.
+---
+
+## Introduction
+
+Actions can open modals before executing, allowing you to collect additional information from users or require confirmation for important operations. Modals can contain forms, wizards, custom content, and action buttons.
+
+## Confirmation modals
+
+The simplest modal is a confirmation dialog that asks users to verify their intent before executing a destructive action:
+
+```php
+use Filament\Actions\Action;
+
+Action::make('delete')
+    ->requiresConfirmation()
+    ->action(fn () => $this->post->delete())
+```
+
+<Note>
+Confirmation modals are not available when using `url()` instead of `action()`. If you need to redirect to a URL after confirmation, do so within the `action()` closure.
+</Note>
+
+### Customizing confirmation text
+
+You can customize the modal's heading, description, and submit button label:
+
+```php
+Action::make('delete')
+    ->requiresConfirmation()
+    ->modalHeading('Delete post')
+    ->modalDescription('Are you sure you\'d like to delete this post? This cannot be undone.')
+    ->modalSubmitActionLabel('Yes, delete it')
+    ->action(fn () => $this->post->delete())
+```
+
+## Form modals
+
+You can render a form inside a modal to collect data from users before the action executes:
+
+<Steps>
+
+### Define the form schema
+
+Use the `schema()` method to add form fields:
+
+```php
+use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+
+Action::make('updateAuthor')
+    ->schema([
+        Select::make('authorId')
+            ->label('Author')
+            ->options(User::query()->pluck('name', 'id'))
+            ->required(),
+        TextInput::make('reason')
+            ->label('Reason for change')
+            ->required(),
+    ])
+    ->action(function (array $data, Post $record): void {
+        $record->author()->associate($data['authorId']);
+        $record->update(['author_change_reason' => $data['reason']]);
+    })
+```
+
+### Access form data
+
+The submitted form data is available as the `$data` parameter:
+
+```php
+->action(function (array $data) {
+    // $data['authorId'] contains the selected author ID
+    // $data['reason'] contains the reason text
+})
+```
+
+### Fill the form with existing data
+
+Pre-populate form fields using `fillForm()`:
+
+```php
+Action::make('updateAuthor')
+    ->fillForm(fn (Post $record): array => [
+        'authorId' => $record->author->id,
+    ])
+    ->schema([
+        Select::make('authorId')
+            ->label('Author')
+            ->options(User::query()->pluck('name', 'id'))
+            ->required(),
+    ])
+    ->action(function (array $data, Post $record): void {
+        $record->author()->associate($data['authorId']);
+        $record->save();
+    })
+```
+
+</Steps>
+
+### Disabling form fields
+
+Make all form fields read-only using `disabledForm()`:
+
+```php
+Action::make('approvePost')
+    ->schema([
+        TextInput::make('title'),
+        Textarea::make('content'),
+    ])
+    ->disabledForm()
+    ->action(fn (Post $record) => $record->approve())
+```
+
+## Wizard modals
+
+Create multi-step workflows inside modals using wizards:
+
+```php
+use Filament\Forms\Components\MarkdownEditor;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Wizard\Step;
+
+Action::make('create')
+    ->steps([
+        Step::make('Name')
+            ->description('Give the category a unique name')
+            ->schema([
+                TextInput::make('name')->required(),
+                TextInput::make('slug')->required(),
+            ]),
+        Step::make('Description')
+            ->description('Add some extra details')
+            ->schema([
+                MarkdownEditor::make('description'),
+            ]),
+        Step::make('Visibility')
+            ->description('Control who can view it')
+            ->schema([
+                Toggle::make('is_visible')
+                    ->label('Visible to customers')
+                    ->default(true),
+            ]),
+    ])
+    ->action(function (array $data) {
+        Category::create($data);
+    })
+```
+
+### Allowing step navigation
+
+By default, users must complete each step in order. Allow free navigation with `skippableSteps()`:
+
+```php
+Action::make('create')
+    ->steps([...])
+    ->skippableSteps()
+```
+
+## Modal appearance
+
+<Steps>
+
+### Adding an icon
+
+Display an icon at the top of the modal:
+
+```php
+Action::make('delete')
+    ->requiresConfirmation()
+    ->modalIcon('heroicon-o-trash')
+    ->modalIconColor('danger')
+    ->action(fn () => $this->post->delete())
+```
+
+### Changing the width
+
+Adjust the modal width using Tailwind's max-width scale:
+
+```php
+use Filament\Support\Enums\Width;
+
+Action::make('updateAuthor')
+    ->schema([...])
+    ->modalWidth(Width::FiveExtraLarge)
+```
+
+### Using slide-overs
+
+Open a slide-over panel instead of a centered modal:
+
+```php
+Action::make('updateAuthor')
+    ->slideOver()
+    ->schema([...])
+```
+
+### Customizing alignment
+
+Change the content alignment within the modal:
+
+```php
+use Filament\Support\Enums\Alignment;
+
+Action::make('updateAuthor')
+    ->modalAlignment(Alignment::Center)
+    ->schema([...])
+```
+
+</Steps>
+
+## Custom modal content
+
+You can render custom Blade views inside your modals:
+
+```php
+Action::make('showDetails')
+    ->modalContent(view('filament.modals.post-details'))
+    ->modalContentFooter(view('filament.modals.post-footer'))
+```
+
+### Passing data to views
+
+Pass data to your custom views using a closure:
+
+```php
+Action::make('showDetails')
+    ->modalContent(fn (Post $record): View => view(
+        'filament.modals.post-details',
+        ['post' => $record],
+    ))
+```
+
+## Modal footer actions
+
+<Steps>
+
+### Customizing default buttons
+
+Modify the submit and cancel buttons:
+
+```php
+Action::make('help')
+    ->modalContent(view('actions.help'))
+    ->modalSubmitActionLabel('Got it')
+    ->modalCancelActionLabel('Close')
+```
+
+For more control, use a closure:
+
+```php
+Action::make('help')
+    ->modalCancelAction(fn (Action $action) => $action->label('Close')->color('gray'))
+```
+
+### Removing default buttons
+
+Remove the submit or cancel button:
+
+```php
+Action::make('help')
+    ->modalContent(view('actions.help'))
+    ->modalSubmitAction(false)
+```
+
+### Adding extra footer actions
+
+Add additional buttons to the modal footer:
+
+```php
+Action::make('create')
+    ->schema([...])
+    ->extraModalFooterActions(fn (Action $action): array => [
+        $action->makeModalSubmitAction('createAnother', arguments: ['another' => true]),
+    ])
+    ->action(function (array $data, array $arguments): void {
+        Category::create($data);
+        
+        if ($arguments['another'] ?? false) {
+            // Reset form and keep modal open
+        }
+    })
+```
+
+</Steps>
+
+## Nested actions
+
+You can open child action modals from parent actions:
+
+```php
+Action::make('edit')
+    ->schema([...])
+    ->extraModalFooterActions([
+        Action::make('delete')
+            ->requiresConfirmation()
+            ->action(fn () => $this->post->delete())
+            ->cancelParentActions(),
+    ])
+```
+
+<Note>
+Use `cancelParentActions()` to close parent modals when a child action completes. You can pass a specific parent action name to only cancel that action and its children.
+</Note>
+
+## Modal behavior
+
+### Closing behavior
+
+Control how users can close the modal:
+
+<CodeGroup>
+```php Disable click-away closing
+Action::make('updateAuthor')
+    ->closeModalByClickingAway(false)
+```
+
+```php Disable escape key closing
+Action::make('updateAuthor')
+    ->closeModalByEscaping(false)
+```
+
+```php Hide close button
+Action::make('updateAuthor')
+    ->modalCloseButton(false)
+```
+</CodeGroup>
+
+### Sticky header and footer
+
+Make the header and footer always visible:
+
+```php
+Action::make('edit')
+    ->slideOver()
+    ->stickyModalHeader()
+    ->stickyModalFooter()
+```
+
+### Disabling autofocus
+
+Prevent the modal from automatically focusing the first field:
+
+```php
+Action::make('updateAuthor')
+    ->modalAutofocus(false)
+```
+
+## Advanced techniques
+
+### Conditionally hiding modals
+
+Show or hide the modal based on conditions:
+
+```php
+Action::make('create')
+    ->modalHidden(fn () => $this->user->isAdmin())
+    ->action(fn () => $this->createPost())
+```
+
+### Executing code on modal open
+
+Run code when the modal opens:
+
+```php
+use Filament\Schemas\Schema;
+
+Action::make('create')
+    ->mountUsing(function (Schema $form) {
+        $form->fill(['status' => 'draft']);
+        
+        // Additional setup code
+    })
+```
+
+### Optimizing performance
+
+Tell Filament a modal exists to skip the existence check:
+
+```php
+Action::make('updateAuthor')
+    ->modal() // Skips the check
+    ->schema([...])
+```
+
+### Extra HTML attributes
+
+Add custom attributes to the modal window:
+
+```php
+Action::make('updateAuthor')
+    ->extraModalWindowAttributes([
+        'class' => 'update-author-modal',
+        'data-modal-type' => 'form',
+    ])
+```

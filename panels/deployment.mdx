@@ -1,0 +1,467 @@
+---
+title: Deployment
+description: Deploying Filament panels to production
+---
+
+## Introduction
+
+Deploying a Filament panel to production requires several steps to ensure optimal performance and security. This guide covers best practices for production deployments.
+
+## Pre-deployment checklist
+
+Before deploying, ensure you've completed these steps:
+
+<Steps>
+
+<Step title="Environment configuration">
+  Set `APP_ENV=production` and `APP_DEBUG=false` in your `.env` file.
+</Step>
+
+<Step title="Generate application key">
+  ```bash
+  php artisan key:generate
+  ```
+</Step>
+
+<Step title="Configure database">
+  Update database credentials in `.env` for your production database.
+</Step>
+
+<Step title="Run migrations">
+  ```bash
+  php artisan migrate --force
+  ```
+</Step>
+
+<Step title="Cache configuration">
+  ```bash
+  php artisan config:cache
+  php artisan route:cache
+  php artisan view:cache
+  ```
+</Step>
+
+<Step title="Cache Filament components">
+  ```bash
+  php artisan filament:cache-components
+  ```
+</Step>
+
+<Step title="Build assets">
+  ```bash
+  npm run build
+  ```
+</Step>
+
+</Steps>
+
+## Component caching
+
+Filament automatically caches discovered resources, pages, and widgets in production. This significantly improves performance.
+
+### Manual caching
+
+Cache components manually:
+
+```bash
+php artisan filament:cache-components
+```
+
+### Clearing the cache
+
+When you add or remove components, clear the cache:
+
+```bash
+php artisan filament:clear-cached-components
+```
+
+### Cache location
+
+Component cache is stored in `bootstrap/cache/filament/panels/{panel-id}.php`.
+
+## Asset compilation
+
+Always compile assets for production:
+
+```bash
+npm run build
+```
+
+This:
+- Minifies CSS and JavaScript
+- Optimizes for production
+- Removes source maps
+- Applies PostCSS transformations
+
+### Custom themes
+
+If using custom themes with Vite:
+
+```bash
+npm run build
+```
+
+Ensure the built assets are committed or deployed with your application.
+
+## Environment variables
+
+Key environment variables for production:
+
+```env
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://your-domain.com
+
+# Session and cache
+SESSION_DRIVER=redis
+CACHE_DRIVER=redis
+QUEUE_CONNECTION=redis
+
+# Database
+DB_CONNECTION=mysql
+DB_HOST=your-db-host
+DB_DATABASE=your-database
+DB_USERNAME=your-username
+DB_PASSWORD=your-password
+
+# Mail
+MAIL_MAILER=smtp
+MAIL_HOST=your-smtp-host
+MAIL_PORT=587
+MAIL_ENCRYPTION=tls
+```
+
+## Performance optimization
+
+### Enable OPcache
+
+Ensure OPcache is enabled in your PHP configuration:
+
+```ini
+opcache.enable=1
+opcache.memory_consumption=256
+opcache.interned_strings_buffer=16
+opcache.max_accelerated_files=20000
+opcache.validate_timestamps=0
+```
+
+### Use Redis for caching
+
+```env
+CACHE_DRIVER=redis
+SESSION_DRIVER=redis
+```
+
+Install Redis PHP extension:
+
+```bash
+pecl install redis
+```
+
+### Database optimization
+
+Add indexes to frequently queried columns:
+
+```php
+Schema::table('users', function (Blueprint $table) {
+    $table->index('email');
+    $table->index('created_at');
+});
+```
+
+### Enable SPA mode
+
+For faster navigation:
+
+```php
+$panel->spa()
+```
+
+### Queue long-running tasks
+
+Move heavy operations to queues:
+
+```bash
+php artisan queue:work --daemon
+```
+
+Use Supervisor to keep queue workers running.
+
+## Security considerations
+
+### HTTPS
+
+Always use HTTPS in production. Force HTTPS in your web server configuration.
+
+### Rate limiting
+
+Add rate limiting to prevent abuse:
+
+```php
+$panel->middleware([
+    'throttle:60,1',
+])
+```
+
+### CSRF protection
+
+Ensure CSRF protection is enabled (Laravel default).
+
+### Content Security Policy
+
+Add CSP headers to prevent XSS attacks:
+
+```php
+$panel->renderHook(
+    PanelsRenderHook::HEAD_START,
+    fn () => '<meta http-equiv="Content-Security-Policy" content="default-src \'self\';">'
+)
+```
+
+### Disable registration
+
+Disable public registration in production if not needed:
+
+```php
+$panel->registration(false)
+```
+
+### Strong passwords
+
+Enforce strong password requirements:
+
+```php
+use Illuminate\Validation\Rules\Password;
+
+Password::defaults(function () {
+    return Password::min(8)
+        ->mixedCase()
+        ->numbers()
+        ->symbols()
+        ->uncompromised();
+});
+```
+
+## Database setup
+
+### Run migrations
+
+```bash
+php artisan migrate --force
+```
+
+The `--force` flag is required in production.
+
+### Seed initial data
+
+If needed, seed initial data:
+
+```bash
+php artisan db:seed --force
+```
+
+### Backup strategy
+
+Implement regular database backups:
+
+```bash
+php artisan backup:run
+```
+
+Use packages like `spatie/laravel-backup`.
+
+## File permissions
+
+Set correct file permissions:
+
+```bash
+chmod -R 755 /path/to/your/project
+chmod -R 775 storage
+chmod -R 775 bootstrap/cache
+```
+
+Ensure your web server user owns the files:
+
+```bash
+chown -R www-data:www-data /path/to/your/project
+```
+
+## Web server configuration
+
+### Nginx
+
+Example Nginx configuration:
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+    root /var/www/your-project/public;
+
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-Content-Type-Options "nosniff";
+
+    index index.php;
+
+    charset utf-8;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+
+    error_page 404 /index.php;
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}
+```
+
+### Apache
+
+Ensure `mod_rewrite` is enabled and `.htaccess` is configured:
+
+```apache
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+```
+
+## Deployment automation
+
+### Using Laravel Forge
+
+Laravel Forge provides one-click deployments:
+
+1. Connect your Git repository
+2. Configure deployment script:
+
+```bash
+cd /home/forge/your-site.com
+git pull origin main
+composer install --no-dev --optimize-autoloader
+npm ci
+npm run build
+php artisan migrate --force
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan filament:cache-components
+php artisan queue:restart
+```
+
+### Using Deployer
+
+Example `deploy.php` for Deployer:
+
+```php
+import('recipe/laravel.php');
+
+set('repository', 'git@github.com:your/repository.git');
+set('keep_releases', 3);
+
+host('production')
+    ->set('remote_user', 'forge')
+    ->set('deploy_path', '/home/forge/your-site.com');
+
+task('npm:install', function () {
+    run('cd {{release_path}} && npm ci');
+});
+
+task('npm:build', function () {
+    run('cd {{release_path}} && npm run build');
+});
+
+task('filament:cache', function () {
+    run('cd {{release_path}} && php artisan filament:cache-components');
+});
+
+after('deploy:vendors', 'npm:install');
+after('npm:install', 'npm:build');
+after('artisan:migrate', 'filament:cache');
+```
+
+## Monitoring
+
+### Error tracking
+
+Use error tracking services:
+
+```bash
+composer require sentry/sentry-laravel
+```
+
+Configure in `.env`:
+
+```env
+SENTRY_LARAVEL_DSN=your-sentry-dsn
+```
+
+### Performance monitoring
+
+Monitor application performance:
+
+- Laravel Telescope (development)
+- New Relic (production)
+- Blackfire (profiling)
+
+### Uptime monitoring
+
+Use services like:
+- Pingdom
+- UptimeRobot  
+- Oh Dear
+
+## Zero-downtime deployment
+
+For zero-downtime deployments:
+
+1. Use a deployment tool (Forge, Envoyer, Deployer)
+2. Keep queue workers running
+3. Use `php artisan down` only when necessary
+4. Enable maintenance mode with secret bypass:
+
+```bash
+php artisan down --secret="your-secret-token"
+```
+
+Access your site during maintenance:
+```
+https://your-site.com/your-secret-token
+```
+
+## Post-deployment
+
+After deployment:
+
+<Steps>
+
+<Step title="Verify installation">
+  Check that the site loads correctly and all features work.
+</Step>
+
+<Step title="Test authentication">
+  Verify login, registration, and password reset work.
+</Step>
+
+<Step title="Check logs">
+  Review `storage/logs/laravel.log` for errors.
+</Step>
+
+<Step title="Monitor performance">
+  Use monitoring tools to track performance metrics.
+</Step>
+
+</Steps>

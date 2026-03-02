@@ -1,0 +1,314 @@
+---
+title: Overview
+description: Introduction to Filament's powerful table builder with columns, filters, actions, and pagination.
+---
+
+## Introduction
+
+Filament's Table Builder provides a complete solution for displaying, filtering, and managing data in your Laravel applications. Built on top of Eloquent, it offers a powerful PHP-based API with extensive customization options while maintaining simplicity.
+
+Tables are composed of several key components:
+- **[Columns](/tables/columns)** - Display data in various formats
+- **[Filters](/tables/filters)** - Allow users to scope and search data
+- **[Actions](/tables/actions)** - Add interactive buttons and bulk operations
+- **Pagination** - Handle large datasets efficiently
+
+## Getting started
+
+Define a table using the `table()` method, which returns a `Table` instance configured with columns, filters, and actions:
+
+```php
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->columns([
+            TextColumn::make('title')
+                ->searchable()
+                ->sortable(),
+            TextColumn::make('author.name')
+                ->label('Author'),
+            IconColumn::make('is_featured')
+                ->boolean(),
+            TextColumn::make('created_at')
+                ->dateTime()
+                ->sortable(),
+        ])
+        ->filters([
+            // Add filters
+        ])
+        ->recordActions([
+            // Add row actions
+        ]);
+}
+```
+
+## Defining columns
+
+Columns determine what data appears in each row of your table. Filament includes many prebuilt column types:
+
+<CardGroup cols={2}>
+  <Card title="Text Column" icon="text" href="/tables/columns#text-column">
+    Display text content with formatting, badges, and icons
+  </Card>
+  <Card title="Icon Column" icon="star" href="/tables/columns#icon-column">
+    Show icons or boolean states with colors
+  </Card>
+  <Card title="Image Column" icon="image" href="/tables/columns#image-column">
+    Display images with circular, square, or stacked layouts
+  </Card>
+  <Card title="Color Column" icon="palette" href="/tables/columns#color-column">
+    Preview color values as swatches
+  </Card>
+</CardGroup>
+
+### Column basics
+
+Create columns using the static `make()` method with the attribute name:
+
+```php
+use Filament\Tables\Columns\TextColumn;
+
+TextColumn::make('title')
+```
+
+### Accessing relationships
+
+Use dot notation to display data from Eloquent relationships:
+
+```php
+TextColumn::make('author.name')
+TextColumn::make('category.parent.name')
+```
+
+Filament automatically eager-loads these relationships for optimal performance.
+
+### Making columns sortable
+
+Enable sorting by clicking column headers:
+
+```php
+TextColumn::make('title')
+    ->sortable()
+```
+
+### Making columns searchable
+
+Add a search field to filter by column content:
+
+```php
+TextColumn::make('title')
+    ->searchable()
+```
+
+You can make multiple columns searchable - the search will match any of them.
+
+## Pagination
+
+Tables are paginated by default with options for 5, 10, 25, and 50 records per page.
+
+### Customizing pagination options
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->paginated([10, 25, 50, 100, 'all']);
+}
+```
+
+### Setting default page size
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->defaultPaginationPageOption(25);
+}
+```
+
+### Using simple pagination
+
+```php
+use Filament\Tables\Enums\PaginationMode;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->paginationMode(PaginationMode::Simple);
+}
+```
+
+### Using cursor pagination
+
+```php
+use Filament\Tables\Enums\PaginationMode;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->paginationMode(PaginationMode::Cursor);
+}
+```
+
+### Disabling pagination
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->paginated(false);
+}
+```
+
+## Clickable rows
+
+Make entire rows clickable using the `recordUrl()` method:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->recordUrl(
+            fn (Model $record): string => route('posts.edit', ['record' => $record]),
+        );
+}
+```
+
+Open URLs in a new tab:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->openRecordUrlInNewTab();
+}
+```
+
+## Reordering records
+
+Allow drag-and-drop reordering with a sort column:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->reorderable('sort');
+}
+```
+
+The `sort` column stores the order. Users can toggle reordering mode with a button.
+
+### Descending order
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->reorderable('sort', direction: 'desc');
+}
+```
+
+## Styling table rows
+
+### Striped rows
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->striped();
+}
+```
+
+### Conditional row classes
+
+```php
+use App\Models\Post;
+
+public function table(Table $table): Table
+{
+    return $table
+        ->recordClasses(fn (Post $record) => match ($record->status) {
+            'draft' => 'draft-post-table-row',
+            'reviewing' => 'reviewing-post-table-row',
+            'published' => 'published-post-table-row',
+            default => null,
+        });
+}
+```
+
+## Customizing the table header
+
+Add a heading and description:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->heading('Clients')
+        ->description('Manage your clients here.')
+        ->columns([
+            // ...
+        ]);
+}
+```
+
+## Polling content
+
+Automatically refresh table data at intervals:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->poll('10s');
+}
+```
+
+## Deferred loading
+
+Load table data asynchronously for better initial page performance:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->deferLoading();
+}
+```
+
+## Global settings
+
+Configure default behavior for all tables in a service provider:
+
+```php
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Table;
+
+Table::configureUsing(function (Table $table): void {
+    $table
+        ->reorderableColumns()
+        ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+        ->paginationPageOptions([10, 25, 50]);
+});
+```
+
+## Next steps
+
+<CardGroup cols={3}>
+  <Card title="Columns" icon="table-columns" href="/tables/columns">
+    Learn about all available column types and customization options
+  </Card>
+  <Card title="Filters" icon="filter" href="/tables/filters">
+    Add powerful filtering capabilities to your tables
+  </Card>
+  <Card title="Actions" icon="bolt" href="/tables/actions">
+    Implement row actions, bulk actions, and header actions
+  </Card>
+</CardGroup>

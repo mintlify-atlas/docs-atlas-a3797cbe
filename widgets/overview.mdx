@@ -1,0 +1,458 @@
+---
+title: Widgets Overview
+---
+
+## Introduction
+
+Filament allows you to build dynamic dashboards comprised of "widgets". Each widget is a component that displays data in a specific way, helping you create rich, interactive admin panels and information displays.
+
+Widgets are Livewire components that can display stats, charts, tables, or any custom content you need. They're commonly used on dashboard pages, but can also be integrated into resource pages and custom layouts.
+
+## Widget Types
+
+Filament provides several built-in widget types:
+
+- **Stats Overview Widgets**: Display key metrics and statistics with optional charts
+- **Chart Widgets**: Render interactive charts using Chart.js
+- **Table Widgets**: Display data in tabular format
+- **Custom Widgets**: Build completely custom widgets with your own views
+
+## Creating a Widget
+
+Use the `make:filament-widget` Artisan command to create a widget:
+
+```bash
+php artisan make:filament-widget CustomerOverview
+```
+
+The command will prompt you to select a widget type:
+- Custom - A blank widget you can customize
+- Chart - A chart widget
+- Stats overview - A stats overview widget
+- Table - A table widget
+
+This creates a widget class in `app/Filament/Widgets/` and registers it automatically if you're using widget discovery.
+
+## Dashboard Widgets
+
+By default, widgets are displayed on the main dashboard page. Filament automatically discovers widgets in the `app/Filament/Widgets` directory.
+
+```php
+namespace App\Filament\Widgets;
+
+use Filament\Widgets\Widget;
+
+class CustomerOverview extends Widget
+{
+    protected static string $view = 'filament.widgets.customer-overview';
+}
+```
+
+### Widget Discovery
+
+To enable automatic widget discovery, configure it in your panel provider:
+
+```php
+use Filament\Panel;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->discoverWidgets(
+            in: app_path('Filament/Widgets'),
+            for: 'App\\Filament\\Widgets'
+        );
+}
+```
+
+### Manual Widget Registration
+
+You can also manually register widgets:
+
+```php
+use App\Filament\Widgets\CustomerOverview;
+use Filament\Panel;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->widgets([
+            CustomerOverview::class,
+        ]);
+}
+```
+
+## Disabling Default Widgets
+
+Filament includes two default widgets on the dashboard. To disable them:
+
+```php
+use Filament\Panel;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->widgets([]);
+}
+```
+
+## Ordering Widgets
+
+Control the order in which widgets appear using the `$sort` property:
+
+```php
+protected static ?int $sort = 2;
+```
+
+Lower numbers appear first. Widgets without a sort value appear after sorted widgets.
+
+## Widget Width and Layout
+
+Control how much space a widget occupies using the `$columnSpan` property:
+
+```php
+// Span 2 columns
+protected int | string | array $columnSpan = 2;
+
+// Span full width
+protected int | string | array $columnSpan = 'full';
+```
+
+### Responsive Widget Widths
+
+Make widget widths responsive using an array:
+
+```php
+protected int | string | array $columnSpan = [
+    'md' => 2,
+    'xl' => 3,
+];
+```
+
+## Customizing the Widgets Grid
+
+By default, widgets are displayed in a 2-column grid. To customize this, you need to create a custom dashboard page.
+
+### Creating a Custom Dashboard
+
+Create a new dashboard page:
+
+```php
+namespace App\Filament\Pages;
+
+use Filament\Pages\Dashboard as BaseDashboard;
+
+class Dashboard extends BaseDashboard
+{
+    public function getColumns(): int | array
+    {
+        return 3; // 3 column grid
+    }
+}
+```
+
+Register it in your panel configuration:
+
+```php
+use App\Filament\Pages\Dashboard;
+use Filament\Panel;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->pages([
+            Dashboard::class,
+        ]);
+}
+```
+
+### Responsive Widget Grids
+
+Make the grid responsive:
+
+```php
+public function getColumns(): int | array
+{
+    return [
+        'md' => 2,
+        'xl' => 4,
+    ];
+}
+```
+
+## Multiple Dashboards
+
+Create multiple dashboard pages for different purposes:
+
+```php
+namespace App\Filament\Pages;
+
+use Filament\Pages\Dashboard as BaseDashboard;
+
+class AnalyticsDashboard extends BaseDashboard
+{
+    protected static string $routePath = 'analytics';
+    
+    protected static ?string $title = 'Analytics Dashboard';
+    
+    protected static ?int $navigationSort = 10;
+}
+```
+
+## Conditionally Hiding Widgets
+
+Hide widgets based on user permissions or other conditions:
+
+```php
+public static function canView(): bool
+{
+    return auth()->user()->isAdmin();
+}
+```
+
+## Widget Polling
+
+Many widgets support live polling to automatically refresh data:
+
+```php
+// Refresh every 10 seconds
+protected ?string $pollingInterval = '10s';
+
+// Disable polling
+protected ?string $pollingInterval = null;
+```
+
+## Lazy Loading
+
+By default, widgets are lazy-loaded (only rendered when visible):
+
+```php
+// Disable lazy loading
+protected static bool $isLazy = false;
+```
+
+This is useful for widgets that should always be loaded, even if initially off-screen.
+
+## Filtering Widget Data
+
+You can add filters to your dashboard that affect all widgets.
+
+### Using a Filter Form
+
+Add filters using the `HasFiltersForm` trait:
+
+```php
+use Filament\Forms\Components\DatePicker;
+use Filament\Pages\Dashboard as BaseDashboard;
+use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
+use Filament\Schemas\Schema;
+
+class Dashboard extends BaseDashboard
+{
+    use HasFiltersForm;
+
+    public function filtersForm(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                DatePicker::make('startDate'),
+                DatePicker::make('endDate'),
+            ]);
+    }
+}
+```
+
+### Using a Filter Action
+
+For a cleaner UI, use a filter action modal:
+
+```php
+use Filament\Forms\Components\DatePicker;
+use Filament\Pages\Dashboard as BaseDashboard;
+use Filament\Pages\Dashboard\Actions\FilterAction;
+use Filament\Pages\Dashboard\Concerns\HasFiltersAction;
+
+class Dashboard extends BaseDashboard
+{
+    use HasFiltersAction;
+    
+    protected function getHeaderActions(): array
+    {
+        return [
+            FilterAction::make()
+                ->schema([
+                    DatePicker::make('startDate'),
+                    DatePicker::make('endDate'),
+                ]),
+        ];
+    }
+}
+```
+
+### Accessing Filters in Widgets
+
+Use the `InteractsWithPageFilters` trait to access filter data:
+
+```php
+use Filament\Widgets\StatsOverviewWidget;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
+
+class RevenueOverview extends StatsOverviewWidget
+{
+    use InteractsWithPageFilters;
+
+    public function getStats(): array
+    {
+        $startDate = $this->pageFilters['startDate'] ?? null;
+        $endDate = $this->pageFilters['endDate'] ?? null;
+
+        // Use filters to query data
+        return [
+            // ...
+        ];
+    }
+}
+```
+
+### Persisting Filters
+
+By default, filters persist in the user's session. To disable:
+
+```php
+protected bool $persistsFiltersInSession = false;
+```
+
+## Table Widgets
+
+Table widgets display data in tabular format using Filament's table builder:
+
+```bash
+php artisan make:filament-widget LatestOrders --table
+```
+
+Configure the table in your widget:
+
+```php
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Filament\Widgets\TableWidget;
+
+class LatestOrders extends TableWidget
+{
+    public function table(Table $table): Table
+    {
+        return $table
+            ->query(
+                Order::query()->latest()->limit(10)
+            )
+            ->columns([
+                TextColumn::make('customer.name'),
+                TextColumn::make('total')
+                    ->money('USD'),
+                TextColumn::make('status')
+                    ->badge(),
+            ]);
+    }
+}
+```
+
+## Custom Widgets
+
+Create completely custom widgets for unique requirements:
+
+```bash
+php artisan make:filament-widget ProductHighlights
+```
+
+This creates a widget class and view:
+
+```php
+namespace App\Filament\Widgets;
+
+use Filament\Widgets\Widget;
+
+class ProductHighlights extends Widget
+{
+    protected static string $view = 'filament.widgets.product-highlights';
+    
+    public function getProducts(): Collection
+    {
+        return Product::featured()->get();
+    }
+}
+```
+
+In your view:
+
+```blade
+<x-filament-widgets::widget>
+    <x-filament::section>
+        <div class="grid gap-4 md:grid-cols-2">
+            @foreach ($this->getProducts() as $product)
+                <div class="rounded-lg border p-4">
+                    <h3 class="font-bold">{{ $product->name }}</h3>
+                    <p class="text-sm text-gray-600">{{ $product->description }}</p>
+                </div>
+            @endforeach
+        </div>
+    </x-filament::section>
+</x-filament-widgets::widget>
+```
+
+## Using Widgets Outside Dashboards
+
+Widgets can be used on resource pages and custom pages:
+
+```php
+use App\Filament\Widgets\CustomerStats;
+
+class CustomerResource extends Resource
+{
+    public static function getWidgets(): array
+    {
+        return [
+            CustomerStats::class,
+        ];
+    }
+}
+```
+
+## Widget Headings and Descriptions
+
+Add headings and descriptions to widgets:
+
+```php
+protected ?string $heading = 'Revenue Overview';
+
+protected ?string $description = 'Last 12 months of revenue data';
+```
+
+Or use methods for dynamic values:
+
+```php
+protected function getHeading(): ?string
+{
+    return 'Revenue for ' . now()->format('F Y');
+}
+
+protected function getDescription(): ?string
+{
+    return 'Updated ' . now()->diffForHumans();
+}
+```
+
+## Best Practices
+
+1. **Keep Widgets Focused**: Each widget should display one type of information clearly
+2. **Use Appropriate Types**: Choose stats for metrics, charts for trends, tables for detailed data
+3. **Consider Performance**: Use caching for expensive queries, especially with polling enabled
+4. **Responsive Design**: Test widgets on different screen sizes using responsive column spans
+5. **Lazy Loading**: Keep lazy loading enabled for widgets below the fold
+6. **Filter Consistency**: When using dashboard filters, ensure all widgets handle them appropriately
+7. **Sort Logically**: Place most important widgets at the top using the `$sort` property
+
+## Next Steps
+
+- Learn about [Chart Widgets](/widgets/charts) to visualize data
+- Explore [Stats Overview Widgets](/widgets/stats) to display key metrics
+- Understand [Tables](/tables) for detailed data display

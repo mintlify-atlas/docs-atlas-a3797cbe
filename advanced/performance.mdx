@@ -1,0 +1,524 @@
+---
+title: Performance Optimization
+description: Learn how to optimize Filament applications for better performance
+---
+
+## Introduction
+
+Filament applications can handle large datasets and complex UIs efficiently when properly optimized. This guide covers various techniques to improve performance at the database, application, and frontend levels.
+
+## Database optimization
+
+### Eager loading relationships
+
+Prevent N+1 query problems by eager loading relationships in your resources:
+
+```php
+use Illuminate\Database\Eloquent\Builder;
+
+public static function getEloquentQuery(): Builder
+{
+    return parent::getEloquentQuery()
+        ->with(['author', 'category', 'tags']);
+}
+```
+
+For nested relationships:
+
+```php
+public static function getEloquentQuery(): Builder
+{
+    return parent::getEloquentQuery()
+        ->with([
+            'author.profile',
+            'comments.user',
+            'category.parent',
+        ]);
+}
+```
+
+### Counting relationships efficiently
+
+Use `withCount()` instead of loading full relationships when you only need counts:
+
+```php
+public static function getEloquentQuery(): Builder
+{
+    return parent::getEloquentQuery()
+        ->withCount(['comments', 'likes', 'views']);
+}
+```
+
+In your table:
+
+```php
+TextColumn::make('comments_count')
+    ->label('Comments')
+    ->sortable()
+```
+
+### Selective column loading
+
+Load only the columns you need:
+
+```php
+public static function getEloquentQuery(): Builder
+{
+    return parent::getEloquentQuery()
+        ->select([
+            'id',
+            'title',
+            'author_id',
+            'published_at',
+            'created_at',
+        ])
+        ->with('author:id,name');
+}
+```
+
+### Database indexing
+
+Add indexes to frequently queried and sorted columns:
+
+```php
+Schema::table('posts', function (Blueprint $table) {
+    $table->index('published_at');
+    $table->index('author_id');
+    $table->index(['category_id', 'published_at']);
+    $table->fullText(['title', 'content']);
+});
+```
+
+### Query optimization for filters
+
+Optimize filter queries:
+
+```php
+use Filament\Tables\Filters\SelectFilter;
+
+SelectFilter::make('category')
+    ->relationship('category', 'name')
+    ->preload() // Loads options once instead of on-demand
+    ->searchable()
+    ->multiple()
+    ->query(function (Builder $query, array $data): Builder {
+        return $query->when(
+            filled($data['values']),
+            fn (Builder $query) => $query->whereIn('category_id', $data['values'])
+        );
+    })
+```
+
+## Table performance
+
+### Deferring table loading
+
+Defer table rendering to improve initial page load:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->deferLoading()
+        ->columns([/* ... */]);
+}
+```
+
+### Pagination optimization
+
+Use appropriate pagination settings:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->defaultPaginationPageOption(25)
+        ->paginationPageOptions([10, 25, 50, 100])
+        ->extremePaginationLinks() // Shows first and last page links
+        ->columns([/* ... */]);
+}
+```
+
+For very large datasets, use simple pagination:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->simplePagination()
+        ->columns([/* ... */]);
+}
+```
+
+### Lazy loading columns
+
+Lazy load expensive column calculations:
+
+```php
+TextColumn::make('statistics')
+    ->state(function (Model $record): string {
+        // This is only calculated when the column is visible
+        return cache()->remember(
+            "post.{$record->id}.statistics",
+            now()->addHours(1),
+            fn () => $this->calculateComplexStatistics($record)
+        );
+    })
+```
+
+### Disable unnecessary features
+
+Disable features you don't need:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->selectCurrentPageOnly() // Only select records on current page
+        ->searchOnBlur() // Search on blur instead of keystroke
+        ->striped(false) // Disable striping for slight performance gain
+        ->columns([/* ... */]);
+}
+```
+
+## Caching strategies
+
+### Caching select options
+
+Cache expensive select option queries:
+
+```php
+use Illuminate\Support\Facades\Cache;
+
+Select::make('category_id')
+    ->options(function (): array {
+        return Cache::remember(
+            'category-options',
+            now()->addHours(24),
+            fn () => Category::pluck('name', 'id')->toArray()
+        );
+    })
+    ->searchable()
+```
+
+### Caching dashboard widgets
+
+Cache widget data for dashboards:
+
+```php
+protected function getStats(): array
+{
+    return Cache::remember(
+        'dashboard-stats',
+        now()->addMinutes(5),
+        function (): array {
+            return [
+                Stat::make('Total Users', User::count())
+                    ->description('32k increase')
+                    ->descriptionIcon('heroicon-m-arrow-trending-up')
+                    ->color('success'),
+
+                Stat::make('Revenue', number_format(Order::sum('total') / 100, 2))
+                    ->description('7% increase')
+                    ->descriptionIcon('heroicon-m-arrow-trending-up')
+                    ->color('success'),
+            ];
+        }
+    );
+}
+```
+
+### Invalidating caches
+
+Invalidate caches when data changes:
+
+```php
+protected function afterSave(): void
+{
+    Cache::forget('category-options');
+    Cache::tags(['posts', "post.{$this->record->id}"])->flush();
+}
+```
+
+## Asset optimization
+
+### Preloading relationships in forms
+
+Preload select options to reduce queries:
+
+```php
+Select::make('author_id')
+    ->relationship('author', 'name')
+    ->preload() // Loads all options immediately
+    ->searchable()
+```
+
+Or use `getOptionLabelFromRecordUsing()` to avoid extra queries:
+
+```php
+Select::make('author_id')
+    ->relationship(
+        name: 'author',
+        titleAttribute: 'name',
+        modifyQueryUsing: fn (Builder $query) => $query->select(['id', 'name'])
+    )
+    ->searchable()
+    ->preload()
+```
+
+### Optimizing file uploads
+
+Optimize image uploads with automatic resizing:
+
+```php
+FileUpload::make('featured_image')
+    ->image()
+    ->imageResizeMode('cover')
+    ->imageCropAspectRatio('16:9')
+    ->imageResizeTargetWidth(1920)
+    ->imageResizeTargetHeight(1080)
+    ->imagePreviewHeight(250)
+    ->optimize('webp') // Convert to WebP format
+    ->maxSize(2048) // 2MB limit
+```
+
+## Livewire optimization
+
+### Reducing Livewire updates
+
+Use `lazy()` for heavy calculations:
+
+```php
+TextInput::make('title')
+    ->lazy() // Only updates on blur, not every keystroke
+    ->debounce(500) // Wait 500ms after typing stops
+```
+
+### Polling optimization
+
+Optimize polling intervals:
+
+```php
+protected function getHeaderWidgets(): array
+{
+    return [
+        RealtimeStatsWidget::class,
+    ];
+}
+
+// In the widget:
+protected static ?string $pollingInterval = '30s'; // Poll every 30 seconds instead of default 2s
+```
+
+### Offline support
+
+Handle offline states gracefully:
+
+```php
+public function table(Table $table): Table
+{
+    return $table
+        ->poll('30s')
+        ->columns([/* ... */]);
+}
+```
+
+## Query optimization
+
+### Using chunking for bulk operations
+
+Process large datasets in chunks:
+
+```php
+use Illuminate\Support\Facades\DB;
+
+BulkAction::make('process')
+    ->action(function (Collection $records): void {
+        DB::transaction(function () use ($records) {
+            $records->chunk(100)->each(function (Collection $chunk): void {
+                // Process 100 records at a time
+                $chunk->each->process();
+            });
+        });
+    })
+```
+
+### Lazy collections for memory efficiency
+
+Use lazy collections for large datasets:
+
+```php
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\LazyCollection;
+
+Action::make('export')
+    ->action(function (): void {
+        Post::query()
+            ->cursor() // Returns a lazy collection
+            ->each(function (Post $post): void {
+                // Process one record at a time, memory-efficient
+                $this->exportRecord($post);
+            });
+    })
+```
+
+### Optimizing search queries
+
+Use full-text search for better performance:
+
+```php
+protected function applySearchToTableQuery(Builder $query): Builder
+{
+    $search = $this->tableSearch;
+
+    if (filled($search)) {
+        $query->whereFullText(['title', 'content'], $search);
+    }
+
+    return $query;
+}
+```
+
+## Advanced techniques
+
+### Using queue workers
+
+Offload heavy operations to queues:
+
+```php
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+
+Action::make('process')
+    ->action(function (Model $record): void {
+        ProcessPostJob::dispatch($record);
+
+        Notification::make()
+            ->title('Processing started')
+            ->success()
+            ->send();
+    })
+```
+
+### Database connection optimization
+
+Use read/write connections:
+
+```php
+// config/database.php
+'mysql' => [
+    'read' => [
+        'host' => ['192.168.1.1'],
+    ],
+    'write' => [
+        'host' => ['192.168.1.2'],
+    ],
+    'sticky' => true,
+    // ... other config
+],
+```
+
+### Horizon for queue monitoring
+
+Monitor queue performance with Laravel Horizon:
+
+```bash
+composer require laravel/horizon
+php artisan horizon:install
+php artisan horizon
+```
+
+### Using Redis for caching
+
+Configure Redis for better cache performance:
+
+```php
+// config/cache.php
+'default' => env('CACHE_DRIVER', 'redis'),
+
+'stores' => [
+    'redis' => [
+        'driver' => 'redis',
+        'connection' => 'cache',
+        'lock_connection' => 'default',
+    ],
+],
+```
+
+## Monitoring performance
+
+### Using Laravel Telescope
+
+Monitor application performance:
+
+```bash
+composer require laravel/telescope --dev
+php artisan telescope:install
+php artisan migrate
+```
+
+### Query logging
+
+Log slow queries for optimization:
+
+```php
+// In a service provider
+use Illuminate\Support\Facades\DB;
+
+DB::listen(function ($query) {
+    if ($query->time > 1000) { // Queries taking more than 1 second
+        Log::warning('Slow query detected', [
+            'sql' => $query->sql,
+            'bindings' => $query->bindings,
+            'time' => $query->time,
+        ]);
+    }
+});
+```
+
+### Performance profiling
+
+Use Clockwork for profiling:
+
+```bash
+composer require itsgoingd/clockwork --dev
+```
+
+## Best practices
+
+- Always eager load relationships to prevent N+1 queries
+- Use database indexing on frequently queried columns
+- Cache expensive operations and calculations
+- Use pagination for large datasets
+- Implement lazy loading for heavy columns
+- Use `withCount()` instead of loading full relationships
+- Optimize file uploads with compression and resizing
+- Use queues for long-running operations
+- Monitor slow queries and optimize them
+- Use Redis for caching in production
+- Implement full-text search for large text searches
+- Use `select()` to load only needed columns
+- Process bulk operations in chunks
+- Use lazy collections for memory efficiency
+- Defer table loading when appropriate
+- Minimize Livewire polling intervals
+- Use database transactions for consistency
+- Profile your application regularly
+
+## Performance checklist
+
+- [ ] Database indexes added for sortable and searchable columns
+- [ ] Relationships eager loaded in `getEloquentQuery()`
+- [ ] Using `withCount()` for relationship counts
+- [ ] Select options cached where appropriate
+- [ ] Dashboard widgets cached with appropriate TTL
+- [ ] File uploads optimized with resizing and format conversion
+- [ ] Pagination configured appropriately
+- [ ] Heavy operations moved to queues
+- [ ] Redis configured for caching
+- [ ] Slow query logging enabled
+- [ ] Full-text search implemented for large text fields
+- [ ] Table loading deferred when appropriate
+- [ ] Livewire polling optimized
+- [ ] Telescope or Clockwork installed for monitoring
+- [ ] Database read/write replicas configured (if applicable)

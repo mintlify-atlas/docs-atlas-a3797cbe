@@ -1,0 +1,354 @@
+---
+title: Forms Overview
+description: Introduction to Filament's powerful form builder package
+---
+
+## Introduction
+
+Filament's Forms package allows you to easily build dynamic, reactive forms in your Laravel applications. It's used throughout Filament's ecosystem - in panel resources, action modals, table filters, and more. The form builder provides a fluent API for creating fields, organizing layouts, and handling validation with both frontend and backend support.
+
+Learning how to build forms is essential to using Filament effectively. This guide will walk you through the fundamentals of the form builder.
+
+## How forms work
+
+Forms in Filament are built using a schema-based approach. A schema is an array of components that define the structure and behavior of your form. These components include:
+
+- **Fields** - Input components for capturing data (text inputs, selects, date pickers, etc.)
+- **Layout components** - Components for organizing fields (sections, grids, tabs, etc.)
+- **Actions** - Buttons and interactive elements that can be added to forms
+
+### Creating form fields
+
+Form field classes are found in the `Filament\Forms\Components` namespace. Fields are created using the static `make()` method, passing the field's name:
+
+```php
+use Filament\Forms\Components\TextInput;
+
+TextInput::make('name')
+```
+
+The field name typically corresponds to a database column or model attribute. You can use dot notation to bind fields to nested array keys:
+
+```php
+TextInput::make('settings.theme')
+TextInput::make('meta.seo_title')
+```
+
+### Building a complete form
+
+Here's an example of a complete form schema with multiple fields:
+
+```php
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Schemas\Components\Section;
+
+public function form(Schema $schema): Schema
+{
+    return $schema
+        ->schema([
+            Section::make('Post Details')
+                ->schema([
+                    TextInput::make('title')
+                        ->required()
+                        ->maxLength(255),
+                    
+                    Textarea::make('excerpt')
+                        ->rows(3)
+                        ->maxLength(500),
+                    
+                    Select::make('status')
+                        ->options([
+                            'draft' => 'Draft',
+                            'published' => 'Published',
+                            'archived' => 'Archived',
+                        ])
+                        ->required(),
+                    
+                    DateTimePicker::make('published_at')
+                        ->label('Publish Date'),
+                ])
+                ->columns(2),
+        ]);
+}
+```
+
+## Fluent API pattern
+
+Filament forms use a fluent, chainable API. Each method returns the component instance, allowing you to chain multiple configuration methods:
+
+```php
+TextInput::make('email')
+    ->label('Email Address')
+    ->email()
+    ->required()
+    ->maxLength(255)
+    ->placeholder('user@example.com')
+    ->helperText('We\'ll never share your email.')
+```
+
+## Field labels
+
+By default, field labels are automatically generated from the field name. You can customize the label using the `label()` method:
+
+```php
+TextInput::make('full_name')
+    ->label('Full Name')
+```
+
+You can also hide labels visually while keeping them accessible to screen readers:
+
+```php
+TextInput::make('search')
+    ->hiddenLabel()
+    ->placeholder('Search...')
+```
+
+## Field placeholders
+
+Many fields support placeholders that display when the field is empty:
+
+```php
+TextInput::make('username')
+    ->placeholder('johndoe')
+
+Select::make('country')
+    ->options([
+        'us' => 'United States',
+        'uk' => 'United Kingdom',
+        'ca' => 'Canada',
+    ])
+    ->placeholder('Select a country')
+```
+
+## Default values
+
+You can set default values for fields that are used when the form is loaded with no data:
+
+```php
+TextInput::make('role')
+    ->default('member')
+
+Toggle::make('is_active')
+    ->default(true)
+
+DateTimePicker::make('created_at')
+    ->default(now())
+```
+
+## Disabling fields
+
+Fields can be disabled to prevent user interaction:
+
+```php
+TextInput::make('email')
+    ->disabled()
+
+// Conditionally disable
+TextInput::make('admin_notes')
+    ->disabled(fn () => ! auth()->user()->isAdmin())
+```
+
+Disabled fields are still included when the form is submitted. To make a field read-only and exclude it from submission, use `readOnly()`:
+
+```php
+TextInput::make('created_at')
+    ->readOnly()
+```
+
+## Helper text and hints
+
+You can add helper text below a field to provide additional context:
+
+```php
+TextInput::make('slug')
+    ->helperText('This will be used in the URL for this post.')
+```
+
+Hints are displayed next to the label:
+
+```php
+TextInput::make('api_token')
+    ->hint('Required for API access')
+```
+
+## Autofocus
+
+You can autofocus a field when the form loads:
+
+```php
+TextInput::make('name')
+    ->autofocus()
+```
+
+## Column spans
+
+When using a grid layout, you can control how many columns a field spans:
+
+```php
+use Filament\Schemas\Components\Grid;
+
+Grid::make(3)
+    ->schema([
+        TextInput::make('first_name'), // Spans 1 column
+        TextInput::make('last_name'),  // Spans 1 column
+        TextInput::make('email')
+            ->columnSpan(2), // Spans 2 columns
+        Textarea::make('bio')
+            ->columnSpan('full'), // Spans all columns
+    ])
+```
+
+## Field utility injection
+
+Many field methods accept closures that can access various utilities through dependency injection:
+
+### Accessing other field values
+
+Use the `Get` utility to access the value of other fields:
+
+```php
+use Filament\Schemas\Components\Utilities\Get;
+
+TextInput::make('slug')
+    ->required(fn (Get $get) => filled($get('title')))
+```
+
+### Setting other field values
+
+Use the `Set` utility to modify other fields:
+
+```php
+use Filament\Schemas\Components\Utilities\Set;
+use Illuminate\Support\Str;
+
+TextInput::make('title')
+    ->live(onBlur: true)
+    ->afterStateUpdated(function (Set $set, ?string $state) {
+        $set('slug', Str::slug($state));
+    })
+
+TextInput::make('slug')
+    ->required()
+```
+
+### Accessing the current component
+
+Inject the component instance to access its methods:
+
+```php
+use Filament\Forms\Components\TextInput;
+
+TextInput::make('name')
+    ->placeholder(fn (TextInput $component) => 
+        $component->isDisabled() ? null : 'Enter your name'
+    )
+```
+
+### Accessing the Livewire component
+
+Access the parent Livewire component:
+
+```php
+use Livewire\Component as Livewire;
+
+TextInput::make('team_name')
+    ->default(fn (Livewire $livewire) => $livewire->currentTeam->name)
+```
+
+## Available form fields
+
+Filament ships with a comprehensive set of form fields:
+
+<CardGroup cols={3}>
+  <Card title="Text Input" href="/forms/fields#text-input">
+    Basic text input field with support for various HTML input types
+  </Card>
+  
+  <Card title="Select" href="/forms/fields#select">
+    Dropdown selection with search and multi-select support
+  </Card>
+  
+  <Card title="Checkbox" href="/forms/fields#checkbox">
+    Single checkbox for boolean values
+  </Card>
+  
+  <Card title="Toggle" href="/forms/fields#toggle">
+    Modern toggle switch for boolean values
+  </Card>
+  
+  <Card title="Radio" href="/forms/fields#radio">
+    Radio button group for single selection
+  </Card>
+  
+  <Card title="Checkbox List" href="/forms/fields#checkbox-list">
+    Multiple checkboxes for array selection
+  </Card>
+  
+  <Card title="Date & Time Pickers" href="/forms/fields#date-time-picker">
+    Date, time, and datetime selection
+  </Card>
+  
+  <Card title="File Upload" href="/forms/fields#file-upload">
+    File and image upload with preview
+  </Card>
+  
+  <Card title="Rich Editor" href="/forms/fields#rich-editor">
+    WYSIWYG editor with formatting tools
+  </Card>
+  
+  <Card title="Markdown Editor" href="/forms/fields#markdown-editor">
+    Markdown editor with preview
+  </Card>
+  
+  <Card title="Repeater" href="/forms/fields#repeater">
+    Repeatable set of fields for array data
+  </Card>
+  
+  <Card title="Builder" href="/forms/fields#builder">
+    Flexible builder with multiple block types
+  </Card>
+  
+  <Card title="Tags Input" href="/forms/fields#tags-input">
+    Input for managing tags/keywords
+  </Card>
+  
+  <Card title="Textarea" href="/forms/fields#textarea">
+    Multi-line text input
+  </Card>
+  
+  <Card title="Key-Value" href="/forms/fields#key-value">
+    Key-value pair editor
+  </Card>
+  
+  <Card title="Color Picker" href="/forms/fields#color-picker">
+    Color selection input
+  </Card>
+  
+  <Card title="Toggle Buttons" href="/forms/fields#toggle-buttons">
+    Button group for single/multiple selection
+  </Card>
+  
+  <Card title="Slider" href="/forms/fields#slider">
+    Range slider for numeric input
+  </Card>
+  
+  <Card title="Code Editor" href="/forms/fields#code-editor">
+    Code editor with syntax highlighting
+  </Card>
+  
+  <Card title="Hidden" href="/forms/fields#hidden">
+    Hidden field for storing data
+  </Card>
+</CardGroup>
+
+## Next steps
+
+Now that you understand the basics, explore:
+
+- [Form Fields](/forms/fields) - Detailed guide to all available fields
+- [Form Layouts](/forms/layout) - Organize your forms with sections, grids, and tabs
+- [Validation](/forms/validation) - Add validation rules to your fields
+- [Advanced Features](/forms/advanced) - Reactive fields, dependent fields, and more

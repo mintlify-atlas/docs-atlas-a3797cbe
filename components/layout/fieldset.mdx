@@ -1,0 +1,77 @@
+---
+title: Fieldset
+---
+
+## Introduction
+
+Fieldsets group components together with a label and border:
+
+```php
+use Filament\Schemas\Components\Fieldset;
+
+Fieldset::make('Label')
+    ->schema([
+        // ...
+    ])
+```
+
+By default, fieldsets have a two-column grid.
+
+<ParamField path="label" type="string | Htmlable | Closure">
+  The fieldset label.
+</ParamField>
+
+## Customizing columns
+
+Customize the grid columns:
+
+```php
+Fieldset::make('Label')
+    ->columns([
+        'default' => 1,
+        'md' => 2,
+        'xl' => 3,
+    ])
+    ->schema([
+        // ...
+    ])
+```
+
+<ParamField path="columns" type="int | array | Closure" default="2">
+  The number of columns or responsive column configuration.
+</ParamField>
+
+## Removing the border
+
+Remove the container border:
+
+```php
+Fieldset::make('Label')
+    ->contained(false)
+    ->schema([
+        // ...
+    ])
+```
+
+<ParamField path="condition" type="bool | Closure" default="true">
+  Whether to display the border.
+</ParamField>
+
+## Relationship integration
+
+Fieldsets can integrate with singular relationships:
+
+```php
+Fieldset::make('Author')
+    ->relationship('author')
+    ->schema([
+        TextInput::make('name'),
+        TextInput::make('email'),
+    ])
+```
+
+This automatically manages the relationship data.
+
+<ParamField path="relationshipName" type="string">
+  The name of the relationship.
+</ParamField>

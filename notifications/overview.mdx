@@ -1,0 +1,333 @@
+---
+title: Notifications Overview
+description: Learn how to send flash notifications in Filament with customizable titles, icons, colors, and actions.
+---
+
+## Introduction
+
+Filament's notification system allows you to send flash notifications to users that appear in the corner of the screen. Notifications are built using a fluent API and can be sent from anywhere in your application - Livewire components, controllers, jobs, or even JavaScript.
+
+## Sending a basic notification
+
+Create and send a notification using the `make()` method:
+
+```php
+use Filament\Notifications\Notification;
+
+Notification::make()
+    ->title('Saved successfully')
+    ->success()
+    ->send();
+```
+
+Since notifications use the session, they can be sent from any part of your code, not just Livewire components.
+
+## Notification content
+
+<Steps>
+
+### Setting the title
+
+The title is the main message displayed to users:
+
+```php
+Notification::make()
+    ->title('Saved successfully')
+    ->send();
+```
+
+Titles support basic HTML and Markdown:
+
+```php
+use Illuminate\Support\Str;
+
+Notification::make()
+    ->title(Str::markdown('Your **post** has been saved'))
+    ->send();
+```
+
+### Adding body text
+
+Provide additional details in the body:
+
+```php
+Notification::make()
+    ->title('Saved successfully')
+    ->body('Changes to the post have been saved.')
+    ->send();
+```
+
+The body also supports HTML and Markdown:
+
+```php
+Notification::make()
+    ->title('Saved successfully')
+    ->body(Str::markdown('Changes to the **post** have been saved.'))
+    ->send();
+```
+
+</Steps>
+
+## Status and icons
+
+Notifications can display status indicators with appropriate icons and colors:
+
+<CodeGroup>
+```php Success
+Notification::make()
+    ->title('User created')
+    ->success()
+    ->send();
+```
+
+```php Warning
+Notification::make()
+    ->title('Disk space low')
+    ->warning()
+    ->send();
+```
+
+```php Danger
+Notification::make()
+    ->title('An error occurred')
+    ->danger()
+    ->send();
+```
+
+```php Info
+Notification::make()
+    ->title('New feature available')
+    ->info()
+    ->send();
+```
+</CodeGroup>
+
+### Custom icons
+
+Set a custom icon and color:
+
+```php
+Notification::make()
+    ->title('Settings updated')
+    ->icon('heroicon-o-cog-6-tooth')
+    ->iconColor('primary')
+    ->send();
+```
+
+## Background colors
+
+Add a background color to make notifications more prominent:
+
+```php
+Notification::make()
+    ->title('Saved successfully')
+    ->color('success')
+    ->send();
+```
+
+## Duration and persistence
+
+<Steps>
+
+### Setting duration
+
+By default, notifications close after 6 seconds. Customize the duration in milliseconds:
+
+```php
+Notification::make()
+    ->title('Saved successfully')
+    ->duration(5000) // 5 seconds
+    ->send();
+```
+
+Or use seconds:
+
+```php
+Notification::make()
+    ->title('Saved successfully')
+    ->seconds(5)
+    ->send();
+```
+
+### Making notifications persistent
+
+Require manual dismissal:
+
+```php
+Notification::make()
+    ->title('Important update')
+    ->body('Please review these changes carefully.')
+    ->persistent()
+    ->send();
+```
+
+</Steps>
+
+## Notification actions
+
+Add interactive buttons to your notifications:
+
+```php
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+
+Notification::make()
+    ->title('Saved successfully')
+    ->body('Changes to the post have been saved.')
+    ->actions([
+        Action::make('view')
+            ->button()
+            ->url(route('posts.show', $post), shouldOpenInNewTab: true),
+        Action::make('undo')
+            ->color('gray'),
+    ])
+    ->send();
+```
+
+### Opening URLs
+
+Actions can open URLs when clicked:
+
+```php
+Action::make('view')
+    ->button()
+    ->url(route('posts.show', $post), shouldOpenInNewTab: true)
+```
+
+### Dispatching Livewire events
+
+Trigger Livewire events from notification actions:
+
+```php
+Action::make('undo')
+    ->dispatch('undoEdit', [$post->id])
+    ->close() // Close notification after clicking
+```
+
+You can also use `dispatchSelf()` and `dispatchTo()`:
+
+```php
+Action::make('refresh')
+    ->dispatchSelf('refreshData')
+
+Action::make('notify')
+    ->dispatchTo('admin-panel', 'notify', [$message])
+```
+
+## Sending from JavaScript
+
+Create notifications from JavaScript using the global `FilamentNotification` object:
+
+```js
+new FilamentNotification()
+    .title('Saved successfully')
+    .success()
+    .send()
+```
+
+With actions:
+
+```js
+new FilamentNotification()
+    .title('Saved successfully')
+    .body('Changes have been saved.')
+    .actions([
+        new FilamentNotificationAction('view')
+            .button()
+            .url('/posts/123'),
+        new FilamentNotificationAction('undo')
+            .color('gray')
+            .dispatch('undoEdit'),
+    ])
+    .send()
+```
+
+### Importing in bundled JavaScript
+
+If you're using a JavaScript bundler:
+
+```js
+import { Notification, NotificationAction } from '../../vendor/filament/notifications/dist/index.js'
+
+new Notification()
+    .title('Saved successfully')
+    .send()
+```
+
+## Closing notifications
+
+Close a notification programmatically by dispatching a browser event:
+
+<Steps>
+
+### Get the notification ID
+
+```php
+$notification = Notification::make()
+    ->title('Processing...')
+    ->persistent()
+    ->send();
+
+$notificationId = $notification->getId();
+```
+
+### Dispatch the close event
+
+From Livewire:
+
+```php
+$this->dispatch('close-notification', id: $notificationId);
+```
+
+From JavaScript:
+
+```blade
+<button 
+    x-on:click="$dispatch('close-notification', { id: '{{ $notificationId }}' })"
+    type="button"
+>
+    Close Notification
+</button>
+```
+
+### Using custom IDs
+
+Assign a custom ID for easier tracking:
+
+```php
+Notification::make('greeting')
+    ->title('Hello!')
+    ->persistent()
+    ->send();
+```
+
+Then close it:
+
+```blade
+<button x-on:click="$dispatch('close-notification', { id: 'greeting' })" type="button">
+    Close
+</button>
+```
+
+</Steps>
+
+<Note>
+Using random IDs is recommended to avoid accidentally closing the wrong notification. Only use custom IDs when you can guarantee uniqueness.
+</Note>
+
+## Positioning notifications
+
+Configure the global position of notifications in a service provider or middleware:
+
+```php
+use Filament\Notifications\Livewire\Notifications;
+use Filament\Support\Enums\Alignment;
+use Filament\Support\Enums\VerticalAlignment;
+
+Notifications::alignment(Alignment::Start);
+Notifications::verticalAlignment(VerticalAlignment::End);
+```
+
+Available positions:
+- Horizontal: `Alignment::Start`, `Alignment::Center`, `Alignment::End`
+- Vertical: `VerticalAlignment::Start`, `VerticalAlignment::Center`, `VerticalAlignment::End`
