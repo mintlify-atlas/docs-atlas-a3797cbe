@@ -1,0 +1,216 @@
+{
+  "projectType": "framework",
+  "projectName": "Filament",
+  "projectDescription": "A powerful open-source UI framework for Laravel to build and ship apps and admin panels fast with Livewire",
+  "theme": "palm",
+  "primaryColor": "#F59E0B",
+  "lightColor": "#FCD34D",
+  "darkColor": "#D97706",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart",
+              "upgrading"
+            ]
+          },
+          {
+            "group": "Panel Builder",
+            "pages": [
+              "panels/overview",
+              "panels/resources",
+              "panels/pages",
+              "panels/navigation",
+              "panels/configuration",
+              "panels/authentication",
+              "panels/tenancy",
+              "panels/themes",
+              "panels/deployment"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "resources/overview",
+              "resources/creating-records",
+              "resources/listing-records",
+              "resources/editing-records",
+              "resources/viewing-records",
+              "resources/deleting-records",
+              "resources/relationships",
+              "resources/global-search"
+            ]
+          },
+          {
+            "group": "Building Blocks",
+            "pages": [
+              "forms/overview",
+              "forms/fields",
+              "forms/layout",
+              "forms/validation",
+              "forms/advanced",
+              "tables/overview",
+              "tables/columns",
+              "tables/filters",
+              "tables/actions",
+              "actions/overview",
+              "actions/modals",
+              "actions/prebuilt",
+              "notifications/overview",
+              "notifications/sending",
+              "infolists/overview",
+              "infolists/entries",
+              "widgets/overview",
+              "widgets/charts",
+              "widgets/stats"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/custom-fields",
+              "advanced/custom-columns",
+              "advanced/custom-actions",
+              "advanced/plugins",
+              "advanced/testing",
+              "advanced/performance"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Components",
+        "groups": [
+          {
+            "group": "Form Components",
+            "pages": [
+              "components/forms/text-input",
+              "components/forms/select",
+              "components/forms/checkbox",
+              "components/forms/toggle",
+              "components/forms/radio",
+              "components/forms/date-time-picker",
+              "components/forms/file-upload",
+              "components/forms/rich-editor",
+              "components/forms/markdown-editor",
+              "components/forms/repeater",
+              "components/forms/builder",
+              "components/forms/tags-input",
+              "components/forms/textarea",
+              "components/forms/color-picker",
+              "components/forms/key-value"
+            ]
+          },
+          {
+            "group": "Table Components",
+            "pages": [
+              "components/tables/text-column",
+              "components/tables/image-column",
+              "components/tables/icon-column",
+              "components/tables/badge-column",
+              "components/tables/color-column",
+              "components/tables/select-column",
+              "components/tables/checkbox-column",
+              "components/tables/toggle-column"
+            ]
+          },
+          {
+            "group": "Layout Components",
+            "pages": [
+              "components/layout/section",
+              "components/layout/fieldset",
+              "components/layout/tabs",
+              "components/layout/wizard",
+              "components/layout/grid",
+              "components/layout/split"
+            ]
+          },
+          {
+            "group": "Infolist Components",
+            "pages": [
+              "components/infolists/text-entry",
+              "components/infolists/image-entry",
+              "components/infolists/icon-entry",
+              "components/infolists/badge-entry",
+              "components/infolists/color-entry"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Core Classes",
+            "pages": [
+              "api/panel",
+              "api/resource",
+              "api/page",
+              "api/livewire-component"
+            ]
+          },
+          {
+            "group": "Form Builder",
+            "pages": [
+              "api/form",
+              "api/field",
+              "api/component"
+            ]
+          },
+          {
+            "group": "Table Builder",
+            "pages": [
+              "api/table",
+              "api/column",
+              "api/filter"
+            ]
+          },
+          {
+            "group": "Actions",
+            "pages": [
+              "api/action",
+              "api/bulk-action"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Panel Builder - Full admin panel framework with authentication, navigation, and theming",
+    "Form Builder - Reactive forms with 30+ field types and advanced validation",
+    "Table Builder - Powerful data tables with sorting, filtering, searching, and bulk actions",
+    "Actions - Modal-based workflows for CRUD operations, imports, and exports",
+    "Notifications - In-app toast notifications and database notifications",
+    "Infolists - Read-only record displays with structured layouts",
+    "Widgets - Dashboard widgets including charts, stats, and custom components",
+    "Resources - CRUD interfaces for Eloquent models with automatic page generation",
+    "Multi-tenancy - Built-in support for team/organization-scoped data",
+    "Plugin System - Extensible architecture with first-party and community plugins"
+  ],
+  "publicApiSurface": [
+    "Filament\\Panel::make() - Create and configure admin panels",
+    "Filament\\Resources\\Resource - Base class for CRUD resources",
+    "Filament\\Pages\\Page - Base class for custom pages",
+    "Filament\\Forms\\Components\\* - 30+ form field components",
+    "Filament\\Tables\\Columns\\* - Table column components",
+    "Filament\\Tables\\Filters\\* - Table filter components",
+    "Filament\\Actions\\Action - Define modal-based actions",
+    "Filament\\Notifications\\Notification - Send in-app notifications",
+    "Filament\\Infolists\\Components\\* - Infolist entry components",
+    "Filament\\Widgets\\Widget - Base class for dashboard widgets",
+    "Filament\\Support\\* - Shared utilities and helpers",
+    "php artisan make:filament-resource - Generate resource scaffolding",
+    "php artisan make:filament-page - Generate custom pages",
+    "php artisan make:filament-widget - Generate dashboard widgets",
+    "php artisan make:filament-user - Create admin users",
+    "php artisan filament:install - Install Filament packages",
+    "php artisan filament:upgrade - Upgrade between versions"
+  ]
+}
